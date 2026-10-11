@@ -125,10 +125,10 @@ public final class GeologicalSurveyHintOverlay {
             return Component.empty();
         }
         String key = translationKey(incoming);
-        if (!LightBlock.LightBlockSpeech.KEY.equals(key) && !LightBlock.LightBlockSpeech.KEY_EN.equals(key)) {
+        if (!LightBlock.SPEECH_KEY.equals(key) && !LightBlock.SPEECH_KEY_EN.equals(key)) {
             return incoming;
         }
-        return Component.literal(LightBlock.LightBlockSpeech.textForLanguage(selectedLanguage()));
+        return Component.translatable(LightBlock.SPEECH_KEY);
     }
 
     private static String selectedLanguage() {

@@ -29,6 +29,10 @@ public final class LightBlock extends Block {
             Identifier.fromNamespaceAndPath(SimuKraft.MOD_ID, "story/talking_light");
     static final String TALKING_LIGHT_CRITERION = "use_light";
 
+    public static final String SPEECH_KEY = "message.simukraft.light_block.speech";
+    public static final String SPEECH_KEY_EN = "message.simukraft.light_block.speech.en";
+    public static final int SPEECH_MILLIS = 13_400;
+
     public LightBlock(Properties properties) {
         super(properties.mapColor(MapColor.METAL)
                 .strength(1.0F)
@@ -42,8 +46,8 @@ public final class LightBlock extends Block {
             level.playSound(null, pos, ModSoundEvents.LIGHT_USE.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
             GeologicalSurveyHintService.sendTypewriter(
                     serverPlayer,
-                    Component.translatable(LightBlockSpeech.KEY),
-                    LightBlockSpeech.SPEECH_MILLIS);
+                    Component.translatable(SPEECH_KEY),
+                    SPEECH_MILLIS);
             grantTalkingLightAdvancement(serverPlayer);
         }
         return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
@@ -61,27 +65,5 @@ public final class LightBlock extends Block {
             return;
         }
         player.getAdvancements().award(advancement, TALKING_LIGHT_CRITERION);
-    }
-
-    /**
-     * LightBlockSpeech: 灯块右键台词，按玩家语言选中文或英文。
-     */
-    public static final class LightBlockSpeech {
-        public static final String KEY = "message.simukraft.light_block.speech";
-        public static final String KEY_EN = "message.simukraft.light_block.speech.en";
-        public static final String CHINESE = "你好，我是灯箱。我给 Minecraft 世界带来光明。谢谢你点击我。从这里看出去风景不错。谢谢你把我放在这儿。祝你今天愉快。感谢收听。";
-        public static final String ENGLISH = "Hello, I am a lightbox. I bring light into the Minecraft world. Thanks for clicking me. There's a nice view from here. Thanks for placing me here. Have a nice day. Thank you for watching.";
-        public static final int SPEECH_MILLIS = 13_400;
-
-        private LightBlockSpeech() {
-        }
-
-        public static boolean isChineseLanguage(String languageCode) {
-            return languageCode != null && languageCode.toLowerCase(Locale.ROOT).startsWith("zh");
-        }
-
-        public static String textForLanguage(String languageCode) {
-            return isChineseLanguage(languageCode) ? CHINESE : ENGLISH;
-        }
     }
 }
