@@ -1,6 +1,6 @@
 package client.cn.kafei.simukraft.client.geology;
 
-import common.cn.kafei.simukraft.block.LightBlockSpeech;
+import common.cn.kafei.simukraft.block.LightBlock;
 import common.cn.kafei.simukraft.util.TypewriterReveal;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -125,10 +125,10 @@ public final class GeologicalSurveyHintOverlay {
             return Component.empty();
         }
         String key = translationKey(incoming);
-        if (!LightBlockSpeech.KEY.equals(key) && !LightBlockSpeech.KEY_EN.equals(key)) {
+        if (!LightBlock.LightBlockSpeech.KEY.equals(key) && !LightBlock.LightBlockSpeech.KEY_EN.equals(key)) {
             return incoming;
         }
-        return Component.literal(LightBlockSpeech.textForLanguage(selectedLanguage()));
+        return Component.literal(LightBlock.LightBlockSpeech.textForLanguage(selectedLanguage()));
     }
 
     private static String selectedLanguage() {
