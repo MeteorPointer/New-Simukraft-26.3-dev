@@ -2,6 +2,13 @@ package common.cn.kafei.simukraft.config;
 
 import java.util.List;
 
+// TODO
+// schedule to move this to datapacks or otherwise instead config-control
+// sometimes, we will update this list, but the original saves will not implement it well
+// when we update the mod version, we still need to reset config file
+// 计划移动到数据包或者其他地方内
+// 有时我们会更新这个列表，但是原始的存档却未正确应用这些修改
+// 当我们更新模组的时候，我们仍然需要重置配置文件
 public final class MaterialConfigDefaults {
     public static final List<String> ALL_MODE_BLOCK_BLACKLIST = List.of(
             "minecraft:bedrock",
