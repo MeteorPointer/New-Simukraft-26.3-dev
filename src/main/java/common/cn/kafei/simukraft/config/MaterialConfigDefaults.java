@@ -1,6 +1,13 @@
 package common.cn.kafei.simukraft.config;
 
-import java.util.List;
+import common.cn.kafei.simukraft.registry.ModBlocks;
+import it.unimi.dsi.fastutil.Pair;
+import net.minecraft.references.BlockItemIds;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.block.Block;
+
+import java.util.*;
+import java.util.function.Supplier;
 
 // TODO
 // schedule to move this to datapacks or otherwise instead config-control
@@ -10,6 +17,308 @@ import java.util.List;
 // 有时我们会更新这个列表，但是原始的存档却未正确应用这些修改
 // 当我们更新模组的时候，我们仍然需要重置配置文件
 public final class MaterialConfigDefaults {
+    public static final Supplier<Set<ResourceKey<Block>>> ALL_MODE_BLOCK_BLACKLIST_BLOCKS = () -> {
+        Set<ResourceKey<Block>> set = new HashSet<>();
+
+        set.add(BlockItemIds.BEDROCK.block());
+        set.add(BlockItemIds.COMMAND_BLOCK.block());
+        set.add(BlockItemIds.CHAIN_COMMAND_BLOCK.block());
+        set.add(BlockItemIds.REPEATING_COMMAND_BLOCK.block());
+        set.add(BlockItemIds.BARRIER.block());
+        set.add(BlockItemIds.STRUCTURE_BLOCK.block());
+        set.add(BlockItemIds.STRUCTURE_VOID.block());
+        set.add(BlockItemIds.JIGSAW.block());
+        set.add(ModBlocks.BUILD_BOX.key());
+        set.add(ModBlocks.CITY_CORE.key());
+        set.add(ModBlocks.RESIDENTIAL_CONTROL_BOX.key());
+        set.add(ModBlocks.COMMERCIAL_CONTROL_BOX.key());
+        set.add(ModBlocks.INDUSTRIAL_CONTROL_BOX.key());
+        set.add(ModBlocks.OTHER_CONTROL_BOX.key());
+        set.add(ModBlocks.MEDICAL_CONTROL_BOX.key());
+        set.add(ModBlocks.BANK_CONTROL_BOX.key());
+        set.add(ModBlocks.EXCHANGE_CONTROL_BOX.key());
+        set.add(ModBlocks.LOGISTICS_CLIENT_BOX.key());
+        set.add(ModBlocks.LOGISTICS_SERVER_BOX.key());
+        set.add(ModBlocks.NSUK_FARMLAND_BOX.key());
+
+        return Set.copyOf(set);
+    };
+
+    public static final Supplier<Set<ResourceKey<Block>>> BASIC_MATERIALS_BLOCKS = () -> {
+        Set<ResourceKey<Block>> set = new HashSet<>();
+        set.add(BlockItemIds.IRON_BLOCK.block());
+        set.add(BlockItemIds.GOLD_BLOCK.block());
+        set.add(BlockItemIds.DIAMOND_BLOCK.block());
+        set.add(BlockItemIds.EMERALD_BLOCK.block());
+        BlockItemIds.COPPER_BLOCK.forEach(block -> set.add(block.block()));
+        set.add(BlockItemIds.NETHERITE_BLOCK.block());
+        set.add(BlockItemIds.LAPIS_BLOCK.block());
+        set.add(BlockItemIds.REDSTONE_BLOCK.block());
+        set.add(BlockItemIds.COAL_BLOCK.block());
+        set.add(BlockItemIds.BAMBOO_BLOCK.block());
+        return Set.copyOf(set);
+    };
+
+    public static final Supplier<Map<String, Set<Pair<ResourceKey<Block>, Boolean>>>> MATERIAL_CATEGORY_GROUPS_BLOCKS = () -> {
+        Map<String, Set<Pair<ResourceKey<Block>, Boolean>>> map = new HashMap<>();
+        {
+            String toAdd = "bamboo_block";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            addCommons(set, BlockItemIds.BAMBOO_BLOCK.block());
+            addNotCommons(set, BlockItemIds.BAMBOO_SLAB.block(), BlockItemIds.BAMBOO_STAIRS.block());
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "bamboo_fence";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            addCommons(set, BlockItemIds.BAMBOO_FENCE.block(), BlockItemIds.BAMBOO_FENCE_GATE.block());
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "black_stone_family";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            addCommons(set, BlockItemIds.BLACKSTONE.block(), BlockItemIds.CHISELED_POLISHED_BLACKSTONE.block(),
+                    BlockItemIds.CRACKED_POLISHED_BLACKSTONE_BRICKS.block(), BlockItemIds.POLISHED_BLACKSTONE.block(),
+                    BlockItemIds.POLISHED_BLACKSTONE_BRICKS.block());
+            addNotCommons(set, BlockItemIds.BLACKSTONE_SLAB.block(), BlockItemIds.BLACKSTONE_STAIRS.block(),
+                    BlockItemIds.BLACKSTONE_WALL.block(), BlockItemIds.POLISHED_BLACKSTONE_BRICK_SLAB.block(),
+                    BlockItemIds.POLISHED_BLACKSTONE_BRICK_STAIRS.block(), BlockItemIds.POLISHED_BLACKSTONE_BRICK_WALL.block(),
+                    BlockItemIds.POLISHED_BLACKSTONE_SLAB.block(), BlockItemIds.POLISHED_BLACKSTONE_WALL.block(),
+                    BlockItemIds.POLISHED_BLACKSTONE_STAIRS.block());
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "bricks";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            addCommons(set, BlockItemIds.BRICKS.block());
+            addNotCommons(set, BlockItemIds.BRICK_SLAB.block(), BlockItemIds.BRICK_STAIRS.block(),
+                    BlockItemIds.BRICK_WALL.block());
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "cobblestone_family";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            addCommons(set, BlockItemIds.COBBLESTONE.block(), BlockItemIds.MOSSY_COBBLESTONE.block());
+            addNotCommons(set, BlockItemIds.COBBLESTONE_SLAB.block(), BlockItemIds.COBBLESTONE_STAIRS.block(),
+                    BlockItemIds.COBBLESTONE_WALL.block(), BlockItemIds.MOSSY_COBBLESTONE_SLAB.block(),
+                    BlockItemIds.MOSSY_COBBLESTONE_STAIRS.block(), BlockItemIds.MOSSY_COBBLESTONE_WALL.block());
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "concrete";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            BlockItemIds.CONCRETE.forEach(block -> addCommons(set, block.block()));
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "concrete_powder";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            BlockItemIds.CONCRETE_POWDER.forEach(block -> addCommons(set, block.block()));
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "deepslate_family";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            addCommons(set, BlockItemIds.DEEPSLATE.block(), BlockItemIds.COBBLED_DEEPSLATE.block(),
+                    BlockItemIds.POLISHED_DEEPSLATE.block(), BlockItemIds.DEEPSLATE_BRICKS.block(),
+                    BlockItemIds.DEEPSLATE_TILES.block(), BlockItemIds.CHISELED_DEEPSLATE.block(),
+                    BlockItemIds.CRACKED_DEEPSLATE_BRICKS.block(), BlockItemIds.CRACKED_DEEPSLATE_TILES.block());
+            addNotCommons(set, BlockItemIds.COBBLED_DEEPSLATE_SLAB.block(), BlockItemIds.COBBLED_DEEPSLATE_STAIRS.block(),
+                    BlockItemIds.COBBLED_DEEPSLATE_WALL.block(), BlockItemIds.POLISHED_DEEPSLATE_SLAB.block(),
+                    BlockItemIds.POLISHED_DEEPSLATE_STAIRS.block(), BlockItemIds.POLISHED_DEEPSLATE_WALL.block(),
+                    BlockItemIds.DEEPSLATE_BRICK_SLAB.block(), BlockItemIds.DEEPSLATE_BRICK_STAIRS.block(),
+                    BlockItemIds.DEEPSLATE_BRICK_WALL.block(), BlockItemIds.DEEPSLATE_TILE_SLAB.block(),
+                    BlockItemIds.DEEPSLATE_TILE_STAIRS.block(), BlockItemIds.DEEPSLATE_TILE_WALL.block());
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "fence_family";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            addCommons(set, BlockItemIds.ACACIA_FENCE.block(), BlockItemIds.BIRCH_FENCE.block(),
+                    BlockItemIds.CHERRY_FENCE.block(), BlockItemIds.ACACIA_FENCE_GATE.block(),
+                    BlockItemIds.BIRCH_FENCE_GATE.block(), BlockItemIds.CHERRY_FENCE_GATE.block(),
+                    BlockItemIds.OAK_FENCE.block(), BlockItemIds.OAK_FENCE_GATE.block(),
+                    BlockItemIds.SPRUCE_FENCE.block(), BlockItemIds.SPRUCE_FENCE_GATE.block(),
+                    BlockItemIds.JUNGLE_FENCE.block(), BlockItemIds.JUNGLE_FENCE_GATE.block(),
+                    BlockItemIds.MANGROVE_FENCE.block(), BlockItemIds.MANGROVE_FENCE_GATE.block(),
+                    BlockItemIds.CRIMSON_FENCE.block(), BlockItemIds.CRIMSON_FENCE_GATE.block(),
+                    BlockItemIds.WARPED_FENCE.block(), BlockItemIds.WARPED_FENCE_GATE.block(),
+                    BlockItemIds.POPLAR_FENCE.block(), BlockItemIds.POPLAR_FENCE_GATE.block());
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "glass_family";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            addCommons(set, BlockItemIds.GLASS.block());
+            BlockItemIds.STAINED_GLASS.forEach(block -> addCommons(set, block.block()));
+            addNotCommons(set, BlockItemIds.GLASS_PANE.block());
+            BlockItemIds.STAINED_GLASS_PANE.forEach(block -> addNotCommons(set, block.block()));
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "glass_pane_extra";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            BlockItemIds.STAINED_GLASS_PANE.forEach(block -> addCommons(set, block.block()));
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "log_family";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            addCommons(set, BlockItemIds.ACACIA_LOG.block(), BlockItemIds.BIRCH_LOG.block(),
+                    BlockItemIds.CHERRY_LOG.block(), BlockItemIds.DARK_OAK_LOG.block(),
+                    BlockItemIds.JUNGLE_LOG.block(), BlockItemIds.MANGROVE_LOG.block(),
+                    BlockItemIds.OAK_LOG.block(), BlockItemIds.SPRUCE_LOG.block(),
+                    BlockItemIds.WARPED_STEM.block(), BlockItemIds.CRIMSON_STEM.block(),
+                    BlockItemIds.POPLAR_LOG.block());
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "packed";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            addCommons(set, BlockItemIds.PACKED_MUD.block(), BlockItemIds.MUD_BRICKS.block());
+            addNotCommons(set, BlockItemIds.MUD_BRICK_STAIRS.block(), BlockItemIds.MUD_BRICK_SLAB.block(),
+                    BlockItemIds.MUD_BRICK_WALL.block());
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "planks_family";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            addCommons(set, BlockItemIds.OAK_PLANKS.block(), BlockItemIds.SPRUCE_PLANKS.block(),
+                    BlockItemIds.BIRCH_PLANKS.block(), BlockItemIds.JUNGLE_PLANKS.block(),
+                    BlockItemIds.ACACIA_PLANKS.block(), BlockItemIds.DARK_OAK_PLANKS.block(),
+                    BlockItemIds.MANGROVE_PLANKS.block(), BlockItemIds.CHERRY_PLANKS.block(),
+                    BlockItemIds.CRIMSON_PLANKS.block(), BlockItemIds.WARPED_PLANKS.block(),
+                    BlockItemIds.POPLAR_PLANKS.block());
+            addNotCommons(set, BlockItemIds.OAK_SLAB.block(), BlockItemIds.OAK_STAIRS.block(),
+                    BlockItemIds.SPRUCE_SLAB.block(), BlockItemIds.SPRUCE_STAIRS.block(),
+                    BlockItemIds.BIRCH_SLAB.block(), BlockItemIds.BIRCH_STAIRS.block(),
+                    BlockItemIds.JUNGLE_SLAB.block(), BlockItemIds.JUNGLE_STAIRS.block(),
+                    BlockItemIds.ACACIA_SLAB.block(), BlockItemIds.ACACIA_STAIRS.block(),
+                    BlockItemIds.DARK_OAK_SLAB.block(), BlockItemIds.DARK_OAK_STAIRS.block(),
+                    BlockItemIds.MANGROVE_SLAB.block(), BlockItemIds.MANGROVE_STAIRS.block(),
+                    BlockItemIds.CHERRY_SLAB.block(), BlockItemIds.CHERRY_STAIRS.block(),
+                    BlockItemIds.CRIMSON_SLAB.block(), BlockItemIds.CRIMSON_STAIRS.block(),
+                    BlockItemIds.WARPED_SLAB.block(), BlockItemIds.WARPED_STAIRS.block(),
+                    BlockItemIds.POPLAR_SLAB.block(), BlockItemIds.POPLAR_STAIRS.block());
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "red_sandstone";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            addCommons(set, BlockItemIds.CUT_RED_SANDSTONE.block(), BlockItemIds.CHISELED_RED_SANDSTONE.block(),
+                    BlockItemIds.RED_SANDSTONE.block(), BlockItemIds.SMOOTH_RED_SANDSTONE.block());
+            addNotCommons(set, BlockItemIds.RED_SANDSTONE_SLAB.block(), BlockItemIds.RED_SANDSTONE_STAIRS.block(),
+                    BlockItemIds.RED_SANDSTONE_WALL.block(), BlockItemIds.SMOOTH_RED_SANDSTONE_SLAB.block(),
+                    BlockItemIds.SMOOTH_RED_SANDSTONE_STAIRS.block(), BlockItemIds.CUT_RED_SANDSTONE_SLAB.block());
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "sandstone";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            addCommons(set, BlockItemIds.CUT_SANDSTONE.block(), BlockItemIds.CHISELED_SANDSTONE.block(),
+                    BlockItemIds.SANDSTONE.block(), BlockItemIds.SMOOTH_SANDSTONE.block());
+            addNotCommons(set, BlockItemIds.SANDSTONE_SLAB.block(), BlockItemIds.SANDSTONE_STAIRS.block(),
+                    BlockItemIds.SANDSTONE_WALL.block(), BlockItemIds.SMOOTH_SANDSTONE_SLAB.block(),
+                    BlockItemIds.SMOOTH_SANDSTONE_STAIRS.block(), BlockItemIds.CUT_SANDSTONE_SLAB.block());
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "stone_bricks";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            addCommons(set, BlockItemIds.STONE_BRICKS.block(), BlockItemIds.CRACKED_STONE_BRICKS.block(),
+                    BlockItemIds.MOSSY_STONE_BRICKS.block(), BlockItemIds.CHISELED_STONE_BRICKS.block());
+            addNotCommons(set, BlockItemIds.STONE_BRICK_STAIRS.block(), BlockItemIds.STONE_BRICK_SLAB.block(),
+                    BlockItemIds.STONE_BRICK_WALL.block(), BlockItemIds.MOSSY_STONE_BRICK_STAIRS.block(),
+                    BlockItemIds.MOSSY_STONE_BRICK_SLAB.block(), BlockItemIds.MOSSY_STONE_BRICK_WALL.block());
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "stone_family";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            addCommons(set, BlockItemIds.STONE.block(), BlockItemIds.CALCITE.block(),
+                    BlockItemIds.DIORITE.block(), BlockItemIds.TUFF.block(),
+                    BlockItemIds.GRANITE.block(), BlockItemIds.ANDESITE.block(),
+                    BlockItemIds.POLISHED_ANDESITE.block(), BlockItemIds.POLISHED_GRANITE.block(),
+                    BlockItemIds.POLISHED_DIORITE.block());
+            addNotCommons(set, BlockItemIds.STONE_SLAB.block(), BlockItemIds.STONE_STAIRS.block(),
+                    BlockItemIds.ANDESITE_SLAB.block(), BlockItemIds.ANDESITE_STAIRS.block(),
+                    BlockItemIds.ANDESITE_WALL.block(), BlockItemIds.POLISHED_ANDESITE_SLAB.block(),
+                    BlockItemIds.POLISHED_ANDESITE_STAIRS.block(), BlockItemIds.GRANITE_SLAB.block(),
+                    BlockItemIds.GRANITE_STAIRS.block(), BlockItemIds.GRANITE_WALL.block(),
+                    BlockItemIds.POLISHED_GRANITE_SLAB.block(), BlockItemIds.POLISHED_GRANITE_STAIRS.block(),
+                    BlockItemIds.DIORITE_SLAB.block(), BlockItemIds.DIORITE_STAIRS.block(),
+                    BlockItemIds.DIORITE_WALL.block(), BlockItemIds.POLISHED_DIORITE_SLAB.block(),
+                    BlockItemIds.POLISHED_DIORITE_STAIRS.block());
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "terracotta";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            addCommons(set, BlockItemIds.TERRACOTTA.block());
+            BlockItemIds.DYED_TERRACOTTA.forEach(block -> addCommons(set, block.block()));
+            BlockItemIds.GLAZED_TERRACOTTA.forEach(block -> addNotCommons(set, block.block()));
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "glazed_terracotta_extra";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            BlockItemIds.GLAZED_TERRACOTTA.forEach(block -> addCommons(set, block.block()));
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "wool_family";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            BlockItemIds.WOOL.forEach(block -> addCommons(set, block.block()));
+            map.put(toAdd, Set.copyOf(set));
+        }
+        {
+            String toAdd = "copper_blocks";
+            Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
+            BlockItemIds.COPPER_BLOCK.forEach(block -> addCommons(set, block.block()));
+            map.put(toAdd, Set.copyOf(set));
+        }
+        return Map.copyOf(map);
+    };
+
+    public static final Supplier<Set<ResourceKey<Block>>> EXPERT_MODE_SKIP_LIST_BLOCKS = () -> {
+        Set<ResourceKey<Block>> set = new HashSet<>();
+        set.add(BlockItemIds.BEDROCK.block());
+        set.add(BlockItemIds.COMMAND_BLOCK.block());
+        set.add(BlockItemIds.CHAIN_COMMAND_BLOCK.block());
+        set.add(BlockItemIds.REPEATING_COMMAND_BLOCK.block());
+        set.add(BlockItemIds.BARRIER.block());
+        set.add(BlockItemIds.STRUCTURE_BLOCK.block());
+        set.add(BlockItemIds.STRUCTURE_VOID.block());
+        set.add(BlockItemIds.JIGSAW.block());
+        set.add(ModBlocks.BUILD_BOX.key());
+        set.add(ModBlocks.CITY_CORE.key());
+        set.add(ModBlocks.RESIDENTIAL_CONTROL_BOX.key());
+        set.add(ModBlocks.COMMERCIAL_CONTROL_BOX.key());
+        set.add(ModBlocks.INDUSTRIAL_CONTROL_BOX.key());
+        set.add(ModBlocks.OTHER_CONTROL_BOX.key());
+        set.add(ModBlocks.MEDICAL_CONTROL_BOX.key());
+        set.add(ModBlocks.BANK_CONTROL_BOX.key());
+        set.add(ModBlocks.EXCHANGE_CONTROL_BOX.key());
+        set.add(ModBlocks.NSUK_FARMLAND_BOX.key());
+        return Set.copyOf(set);
+    };
+
+    private static void regReplaceable(Set<Pair<ResourceKey<Block>, Boolean>> list, boolean common, ResourceKey<Block>[] blocks) {
+        for (ResourceKey<Block> block : blocks) {
+            list.add(Pair.of(block, common));
+        }
+    }
+
+    @SafeVarargs
+    private static void addCommons(Set<Pair<ResourceKey<Block>, Boolean>> list, ResourceKey<Block>... blocks) {
+        regReplaceable(list, true, blocks);
+    }
+
+    @SafeVarargs
+    private static void addNotCommons(Set<Pair<ResourceKey<Block>, Boolean>> list, ResourceKey<Block>... blocks) {
+        regReplaceable(list, false, blocks);
+    }
+
     public static final List<String> ALL_MODE_BLOCK_BLACKLIST = List.of(
             "minecraft:bedrock",
             "minecraft:command_block",
@@ -96,7 +405,4 @@ public final class MaterialConfigDefaults {
             "minecraft:petrified_oak_slab",
             "simukraft:white_carpet"
     );
-
-    private MaterialConfigDefaults() {
-    }
 }
