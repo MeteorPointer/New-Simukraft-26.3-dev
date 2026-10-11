@@ -1,16 +1,14 @@
 package common.cn.kafei.simukraft.citizen;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import common.cn.kafei.simukraft.job.CityJobType;
 import common.cn.kafei.simukraft.util.NbtUuid;
-import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.ChunkPos;
 import org.junit.jupiter.api.Test;
+
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 
 class CitizenDataTest {

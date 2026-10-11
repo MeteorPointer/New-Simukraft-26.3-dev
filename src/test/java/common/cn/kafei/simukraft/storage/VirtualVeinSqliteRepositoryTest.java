@@ -1,10 +1,6 @@
 package common.cn.kafei.simukraft.storage;
 
-import common.cn.kafei.simukraft.virtualvein.VirtualVeinConsumption;
-import common.cn.kafei.simukraft.virtualvein.VirtualVeinFieldKey;
-import common.cn.kafei.simukraft.virtualvein.VirtualVeinFieldProfile;
-import common.cn.kafei.simukraft.virtualvein.VirtualVeinSlot;
-import common.cn.kafei.simukraft.virtualvein.VirtualVeinSlotState;
+import common.cn.kafei.simukraft.virtualvein.*;
 import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -20,9 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class VirtualVeinSqliteRepositoryTest {
     @TempDir
@@ -131,7 +125,9 @@ class VirtualVeinSqliteRepositoryTest {
         );
     }
 
-    /** createLegacyVirtualVeinTable: 构造缺少群系主键列的旧版矿区表。 */
+    /**
+     * createLegacyVirtualVeinTable: 构造缺少群系主键列的旧版矿区表。
+     */
     private static void createLegacyVirtualVeinTable(Path databasePath) throws Exception {
         Class.forName("org.sqlite.JDBC");
         try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + databasePath.toAbsolutePath())) {

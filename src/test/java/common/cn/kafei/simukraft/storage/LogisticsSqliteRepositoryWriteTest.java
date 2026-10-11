@@ -1,7 +1,6 @@
 package common.cn.kafei.simukraft.storage;
 
 import common.cn.kafei.simukraft.util.NbtUuid;
-
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import org.junit.jupiter.api.Test;
@@ -12,13 +11,12 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 
-/** 物流写入回归：同位置顶替的预清理必须覆盖所有保存路径，端口必须按数值后缀序加载。 */
+/**
+ * 物流写入回归：同位置顶替的预清理必须覆盖所有保存路径，端口必须按数值后缀序加载。
+ */
 class LogisticsSqliteRepositoryWriteTest {
     @TempDir
     Path tempDir;

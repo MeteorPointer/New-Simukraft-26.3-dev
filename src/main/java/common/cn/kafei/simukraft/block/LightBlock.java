@@ -19,8 +19,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.BlockHitResult;
 
-import java.util.Locale;
-
 /**
  * NSUK 灯块：右键播放灯块语音，并用地质锤文本框逐字显示台词。
  */

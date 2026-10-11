@@ -1,8 +1,7 @@
 package common.cn.kafei.simukraft.city;
 
-import common.cn.kafei.simukraft.util.NbtUuid;
-
 import com.google.gson.JsonParser;
+import common.cn.kafei.simukraft.util.NbtUuid;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
@@ -11,11 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 class CityLevelDefinitionLoaderTest {
@@ -242,7 +237,9 @@ class CityLevelDefinitionLoaderTest {
         return CityLevelDefinitionLoader.parse(TEST_ID, JsonParser.parseString(json).getAsJsonObject());
     }
 
-    /** transaction: 构造回滚顺序测试使用的财政流水。 */
+    /**
+     * transaction: 构造回滚顺序测试使用的财政流水。
+     */
     private static FinanceTransactionData transaction(long time, String reason) {
         return new FinanceTransactionData(time, null, "", -1.0D, 0.0D,
                 FinanceTransactionData.Type.EXPENSE, reason);
