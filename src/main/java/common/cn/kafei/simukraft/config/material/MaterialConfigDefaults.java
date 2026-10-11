@@ -1,4 +1,4 @@
-package common.cn.kafei.simukraft.config;
+package common.cn.kafei.simukraft.config.material;
 
 import common.cn.kafei.simukraft.registry.ModBlocks;
 import it.unimi.dsi.fastutil.Pair;
@@ -114,6 +114,7 @@ public final class MaterialConfigDefaults {
             String toAdd = "concrete_powder";
             Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
             BlockItemIds.CONCRETE_POWDER.forEach(block -> addCommons(set, block.block()));
+            BlockItemIds.CONCRETE.forEach(block -> addNotCommons(set, block.block()));
             map.put(toAdd, Set.copyOf(set));
         }
         {
@@ -143,6 +144,7 @@ public final class MaterialConfigDefaults {
                     BlockItemIds.MANGROVE_FENCE.block(), BlockItemIds.MANGROVE_FENCE_GATE.block(),
                     BlockItemIds.CRIMSON_FENCE.block(), BlockItemIds.CRIMSON_FENCE_GATE.block(),
                     BlockItemIds.WARPED_FENCE.block(), BlockItemIds.WARPED_FENCE_GATE.block(),
+                    BlockItemIds.PALE_OAK_FENCE.block(), BlockItemIds.PALE_OAK_FENCE_GATE.block(),
                     BlockItemIds.POPLAR_FENCE.block(), BlockItemIds.POPLAR_FENCE_GATE.block());
             map.put(toAdd, Set.copyOf(set));
         }
@@ -169,7 +171,7 @@ public final class MaterialConfigDefaults {
                     BlockItemIds.JUNGLE_LOG.block(), BlockItemIds.MANGROVE_LOG.block(),
                     BlockItemIds.OAK_LOG.block(), BlockItemIds.SPRUCE_LOG.block(),
                     BlockItemIds.WARPED_STEM.block(), BlockItemIds.CRIMSON_STEM.block(),
-                    BlockItemIds.POPLAR_LOG.block());
+                    BlockItemIds.PALE_OAK_LOG.block(), BlockItemIds.POPLAR_LOG.block());
             map.put(toAdd, Set.copyOf(set));
         }
         {
@@ -188,7 +190,7 @@ public final class MaterialConfigDefaults {
                     BlockItemIds.ACACIA_PLANKS.block(), BlockItemIds.DARK_OAK_PLANKS.block(),
                     BlockItemIds.MANGROVE_PLANKS.block(), BlockItemIds.CHERRY_PLANKS.block(),
                     BlockItemIds.CRIMSON_PLANKS.block(), BlockItemIds.WARPED_PLANKS.block(),
-                    BlockItemIds.POPLAR_PLANKS.block());
+                    BlockItemIds.PALE_OAK_PLANKS.block(), BlockItemIds.POPLAR_PLANKS.block());
             addNotCommons(set, BlockItemIds.OAK_SLAB.block(), BlockItemIds.OAK_STAIRS.block(),
                     BlockItemIds.SPRUCE_SLAB.block(), BlockItemIds.SPRUCE_STAIRS.block(),
                     BlockItemIds.BIRCH_SLAB.block(), BlockItemIds.BIRCH_STAIRS.block(),
@@ -199,6 +201,7 @@ public final class MaterialConfigDefaults {
                     BlockItemIds.CHERRY_SLAB.block(), BlockItemIds.CHERRY_STAIRS.block(),
                     BlockItemIds.CRIMSON_SLAB.block(), BlockItemIds.CRIMSON_STAIRS.block(),
                     BlockItemIds.WARPED_SLAB.block(), BlockItemIds.WARPED_STAIRS.block(),
+                    BlockItemIds.PALE_OAK_SLAB.block(), BlockItemIds.PALE_OAK_STAIRS.block(),
                     BlockItemIds.POPLAR_SLAB.block(), BlockItemIds.POPLAR_STAIRS.block());
             map.put(toAdd, Set.copyOf(set));
         }
@@ -269,12 +272,16 @@ public final class MaterialConfigDefaults {
             String toAdd = "wool_family";
             Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
             BlockItemIds.WOOL.forEach(block -> addCommons(set, block.block()));
+            BlockItemIds.WOOL_SLAB.forEach(block -> addNotCommons(set, block.block()));
+            BlockItemIds.WOOL_STAIRS.forEach(block -> addNotCommons(set, block.block()));
             map.put(toAdd, Set.copyOf(set));
         }
         {
             String toAdd = "copper_blocks";
             Set<Pair<ResourceKey<Block>, Boolean>> set = new HashSet<>();
             BlockItemIds.COPPER_BLOCK.forEach(block -> addCommons(set, block.block()));
+            BlockItemIds.CUT_COPPER_SLAB.forEach(block -> addNotCommons(set, block.block()));
+            BlockItemIds.CUT_COPPER_STAIRS.forEach(block -> addNotCommons(set, block.block()));
             map.put(toAdd, Set.copyOf(set));
         }
         return Map.copyOf(map);
@@ -309,12 +316,15 @@ public final class MaterialConfigDefaults {
         }
     }
 
+    // 示例：橡木木板和橡木楼梯
     @SafeVarargs
+    // 添加通用替代方块 例：橡木木板
     private static void addCommons(Set<Pair<ResourceKey<Block>, Boolean>> list, ResourceKey<Block>... blocks) {
         regReplaceable(list, true, blocks);
     }
 
     @SafeVarargs
+    // 非通用替代方块，可以使用通用替代方块代替其消耗 例：橡木楼梯
     private static void addNotCommons(Set<Pair<ResourceKey<Block>, Boolean>> list, ResourceKey<Block>... blocks) {
         regReplaceable(list, false, blocks);
     }

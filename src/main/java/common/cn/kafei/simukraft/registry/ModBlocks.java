@@ -94,7 +94,7 @@ public final class ModBlocks {
     }
 
     private static DeferredBlock<Block> registerLightBlock(String name) {
-        return registerBlock(name, Block::new, p -> p.mapColor(MapColor.METAL).strength(1.0F).sound(SoundType.GLASS).lightLevel(state -> 15));
+        return registerBlock(name, LightBlock::new, p -> p.mapColor(MapColor.METAL).strength(1.0F).sound(SoundType.GLASS).lightLevel(state -> 15));
     }
 
     /**
@@ -148,10 +148,6 @@ public final class ModBlocks {
                         .isViewBlocking((s, b, p, aabb) -> false)
                         .isSuffocating((s, b, p) -> false)
         );
-    }
-
-    private static Block lightBlock() {
-        return new LightBlock();
     }
 
     @SuppressWarnings("deprecation")

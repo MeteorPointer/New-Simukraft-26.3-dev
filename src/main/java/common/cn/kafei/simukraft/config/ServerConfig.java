@@ -1,6 +1,7 @@
 package common.cn.kafei.simukraft.config;
 
 import common.cn.kafei.simukraft.citizen.CitizenNameStyle;
+import common.cn.kafei.simukraft.config.material.MaterialConfigDefaults;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.List;

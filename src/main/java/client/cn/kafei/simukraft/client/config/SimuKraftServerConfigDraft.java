@@ -1,8 +1,8 @@
 package client.cn.kafei.simukraft.client.config;
 
 import common.cn.kafei.simukraft.citizen.CitizenNameStyle;
-import common.cn.kafei.simukraft.config.MaterialConfigDefaults;
 import common.cn.kafei.simukraft.config.ServerConfig;
+import common.cn.kafei.simukraft.config.material.MaterialConfigDefaults;
 import common.cn.kafei.simukraft.network.config.ServerConfigSavePacket;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 

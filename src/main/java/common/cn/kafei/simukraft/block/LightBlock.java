@@ -15,7 +15,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.BlockHitResult;
@@ -28,16 +27,15 @@ public final class LightBlock extends Block {
             Identifier.fromNamespaceAndPath(SimuKraft.MOD_ID, "story/talking_light");
     static final String TALKING_LIGHT_CRITERION = "use_light";
 
-    public LightBlock() {
-        super(BlockBehaviour.Properties.of()
-                .mapColor(MapColor.METAL)
+    public LightBlock(Properties properties) {
+        super(properties.mapColor(MapColor.METAL)
                 .strength(1.0F)
                 .sound(SoundType.GLASS)
                 .lightLevel(state -> 15));
     }
 
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (level instanceof ServerLevel && player instanceof ServerPlayer serverPlayer) {
             level.playSound(null, pos, ModSoundEvents.LIGHT_USE.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
             GeologicalSurveyHintService.sendTypewriter(
