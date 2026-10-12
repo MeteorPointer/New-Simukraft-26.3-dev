@@ -123,7 +123,7 @@ public final class MaterialConfigDefaults {
             bricks.addUnreplaceableBlock(BlockItemIds.BRICKS.block());
 
             ReplaceableMaterialHolder bricks_variants = new ReplaceableMaterialHolder("bricks_variants");
-            bricks_variants.addReplaceableBlock(BlockItemIds.BRICK_SLAB.block(), BlockItemIds.BRICK_STAIRS.block(),
+            bricks_variants.addUnreplaceableBlock(BlockItemIds.BRICK_SLAB.block(), BlockItemIds.BRICK_STAIRS.block(),
                     BlockItemIds.BRICK_WALL.block());
             bricks_variants.addReplaceableHolder(bricks);
 
@@ -176,6 +176,7 @@ public final class MaterialConfigDefaults {
             ReplaceableMaterialHolder cobblestone_family_variants = new ReplaceableMaterialHolder("cobblestone_family_variants");
             cobblestone_family_variants.addReplaceableBlock(BlockItemIds.COBBLESTONE_SLAB.block(), BlockItemIds.MOSSY_COBBLESTONE_SLAB.block());
             cobblestone_family_variants.addReplaceableBlock(BlockItemIds.COBBLESTONE_STAIRS.block(), BlockItemIds.MOSSY_COBBLESTONE_STAIRS.block());
+            cobblestone_family_variants.addReplaceableBlock(BlockItemIds.COBBLESTONE_WALL.block(), BlockItemIds.MOSSY_COBBLESTONE_WALL.block());
             cobblestone_family_variants.addReplaceableHolder(cobblestone_family);
 
             set.add(cobblestone_family);
@@ -303,7 +304,7 @@ public final class MaterialConfigDefaults {
             ReplaceableMaterialHolder mud_variants = new ReplaceableMaterialHolder("mud_variants");
             mud_variants.addUnreplaceableBlock(BlockItemIds.MUD_BRICKS.block(), BlockItemIds.MUD_BRICK_SLAB.block(),
                     BlockItemIds.MUD_BRICK_STAIRS.block(), BlockItemIds.MUD_BRICK_WALL.block());
-            mud.addReplaceableHolder(mud_variants);
+            mud_variants.addReplaceableHolder(mud);
 
             set.add(mud);
             set.add(mud_variants);
@@ -336,6 +337,7 @@ public final class MaterialConfigDefaults {
                     BlockItemIds.MANGROVE_BUTTON.block(), BlockItemIds.CHERRY_BUTTON.block(),
                     BlockItemIds.CRIMSON_BUTTON.block(), BlockItemIds.WARPED_BUTTON.block(),
                     BlockItemIds.PALE_OAK_BUTTON.block(), BlockItemIds.POPLAR_BUTTON.block());
+            planks_family_variants.addReplaceableHolder(planks_family);
 
             set.add(planks_family);
             set.add(planks_family_variants);
@@ -348,8 +350,7 @@ public final class MaterialConfigDefaults {
             ReplaceableMaterialHolder red_sandstone_variants = new ReplaceableMaterialHolder("red_sandstone_variants");
             red_sandstone_variants.addReplaceableBlock(BlockItemIds.RED_SANDSTONE_SLAB.block(), BlockItemIds.SMOOTH_RED_SANDSTONE_SLAB.block(),
                     BlockItemIds.CUT_RED_SANDSTONE_SLAB.block());
-            red_sandstone_variants.addReplaceableBlock(BlockItemIds.RED_SANDSTONE_STAIRS.block(), BlockItemIds.SMOOTH_RED_SANDSTONE_STAIRS.block(),
-                    BlockItemIds.CUT_RED_SANDSTONE_SLAB.block());
+            red_sandstone_variants.addReplaceableBlock(BlockItemIds.RED_SANDSTONE_STAIRS.block(), BlockItemIds.SMOOTH_RED_SANDSTONE_STAIRS.block());
             red_sandstone_variants.addUnreplaceableBlock(BlockItemIds.RED_SANDSTONE_WALL.block());
             red_sandstone_variants.addReplaceableHolder(red_sandstone);
 
@@ -364,8 +365,7 @@ public final class MaterialConfigDefaults {
             ReplaceableMaterialHolder sandstone_variants = new ReplaceableMaterialHolder("sandstone_variants");
             sandstone_variants.addReplaceableBlock(BlockItemIds.SANDSTONE_SLAB.block(), BlockItemIds.SMOOTH_SANDSTONE_SLAB.block(),
                     BlockItemIds.CUT_SANDSTONE_SLAB.block());
-            sandstone_variants.addReplaceableBlock(BlockItemIds.SANDSTONE_STAIRS.block(), BlockItemIds.SMOOTH_SANDSTONE_STAIRS.block(),
-                    BlockItemIds.CUT_SANDSTONE_SLAB.block());
+            sandstone_variants.addReplaceableBlock(BlockItemIds.SANDSTONE_STAIRS.block(), BlockItemIds.SMOOTH_SANDSTONE_STAIRS.block());
             sandstone_variants.addUnreplaceableBlock(BlockItemIds.SANDSTONE_WALL.block());
             sandstone_variants.addReplaceableHolder(sandstone);
 
@@ -412,6 +412,7 @@ public final class MaterialConfigDefaults {
             Set<ResourceKey<Block>> copper_stairs_set = new HashSet<>();
             BlockItemIds.CUT_COPPER_STAIRS.forEach(block -> copper_stairs_set.add(block.block()));
             copper_blocks_variants.addReplaceableBlock(copper_stairs_set);
+            copper_blocks_variants.addReplaceableHolder(copper_blocks);
 
             set.add(copper_blocks);
             set.add(copper_blocks_variants);
