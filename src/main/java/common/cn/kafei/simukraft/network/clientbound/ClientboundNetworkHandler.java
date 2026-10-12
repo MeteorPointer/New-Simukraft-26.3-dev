@@ -213,11 +213,15 @@ public interface ClientboundNetworkHandler {
     default void handleGeologicalSurveyHint(GeologicalSurveyHintPacket packet) {
     }
 
-    /** handleReloadGuideBook: 重新读取指南书页面。 */
+    /**
+     * handleReloadGuideBook: 重新读取指南书页面。
+     */
     default void handleReloadGuideBook(ReloadGuideBookPacket packet) {
     }
 
-    /** handleRtsBuildingBoundsSync: 更新 RTS 客户端建筑边界快照。 */
+    /**
+     * handleRtsBuildingBoundsSync: 更新 RTS 客户端建筑边界快照。
+     */
     default void handleRtsBuildingBoundsSync(RtsBuildingBoundsSyncPacket packet) {
     }
 }

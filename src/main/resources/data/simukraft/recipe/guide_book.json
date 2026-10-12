@@ -1,12 +1,8 @@
 {
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
-    {
-      "item": "simukraft:build_box"
-    },
-    {
-      "item": "minecraft:book"
-    }
+    "simukraft:build_box",
+    "minecraft:book"
   ],
   "result": {
     "id": "simukraft:guide_book",

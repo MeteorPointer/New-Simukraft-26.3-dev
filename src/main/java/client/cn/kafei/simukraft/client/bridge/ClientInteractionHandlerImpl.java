@@ -31,6 +31,6 @@ public final class ClientInteractionHandlerImpl implements ClientInteractionHand
     @Override
     public void openGuideBook(ItemStack stack) {
         ItemStack previewStack = stack == null || stack.isEmpty() ? ItemStack.EMPTY : stack.copy();
-        Minecraft.getInstance().setScreen(new GuideBookScreen(previewStack));
+        Minecraft.getInstance().gui.setScreen(new GuideBookScreen(previewStack));
     }
 }

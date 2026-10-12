@@ -1,17 +1,16 @@
 package client.cn.kafei.simukraft.client.city.map;
 
 import net.minecraft.util.Mth;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import org.joml.Matrix4f;
 
 /**
  * 城市核心 3D 地图相机。
  * 水平方向留在屏幕 X，高度向上，深度向下，遮挡交给视图 Z。
  */
-@OnlyIn(Dist.CLIENT)
 public final class SimuMap3DCamera {
-    /** 约 37 度俯角：墙面还在，顶面也能看见。 */
+    /**
+     * 约 37 度俯角：墙面还在，顶面也能看见。
+     */
     public static final float PITCH = 0.65F;
 
     private SimuMap3DCamera() {

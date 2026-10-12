@@ -3,6 +3,8 @@ package client.cn.kafei.simukraft.client.city.map;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.util.Mth;
 import org.joml.Matrix3x2fc;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 import java.util.Arrays;
 
@@ -164,19 +166,39 @@ public final class SimuMap3DMesh {
     }
 
     /**
-     * emit: 按方块坐标写出顶点。深度测试负责遮挡，调用方负责旋转和正交投影。
+     * emit: 把方块坐标投影成界面像素。远的面先画，近的面盖住它。
      */
-    public void emit(VertexConsumer consumer, Matrix3x2fc pose, float shiftX, float shiftZ) {
+    public void emit(VertexConsumer consumer, Matrix3x2fc pose, float yaw, float scale,
+                     double centerScreenX, double centerScreenY, int liveCenterX, int liveCenterZ) {
         if (faceCount <= 0) {
             return;
         }
+        Matrix4f model = SimuMap3DCamera.modelMatrix(
+                (float) centerScreenX, (float) centerScreenY, yaw, scale, baseHeight);
+        float shiftX = worldXOf(cells / 2) - liveCenterX;
+        float shiftZ = worldZOf(cells / 2) - liveCenterZ;
+        Integer[] order = new Integer[faceCount];
+        float[] depth = new float[faceCount];
+        Vector3f point = new Vector3f();
         for (int i = 0; i < faceCount; i++) {
-            int o = i * 4;
-            quad(buffer, matrix,
-                    fx[o] + shiftX, fy[o], fz[o] + shiftZ, fc[o],
-                    fx[o + 1] + shiftX, fy[o + 1], fz[o + 1] + shiftZ, fc[o + 1],
-                    fx[o + 2] + shiftX, fy[o + 2], fz[o + 2] + shiftZ, fc[o + 2],
-                    fx[o + 3] + shiftX, fy[o + 3], fz[o + 3] + shiftZ, fc[o + 3]);
+            order[i] = i;
+            float z = 0.0F;
+            int origin = i * 4;
+            for (int corner = 0; corner < 4; corner++) {
+                int index = origin + corner;
+                model.transformPosition(fx[index] + shiftX, fy[index], fz[index] + shiftZ, point);
+                z += point.z;
+            }
+            depth[i] = z / 4.0F;
+        }
+        Arrays.sort(order, (left, right) -> Float.compare(depth[right], depth[left]));
+        for (int face : order) {
+            int origin = face * 4;
+            for (int corner = 0; corner < 4; corner++) {
+                int index = origin + corner;
+                model.transformPosition(fx[index] + shiftX, fy[index], fz[index] + shiftZ, point);
+                consumer.addVertexWith2DPose(pose, point.x, point.y).setColor(fc[index]);
+            }
         }
     }
 
@@ -414,17 +436,6 @@ public final class SimuMap3DMesh {
             return 0.34F;
         }
         return 0.66F;
-    }
-
-    private static void quad(BufferBuilder buffer, Matrix4f matrix,
-                             float x0, float y0, float z0, int c0,
-                             float x1, float y1, float z1, int c1,
-                             float x2, float y2, float z2, int c2,
-                             float x3, float y3, float z3, int c3) {
-        buffer.addVertex(matrix, x0, y0, z0).setColor(SimuBlockColors.opaqueTerrainColor(c0));
-        buffer.addVertex(matrix, x1, y1, z1).setColor(SimuBlockColors.opaqueTerrainColor(c1));
-        buffer.addVertex(matrix, x2, y2, z2).setColor(SimuBlockColors.opaqueTerrainColor(c2));
-        buffer.addVertex(matrix, x3, y3, z3).setColor(SimuBlockColors.opaqueTerrainColor(c3));
     }
 
     static final class CellPick {

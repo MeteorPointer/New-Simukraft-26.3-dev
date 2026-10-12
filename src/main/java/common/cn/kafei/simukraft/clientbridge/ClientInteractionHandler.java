@@ -23,7 +23,9 @@ public interface ClientInteractionHandler {
     default void openManifest(ItemStack stack, InteractionHand hand) {
     }
 
-    /** openGuideBook: 打开指南书客户端界面。 */
+    /**
+     * openGuideBook: 打开指南书客户端界面。
+     */
     default void openGuideBook(ItemStack stack) {
     }
 }

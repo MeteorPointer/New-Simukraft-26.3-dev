@@ -4,10 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import common.cn.kafei.simukraft.SimuKraft;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
 import java.io.InputStreamReader;
@@ -18,7 +16,6 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 指南书独立语言。正文来自 guidebook/lang，不走普通语言文件。
  */
-@OnlyIn(Dist.CLIENT)
 public final class GuideBookLang {
     private static final Gson GSON = new Gson();
     private static final String LANG_PATH = "guidebook/lang";
@@ -31,11 +28,11 @@ public final class GuideBookLang {
     public static void load(@Nonnull ResourceManager resourceManager) {
         TRANSLATIONS.clear();
         String langCode = Minecraft.getInstance().getLanguageManager().getSelected();
-        ResourceLocation langLocation = ResourceLocation.fromNamespaceAndPath(
+        Identifier langLocation = Identifier.fromNamespaceAndPath(
                 SimuKraft.MOD_ID, LANG_PATH + "/" + langCode + ".json");
         if (!readLanguage(resourceManager, langLocation)) {
             SimuKraft.LOGGER.warn("GuideBook language file not found for '{}', loading fallback", langCode);
-            readLanguage(resourceManager, ResourceLocation.fromNamespaceAndPath(SimuKraft.MOD_ID, LANG_PATH + "/en_us.json"));
+            readLanguage(resourceManager, Identifier.fromNamespaceAndPath(SimuKraft.MOD_ID, LANG_PATH + "/en_us.json"));
         }
         loaded = true;
     }
@@ -57,7 +54,7 @@ public final class GuideBookLang {
         return String.format(get(key), args);
     }
 
-    private static boolean readLanguage(ResourceManager resourceManager, ResourceLocation location) {
+    private static boolean readLanguage(ResourceManager resourceManager, Identifier location) {
         var resource = resourceManager.getResource(location);
         if (resource.isEmpty()) {
             return false;

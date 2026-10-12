@@ -261,12 +261,16 @@ public final class ClientboundNetworkBridge {
         HANDLER.get().handleGeologicalSurveyHint(packet);
     }
 
-    /** handleReloadGuideBook: 转发指南书重载。 */
+    /**
+     * handleReloadGuideBook: 转发指南书重载。
+     */
     public static void handleReloadGuideBook(ReloadGuideBookPacket packet) {
         HANDLER.get().handleReloadGuideBook(packet);
     }
 
-    /** handleRtsBuildingBoundsSync: 分发 RTS 建筑边界同步。 */
+    /**
+     * handleRtsBuildingBoundsSync: 分发 RTS 建筑边界同步。
+     */
     public static void handleRtsBuildingBoundsSync(RtsBuildingBoundsSyncPacket packet) {
         HANDLER.get().handleRtsBuildingBoundsSync(packet);
     }

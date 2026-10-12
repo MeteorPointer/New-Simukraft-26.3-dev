@@ -4,9 +4,7 @@ import com.mojang.blaze3d.platform.NativeImage;
 import common.cn.kafei.simukraft.SimuKraft;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.resources.ResourceLocation;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraft.resources.Identifier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -21,7 +19,6 @@ import java.util.function.Consumer;
 /**
  * 指南书插图缓存。本地图走资源包，远程图异步下载后再注册动态纹理。
  */
-@OnlyIn(Dist.CLIENT)
 public final class GuideBookImageCache {
     private static final Map<String, ImageEntry> CACHE = new ConcurrentHashMap<>();
     private static final Map<String, CompletableFuture<ImageEntry>> LOADING = new ConcurrentHashMap<>();
@@ -58,7 +55,7 @@ public final class GuideBookImageCache {
     public static void clear() {
         for (ImageEntry entry : CACHE.values()) {
             if (entry.texture != null) {
-                ResourceLocation texture = entry.texture;
+                Identifier texture = entry.texture;
                 Minecraft.getInstance().execute(() -> Minecraft.getInstance().getTextureManager().release(texture));
             }
         }
@@ -68,7 +65,7 @@ public final class GuideBookImageCache {
     }
 
     private static void loadLocalImage(String path) {
-        ResourceLocation location = parseResourceLocation(path);
+        Identifier location = parseIdentifier(path);
         if (location == null) {
             CACHE.put(path, ImageEntry.missing());
             return;
@@ -81,7 +78,7 @@ public final class GuideBookImageCache {
         }
         try (InputStream stream = resource.get().open()) {
             NativeImage image = NativeImage.read(stream);
-            ResourceLocation texture = registerTexture(image, path);
+            Identifier texture = registerTexture(image, path);
             CACHE.put(path, new ImageEntry(texture, image.getWidth(), image.getHeight(), true, false));
             image.close();
         } catch (Exception exception) {
@@ -117,7 +114,7 @@ public final class GuideBookImageCache {
                 int height = image.getHeight();
                 Minecraft.getInstance().execute(() -> {
                     try {
-                        ResourceLocation texture = registerTexture(image, url);
+                        Identifier texture = registerTexture(image, url);
                         CACHE.put(url, new ImageEntry(texture, width, height, true, true));
                         if (onImageLoaded != null) {
                             onImageLoaded.accept(url);
@@ -144,30 +141,30 @@ public final class GuideBookImageCache {
     }
 
     @Nullable
-    private static ResourceLocation parseResourceLocation(String path) {
+    private static Identifier parseIdentifier(String path) {
         if (path.contains(":")) {
-            return ResourceLocation.tryParse(path);
+            return Identifier.tryParse(path);
         }
         String fullPath = path.startsWith("guidebook/image/") ? path : "guidebook/image/" + path;
-        return ResourceLocation.fromNamespaceAndPath(SimuKraft.MOD_ID, fullPath);
+        return Identifier.fromNamespaceAndPath(SimuKraft.MOD_ID, fullPath);
     }
 
-    private static synchronized ResourceLocation registerTexture(NativeImage image, String key) {
+    private static synchronized Identifier registerTexture(NativeImage image, String key) {
         String textureName = "guidebook_image_" + textureIdCounter++ + "_" + Math.abs(key.hashCode());
-        ResourceLocation location = ResourceLocation.fromNamespaceAndPath(SimuKraft.MOD_ID, textureName);
-        DynamicTexture dynamicTexture = new DynamicTexture(image);
+        Identifier location = Identifier.fromNamespaceAndPath(SimuKraft.MOD_ID, textureName);
+        DynamicTexture dynamicTexture = new DynamicTexture(() -> textureName, image);
         Minecraft.getInstance().getTextureManager().register(location, dynamicTexture);
         return location;
     }
 
     public static final class ImageEntry {
-        public final ResourceLocation texture;
+        public final Identifier texture;
         public final int width;
         public final int height;
         public final boolean loaded;
         public final boolean remote;
 
-        public ImageEntry(ResourceLocation texture, int width, int height, boolean loaded, boolean remote) {
+        public ImageEntry(Identifier texture, int width, int height, boolean loaded, boolean remote) {
             this.texture = texture;
             this.width = width;
             this.height = height;

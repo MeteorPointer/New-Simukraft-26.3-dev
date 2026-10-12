@@ -16,6 +16,8 @@ import client.cn.kafei.simukraft.client.exchange.ExchangeControlBoxScreenOpener;
 import client.cn.kafei.simukraft.client.farmland.FarmlandBoxScreenOpener;
 import client.cn.kafei.simukraft.client.farmland.FarmlandHoverPreview;
 import client.cn.kafei.simukraft.client.geology.GeologicalSurveyHintOverlay;
+import client.cn.kafei.simukraft.client.guidebook.GuideBookLang;
+import client.cn.kafei.simukraft.client.guidebook.GuideBookLoader;
 import client.cn.kafei.simukraft.client.hire.NpcHireScreen;
 import client.cn.kafei.simukraft.client.industrial.IndustrialControlBoxScreenOpener;
 import client.cn.kafei.simukraft.client.logistics.LogisticsClientBoxScreenOpener;
@@ -25,8 +27,6 @@ import client.cn.kafei.simukraft.client.path.NpcPathDebugRenderer;
 import client.cn.kafei.simukraft.client.toast.ClientInfoToast;
 import common.cn.kafei.simukraft.commercial.CommercialTradeUiRoot;
 import common.cn.kafei.simukraft.network.bank.BankControlBoxOpenResponsePacket;
-import client.cn.kafei.simukraft.client.guidebook.GuideBookLang;
-import client.cn.kafei.simukraft.client.guidebook.GuideBookLoader;
 import common.cn.kafei.simukraft.network.building.BuildingCacheReloadPacket;
 import common.cn.kafei.simukraft.network.building.controlbox.ResidentialControlBoxBoundsUpdatePacket;
 import common.cn.kafei.simukraft.network.building.controlbox.ResidentialControlBoxOpenResponsePacket;
@@ -57,8 +57,8 @@ import common.cn.kafei.simukraft.network.npc.state.EmploymentStateResponsePacket
 import common.cn.kafei.simukraft.network.path.NpcPathDebugSyncPacket;
 import common.cn.kafei.simukraft.network.planner.PlannerMaterialScanResponsePacket;
 import common.cn.kafei.simukraft.network.rts.RtsBuildingBoundsSyncPacket;
-import net.minecraft.client.Minecraft;
 import common.cn.kafei.simukraft.network.toast.InfoToastPacket;
+import net.minecraft.client.Minecraft;
 
 import java.util.Map;
 import java.util.UUID;

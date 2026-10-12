@@ -7,7 +7,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -250,12 +250,12 @@ public final class GuideBookPage {
             if (itemId == null || itemId.isEmpty()) {
                 return ItemStack.EMPTY;
             }
-            ResourceLocation id = ResourceLocation.tryParse(itemId);
-            var item = id == null ? Items.AIR : BuiltInRegistries.ITEM.get(id);
+            Identifier id = Identifier.tryParse(itemId);
+            var item = id == null ? Items.AIR : BuiltInRegistries.ITEM.getOptional(id).orElse(Items.AIR);
             ItemStack stack = new ItemStack(item);
             if (itemNbt != null && !itemNbt.isEmpty()) {
                 try {
-                    CompoundTag tag = TagParser.parseTag(itemNbt);
+                    CompoundTag tag = TagParser.parseCompoundFully(itemNbt);
                     CustomData.set(DataComponents.CUSTOM_DATA, stack, tag);
                 } catch (Exception ignored) {
                     // 书页里的 NBT 只用于展示，解析失败时仍显示基础物品。

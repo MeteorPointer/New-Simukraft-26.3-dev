@@ -3,17 +3,8 @@ package common.cn.kafei.simukraft.registry;
 import common.cn.kafei.simukraft.SimuKraft;
 import common.cn.kafei.simukraft.block.*;
 import common.cn.kafei.simukraft.block.LightBlock;
-import common.cn.kafei.simukraft.block.MiningBoxBlock;
-import common.cn.kafei.simukraft.block.CautionTapeBlock;
-import common.cn.kafei.simukraft.block.ResidentialControlBoxBlock;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemNameBlockItem;
-import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.core.BlockPos;
+
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.*;
@@ -41,18 +32,18 @@ public final class ModBlocks {
 
     public static final DeferredBlock<Block> BLUE_LIGHT_BLOCK = registerLightBlock("blue_light_block");
     public static final DeferredBlock<Block> BUILD_BOX = registerBlock("build_box", BuildBoxBlock::new, woodBox());
-    public static final DeferredBlock<Block> CAUTION_TAPE = registerNamedItemBlock("caution_tape", CautionTapeBlock::new);
-    public static final DeferredBlock<Block> CHEESE_BLOCK = registerBlock("cheese_block", Block::new, () -> cheeseProperties());
+    public static final DeferredBlock<Block> CAUTION_TAPE = registerBlock("caution_tape", CautionTapeBlock::new, cautionTape());
+    public static final DeferredBlock<Block> CHEESE_BLOCK = registerBlock("cheese_block", Block::new, ModBlocks::cheeseProperties);
     public static final DeferredBlock<Block> CITY_CORE = registerBlock("city_core", CityCoreBlock::new,
             p -> p.mapColor(MapColor.METAL).strength(1.0F).explosionResistance(3600000.0F).sound(SoundType.METAL)
                     .pushReaction(PushReaction.IMMOVEABLE));
     public static final DeferredBlock<Block> COMMERCIAL_CONTROL_BOX = registerBlock("commercial_control_box", CommercialControlBoxBlock::new, metalBox(1.0F));
     public static final DeferredBlock<Block> GREEN_LIGHT_BLOCK = registerLightBlock("green_light_block");
     public static final DeferredBlock<Block> INDUSTRIAL_CONTROL_BOX = registerBlock("industrial_control_box", IndustrialControlBoxBlock::new, metalBox(0.8F));
-    public static final DeferredBlock<Block> INDUSTRIAL_HOUSING = registerBlock("industrial_housing", Block::new, () -> industrialHousingProperties());
-    public static final DeferredBlock<Block> INDUSTRIAL_HOUSING_SLAB = registerBlock("industrial_housing_slab", SlabBlock::new, () -> industrialHousingProperties());
+    public static final DeferredBlock<Block> INDUSTRIAL_HOUSING = registerBlock("industrial_housing", Block::new, ModBlocks::industrialHousingProperties);
+    public static final DeferredBlock<Block> INDUSTRIAL_HOUSING_SLAB = registerBlock("industrial_housing_slab", SlabBlock::new, ModBlocks::industrialHousingProperties);
     public static final DeferredBlock<Block> INDUSTRIAL_HOUSING_STAIRS = registerBlock("industrial_housing_stairs",
-            props -> new StairBlock(Blocks.IRON_BLOCK.defaultBlockState(), props), () -> industrialHousingProperties());
+            props -> new StairBlock(Blocks.IRON_BLOCK.defaultBlockState(), props), ModBlocks::industrialHousingProperties);
     /**
      * INDUSTRIAL_HOUSING_TRAPDOOR: 黄色铁质栈道，仅水平上/下置，不可打开
      */
@@ -61,7 +52,7 @@ public final class ModBlocks {
                     .isViewBlocking((s, b, pos, aabb) -> false)
                     .isSuffocating((s, b, pos) -> false));
     public static final DeferredBlock<Block> MINERAL_DRILLING_CONTROL_BOX = registerBlock("mineral_drilling_control_box", MineralDrillingControlBoxBlock::new, metalBox(0.8F));
-    public static final DeferredBlock<Block> MINING_BOX = registerBlock("mining_box", MiningBoxBlock::new);
+    public static final DeferredBlock<Block> MINING_BOX = registerBlock("mining_box", MiningBoxBlock::new, stoneBox());
     public static final DeferredBlock<Block> LOGISTICS_CLIENT_BOX = registerBlock("logistics_client_box", LogisticsClientBoxBlock::new,
             p -> p.mapColor(MapColor.COLOR_ORANGE).strength(1.0F).sound(SoundType.METAL).pushReaction(PushReaction.IMMOVEABLE));
     public static final DeferredBlock<Block> LOGISTICS_SERVER_BOX = registerBlock("logistics_server_box", LogisticsServerBoxBlock::new,
@@ -70,7 +61,7 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> BANK_CONTROL_BOX = registerBlock("bank_control_box", BankControlBoxBlock::new, metalBox(1.0F));
     public static final DeferredBlock<Block> EXCHANGE_CONTROL_BOX = registerBlock("exchange_control_box", ExchangeControlBoxBlock::new, metalBox(1.0F));
     public static final DeferredBlock<LiquidBlock> MILK_BLOCK = BLOCKS.registerBlock("milk_fluid",
-            props -> new MilkLiquidBlock(ModFluids.SOURCE_MILK.get(), props), () -> milkProperties());
+            props -> new MilkLiquidBlock(ModFluids.SOURCE_MILK.get(), props), ModBlocks::milkProperties);
     public static final DeferredBlock<Block> NSUK_FARMLAND_BOX = registerBlock("nsuk_farmland_box", FarmlandBoxBlock::new, woodBox());
     public static final DeferredBlock<Block> ORANGE_LIGHT_BLOCK = registerLightBlock("orange_light_block");
     public static final DeferredBlock<Block> OTHER_CONTROL_BOX = registerBlock("other_control_box", Block::new, metalBox(0.8F));
@@ -98,13 +89,6 @@ public final class ModBlocks {
         return block;
     }
 
-    /** 物品名与方块名分开：物品显示成卷胶带，放置后是警戒线。 */
-    private static DeferredBlock<Block> registerNamedItemBlock(String name, Supplier<Block> blockSupplier) {
-        DeferredBlock<Block> block = BLOCKS.register(name, blockSupplier);
-        ITEMS.register(name, () -> new ItemNameBlockItem(block.get(), new Item.Properties()));
-        return block;
-    }
-
     private static DeferredBlock<Block> registerBlock(String name, Function<BlockBehaviour.Properties, Block> factory,
                                                       Supplier<BlockBehaviour.Properties> properties) {
         DeferredBlock<Block> block = BLOCKS.registerBlock(name, factory, properties);
@@ -121,6 +105,24 @@ public final class ModBlocks {
      */
     private static UnaryOperator<BlockBehaviour.Properties> metalBox(float strength) {
         return p -> p.mapColor(MapColor.METAL).strength(strength).sound(SoundType.METAL).pushReaction(PushReaction.IMMOVEABLE);
+    }
+
+    /**
+     * cautionTape: 警戒线无碰撞，注册时由 DeferredRegister 写入方块 id。
+     */
+    private static UnaryOperator<BlockBehaviour.Properties> cautionTape() {
+        return p -> p.mapColor(MapColor.COLOR_YELLOW).noCollision().instabreak().sound(SoundType.WOOL)
+                .pushReaction(PushReaction.POPPED)
+                .isViewBlocking((state, level, pos, aabb) -> false)
+                .isSuffocating((state, level, pos) -> false);
+    }
+
+    /**
+     * stoneBox: 挖矿箱与石头一致的硬度、音效和工具要求，功能方块不可被活塞推动。
+     */
+    private static UnaryOperator<BlockBehaviour.Properties> stoneBox() {
+        return p -> p.mapColor(MapColor.STONE).requiresCorrectToolForDrops().strength(1.5F, 6.0F)
+                .sound(SoundType.STONE).pushReaction(PushReaction.IMMOVEABLE);
     }
 
     /**

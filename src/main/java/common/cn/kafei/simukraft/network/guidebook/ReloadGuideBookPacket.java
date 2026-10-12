@@ -4,12 +4,14 @@ import common.cn.kafei.simukraft.network.clientbound.ClientboundNetworkBridge;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-/** 通知客户端重新读取指南书页面。 */
+/**
+ * 通知客户端重新读取指南书页面。
+ */
 public record ReloadGuideBookPacket() implements CustomPacketPayload {
-    public static final Type<ReloadGuideBookPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("simukraft", "reload_guide_book"));
+    public static final Type<ReloadGuideBookPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath("simukraft", "reload_guide_book"));
     public static final StreamCodec<RegistryFriendlyByteBuf, ReloadGuideBookPacket> STREAM_CODEC = StreamCodec.unit(new ReloadGuideBookPacket());
 
     @Override

@@ -1,16 +1,16 @@
 package client.cn.kafei.simukraft.client.guidebook;
 
 import common.cn.kafei.simukraft.SimuKraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -20,17 +20,16 @@ import java.util.List;
 /**
  * 指南书界面。封面点击后展开，页签和目录链接都指向 JSON 里的章节。
  */
-@OnlyIn(Dist.CLIENT)
 public final class GuideBookScreen extends Screen {
-    private static final ResourceLocation COVER_ICON_TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    private static final Identifier COVER_ICON_TEXTURE = Identifier.fromNamespaceAndPath(
             SimuKraft.MOD_ID, "textures/gui/guide_book_cover_icon.png");
-    private static final ResourceLocation TAB_CITY_TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    private static final Identifier TAB_CITY_TEXTURE = Identifier.fromNamespaceAndPath(
             SimuKraft.MOD_ID, "textures/gui/guide_book/tab_city.png");
-    private static final ResourceLocation TAB_COMMERCE_TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    private static final Identifier TAB_COMMERCE_TEXTURE = Identifier.fromNamespaceAndPath(
             SimuKraft.MOD_ID, "textures/gui/guide_book/tab_commerce.png");
-    private static final ResourceLocation TAB_LOGISTICS_TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    private static final Identifier TAB_LOGISTICS_TEXTURE = Identifier.fromNamespaceAndPath(
             SimuKraft.MOD_ID, "textures/gui/guide_book/tab_logistics.png");
-    private static final ResourceLocation TAB_RETURN_TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    private static final Identifier TAB_RETURN_TEXTURE = Identifier.fromNamespaceAndPath(
             SimuKraft.MOD_ID, "textures/gui/guide_book/tab_return.png");
     private static final int COVER_FRONT_BORDER_COLOR = 0x081B38;
     private static final int COVER_FRONT_FILL_COLOR = 0x1B447D;
@@ -143,13 +142,8 @@ public final class GuideBookScreen extends Screen {
         }
     }
 
-    /** 书页自己画底，不使用 1.21 菜单打开时的模糊层。 */
     @Override
-    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-    }
-
-    @Override
-    public void render(@Nonnull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(@Nonnull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.alpha = Math.min(1.0F, this.alpha + 0.05F);
         guiGraphics.fill(0, 0, this.width, this.height, 0xF0101010);
         if (this.bookState == BookState.COVER) {
@@ -162,17 +156,20 @@ public final class GuideBookScreen extends Screen {
             renderBook(guiGraphics, easedProgress, mouseX, mouseY);
             renderBookText(guiGraphics, easedProgress, mouseX, mouseY);
         }
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
         if (this.bookState == BookState.OPENED && this.currentChapter != null && !this.currentChapter.isDirectory()) {
             int[] pageInfo = calculateGlobalPageNumber();
             int centerX = this.width / 2;
             int pageNumberY = this.height / 2 - BOOK_HEIGHT / 2 + BOOK_HEIGHT - 20;
-            guiGraphics.drawCenteredString(this.font, pageInfo[0] + " / " + pageInfo[1], centerX, pageNumberY, 0x5A4A3A);
+            guiGraphics.centeredText(this.font, pageInfo[0] + " / " + pageInfo[1], centerX, pageNumberY, 0x5A4A3A);
         }
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (this.bookState == BookState.COVER) {
             beginOpenAnimation();
             return true;
@@ -200,11 +197,12 @@ public final class GuideBookScreen extends Screen {
                 }
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
+        int keyCode = event.key();
         if (keyCode == 256 && this.bookState == BookState.OPENED && this.currentChapter != null && !this.currentChapter.isDirectory()) {
             navigateToChapter("directory");
             return true;
@@ -217,7 +215,7 @@ public final class GuideBookScreen extends Screen {
             turnPage(1);
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     private void turnPage(int direction) {
@@ -312,7 +310,7 @@ public final class GuideBookScreen extends Screen {
         return new int[]{current, total};
     }
 
-    private void renderClosedCover(GuiGraphics guiGraphics) {
+    private void renderClosedCover(GuiGraphicsExtractor guiGraphics) {
         int bookX = this.width / 2 - CLOSED_BOOK_WIDTH / 2;
         int bookY = this.height / 2 - CLOSED_BOOK_HEIGHT / 2;
         int bookRight = bookX + CLOSED_BOOK_WIDTH;
@@ -327,7 +325,7 @@ public final class GuideBookScreen extends Screen {
         renderCoverPreview(guiGraphics, bookX + 22, bookY + 10, CLOSED_BOOK_WIDTH - 34, CLOSED_BOOK_HEIGHT - 20, this.alpha);
     }
 
-    private void renderCoverPreview(GuiGraphics guiGraphics, int x, int y, int width, int height, float progress) {
+    private void renderCoverPreview(GuiGraphicsExtractor guiGraphics, int x, int y, int width, int height, float progress) {
         int centerX = x + width / 2;
         int iconSize = Math.max(20, Math.min(42, width - 24));
         guiGraphics.fill(x + 10, y + 66, x + width - 10, y + 67, withAlpha(COVER_DECORATION_COLOR, progress));
@@ -337,11 +335,11 @@ public final class GuideBookScreen extends Screen {
         drawCoverTitleLine(guiGraphics, Component.literal(GuideBookLang.get("guidebook.cover.title_en")), centerX, y + 89, withAlpha(0xFFE48A, progress), 0.82F);
         drawCoverTitleLine(guiGraphics, Component.literal(GuideBookLang.get("guidebook.cover.subtitle")), centerX, y + 102, withAlpha(0xFFE48A, progress), 0.76F);
         if (!this.previewStack.isEmpty()) {
-            guiGraphics.renderItem(this.previewStack, x + 10, y + height - 20);
+            guiGraphics.item(this.previewStack, x + 10, y + height - 20);
         }
     }
 
-    private void renderBook(GuiGraphics guiGraphics, float progress, int mouseX, int mouseY) {
+    private void renderBook(GuiGraphicsExtractor guiGraphics, float progress, int mouseX, int mouseY) {
         int currentWidth = Math.round(Mth.lerp(progress, BOOK_WIDTH * 0.68F, BOOK_WIDTH));
         int currentHeight = Math.round(Mth.lerp(progress, BOOK_HEIGHT * 0.82F, BOOK_HEIGHT));
         int bookX = this.width / 2 - currentWidth / 2;
@@ -394,7 +392,7 @@ public final class GuideBookScreen extends Screen {
         }
     }
 
-    private void renderBookText(GuiGraphics guiGraphics, float progress, int mouseX, int mouseY) {
+    private void renderBookText(GuiGraphicsExtractor guiGraphics, float progress, int mouseX, int mouseY) {
         if (progress < 0.45F || this.currentChapter == null) {
             return;
         }
@@ -407,8 +405,8 @@ public final class GuideBookScreen extends Screen {
         int textWidth = (BOOK_WIDTH - BOOK_MARGIN * 2 - PAGE_GAP) / 2 - 24;
         GuideBookPage.BookPage page = this.currentChapter.getPage(this.currentPageIndex);
         this.linkClickAreas.clear();
-        guiGraphics.drawString(this.font, page.getLeftTitle(), leftPageX, pageY, 0xFF23406D, false);
-        guiGraphics.drawString(this.font, page.getRightTitle(), rightPageX, pageY, 0xFF23406D, false);
+        guiGraphics.text(this.font, page.getLeftTitle(), leftPageX, pageY, 0xFF23406D, false);
+        guiGraphics.text(this.font, page.getRightTitle(), rightPageX, pageY, 0xFF23406D, false);
         int leftY = pageY + 20;
         for (GuideBookPage.PageElement element : page.getLeftElements()) {
             leftY = renderElement(guiGraphics, element, leftPageX, leftY, textWidth);
@@ -419,19 +417,19 @@ public final class GuideBookScreen extends Screen {
         }
         Component tooltip = hoveredBookmarkTooltip(bookX, bookY, mouseX, mouseY);
         if (tooltip != null) {
-            guiGraphics.renderTooltip(this.font, tooltip, mouseX, mouseY);
+            guiGraphics.setTooltipForNextFrame(this.font, tooltip, mouseX, mouseY);
         }
     }
 
-    private int renderElement(GuiGraphics guiGraphics, GuideBookPage.PageElement element, int x, int y, int textWidth) {
+    private int renderElement(GuiGraphicsExtractor guiGraphics, GuideBookPage.PageElement element, int x, int y, int textWidth) {
         if (element.isImage()) {
             return renderImage(guiGraphics, element, x, y, textWidth);
         }
         if (element.isItem() || element.hasItem()) {
             ItemStack stack = element.getItemStack();
             if (!stack.isEmpty()) {
-                guiGraphics.renderItem(stack, x, y);
-                guiGraphics.renderItemDecorations(this.font, stack, x, y);
+                guiGraphics.item(stack, x, y);
+                guiGraphics.itemDecorations(this.font, stack, x, y);
                 return y + 20 + element.getSpacing();
             }
         }
@@ -442,7 +440,7 @@ public final class GuideBookScreen extends Screen {
         return drawWrappedText(guiGraphics, element.getContent(), x, y, textWidth, color, element.getSpacing());
     }
 
-    private int renderImage(GuiGraphics guiGraphics, GuideBookPage.PageElement element, int x, int y, int maxWidth) {
+    private int renderImage(GuiGraphicsExtractor guiGraphics, GuideBookPage.PageElement element, int x, int y, int maxWidth) {
         String imageUrl = element.getImageUrl();
         if (imageUrl == null || imageUrl.isEmpty()) {
             return y + element.getSpacing();
@@ -460,7 +458,7 @@ public final class GuideBookScreen extends Screen {
         } else {
             guiGraphics.fill(x, y, x + drawWidth, y + drawHeight, 0xFFCCCCCC);
             String loadingText = entry.loaded ? "[图片加载失败]" : "[图片加载中...]";
-            guiGraphics.drawString(this.font, loadingText,
+            guiGraphics.text(this.font, loadingText,
                     x + (drawWidth - this.font.width(loadingText)) / 2,
                     y + (drawHeight - this.font.lineHeight) / 2,
                     0xFF666666, false);
@@ -468,11 +466,11 @@ public final class GuideBookScreen extends Screen {
         return y + drawHeight + element.getSpacing();
     }
 
-    private int renderLink(GuiGraphics guiGraphics, GuideBookPage.PageElement element, int x, int y) {
+    private int renderLink(GuiGraphicsExtractor guiGraphics, GuideBookPage.PageElement element, int x, int y) {
         Component text = element.getContent();
         int width = this.font.width(text);
         int height = this.font.lineHeight;
-        guiGraphics.drawString(this.font, text, x, y, 0xFF0066CC, false);
+        guiGraphics.text(this.font, text, x, y, 0xFF0066CC, false);
         guiGraphics.fill(x, y + height, x + width, y + height + 1, 0xFF0066CC);
         if (element.getTarget() != null && !element.getTarget().isEmpty()) {
             this.linkClickAreas.add(new LinkClickArea(x, y, width, height, element.getTarget()));
@@ -480,7 +478,7 @@ public final class GuideBookScreen extends Screen {
         return y + height + element.getSpacing();
     }
 
-    private void renderTabs(GuiGraphics guiGraphics, int bookX, int bookY, int mouseX, int mouseY, float revealProgress) {
+    private void renderTabs(GuiGraphicsExtractor guiGraphics, int bookX, int bookY, int mouseX, int mouseY, float revealProgress) {
         int tabX = getTabX(bookX);
         int baseY = bookY + TAB_BASE_Y_OFFSET;
         for (GuideBookPage page : GuideBookLoader.getChildPages("directory")) {
@@ -493,7 +491,7 @@ public final class GuideBookScreen extends Screen {
         }
     }
 
-    private void renderTab(GuiGraphics guiGraphics, int x, int y, GuideBookPage page, int mouseX, int mouseY, float revealProgress) {
+    private void renderTab(GuiGraphicsExtractor guiGraphics, int x, int y, GuideBookPage page, int mouseX, int mouseY, float revealProgress) {
         boolean hovered = isInside(mouseX, mouseY, x, y, TAB_WIDTH, TAB_HEIGHT);
         boolean selected = page.getId().equals(this.currentChapterId);
         int drawX = x + Math.round(Mth.lerp(revealProgress, -TAB_HIDDEN_OFFSET_X, 0.0F))
@@ -503,7 +501,7 @@ public final class GuideBookScreen extends Screen {
         blitScaled(guiGraphics, tabTexture(page), drawX, drawY, TAB_WIDTH, TAB_HEIGHT);
     }
 
-    private void renderReturnButton(GuiGraphics guiGraphics, int bookX, int bookY, int mouseX, int mouseY) {
+    private void renderReturnButton(GuiGraphicsExtractor guiGraphics, int bookX, int bookY, int mouseX, int mouseY) {
         int x = getReturnButtonX(bookX);
         int y = getReturnButtonY(bookY);
         int drawY = y + (isInside(mouseX, mouseY, x, y, RETURN_WIDTH, RETURN_HEIGHT) ? 1 : 0);
@@ -527,10 +525,10 @@ public final class GuideBookScreen extends Screen {
         return null;
     }
 
-    private ResourceLocation tabTexture(GuideBookPage page) {
+    private Identifier tabTexture(GuideBookPage page) {
         String icon = page.getTabIcon();
         if (icon != null && !icon.isEmpty()) {
-            return ResourceLocation.fromNamespaceAndPath(SimuKraft.MOD_ID, "textures/gui/guide_book/" + icon + ".png");
+            return Identifier.fromNamespaceAndPath(SimuKraft.MOD_ID, "textures/gui/guide_book/" + icon + ".png");
         }
         return switch (page.getId()) {
             case "items" -> TAB_COMMERCE_TEXTURE;
@@ -562,29 +560,29 @@ public final class GuideBookScreen extends Screen {
         return normalized * normalized * (3.0F - 2.0F * normalized);
     }
 
-    private void drawCoverTitleLine(GuiGraphics guiGraphics, Component text, int centerX, int y, int color, float scale) {
+    private void drawCoverTitleLine(GuiGraphicsExtractor guiGraphics, Component text, int centerX, int y, int color, float scale) {
         int textWidth = this.font.width(text);
         int drawX = Math.round(centerX - textWidth * scale / 2.0F);
-        guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(drawX, y, 0);
-        guiGraphics.pose().scale(scale, scale, 1.0F);
-        guiGraphics.drawString(this.font, text, 0, 0, color, false);
-        guiGraphics.pose().popPose();
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().translate(drawX, y);
+        guiGraphics.pose().scale(scale, scale);
+        guiGraphics.text(this.font, text, 0, 0, color, false);
+        guiGraphics.pose().popMatrix();
     }
 
-    private int drawWrappedText(GuiGraphics guiGraphics, Component text, int x, int y, int maxWidth, int color, int spacing) {
+    private int drawWrappedText(GuiGraphicsExtractor guiGraphics, Component text, int x, int y, int maxWidth, int color, int spacing) {
         for (FormattedCharSequence line : this.font.split(text, maxWidth)) {
-            guiGraphics.drawString(this.font, line, x, y, color, false);
+            guiGraphics.text(this.font, line, x, y, color, false);
             y += this.font.lineHeight;
         }
         return y + spacing;
     }
 
-    private void blitScaled(GuiGraphics guiGraphics, ResourceLocation texture, int x, int y, int width, int height) {
-        guiGraphics.blit(texture, x, y, width, height, 0.0F, 0.0F, width, height, width, height);
+    private void blitScaled(GuiGraphicsExtractor guiGraphics, Identifier texture, int x, int y, int width, int height) {
+        guiGraphics.blit(texture, x, y, x + width, y + height, 0.0F, 1.0F, 0.0F, 1.0F);
     }
 
-    private void drawPanel(GuiGraphics guiGraphics, int x, int y, int width, int height, int borderColor, int fillColor) {
+    private void drawPanel(GuiGraphicsExtractor guiGraphics, int x, int y, int width, int height, int borderColor, int fillColor) {
         guiGraphics.fill(x + 1, y + 1, x + width - 1, y + height - 1, fillColor);
         guiGraphics.fill(x, y, x + width, y + 1, borderColor);
         guiGraphics.fill(x, y + height - 1, x + width, y + height, borderColor);

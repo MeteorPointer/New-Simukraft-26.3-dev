@@ -3,27 +3,17 @@ package client.cn.kafei.simukraft.client.guidebook;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import common.cn.kafei.simukraft.SimuKraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 从 assets/simukraft/guidebook 读取书页。
  */
-@OnlyIn(Dist.CLIENT)
 public final class GuideBookLoader {
     private static final String GUIDEBOOK_PATH = "guidebook";
     private static final String INDEX_FILE = "index.json";
@@ -82,7 +72,7 @@ public final class GuideBookLoader {
 
     private static Map<String, GuideBookPage> loadPages(ResourceManager resourceManager) {
         Map<String, GuideBookPage> loadedPages = new HashMap<>();
-        ResourceLocation indexLocation = ResourceLocation.fromNamespaceAndPath(SimuKraft.MOD_ID, GUIDEBOOK_PATH + "/" + INDEX_FILE);
+        Identifier indexLocation = Identifier.fromNamespaceAndPath(SimuKraft.MOD_ID, GUIDEBOOK_PATH + "/" + INDEX_FILE);
         try {
             var resource = resourceManager.getResource(indexLocation);
             if (resource.isPresent()) {
@@ -117,7 +107,7 @@ public final class GuideBookLoader {
     }
 
     private static void loadPageFile(ResourceManager resourceManager, String fileName, Map<String, GuideBookPage> loadedPages) {
-        ResourceLocation location = ResourceLocation.fromNamespaceAndPath(SimuKraft.MOD_ID, GUIDEBOOK_PATH + "/" + fileName);
+        Identifier location = Identifier.fromNamespaceAndPath(SimuKraft.MOD_ID, GUIDEBOOK_PATH + "/" + fileName);
         var resource = resourceManager.getResource(location);
         if (resource.isEmpty()) {
             SimuKraft.LOGGER.warn("Guidebook page missing: {}", location);

@@ -172,13 +172,13 @@ public final class PlayerWelcomeService {
     }
 
     private static void grantGuideBookOnFirstWorldJoin(ServerPlayer player) {
-        CompoundTag persistedData = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
-        if (persistedData.getBoolean(GUIDE_BOOK_GRANTED_TAG)) {
+        CompoundTag persistedData = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG).orElseGet(CompoundTag::new);
+        if (persistedData.getBoolean(GUIDE_BOOK_GRANTED_TAG).orElse(false)) {
             return;
         }
         ItemStack guideBook = new ItemStack(ModItems.GUIDE_BOOK.get());
         if (!player.addItem(guideBook)) {
-            player.drop(guideBook, false);
+            player.drop(guideBook, false, net.minecraft.util.Prediction.SERVER_ONLY);
         }
         persistedData.putBoolean(GUIDE_BOOK_GRANTED_TAG, true);
         player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persistedData);

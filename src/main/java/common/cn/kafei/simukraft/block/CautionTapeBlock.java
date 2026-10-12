@@ -2,22 +2,21 @@ package common.cn.kafei.simukraft.block;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.Rotation;
-import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.world.level.material.MapColor;
-import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -26,7 +25,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * 警戒线：无碰撞薄面。按邻接连接，32×32 右半张作为拐角贴图。
  */
 public final class CautionTapeBlock extends Block {
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty NORTH = BlockStateProperties.NORTH;
     public static final BooleanProperty EAST = BlockStateProperties.EAST;
     public static final BooleanProperty SOUTH = BlockStateProperties.SOUTH;
@@ -38,15 +37,8 @@ public final class CautionTapeBlock extends Block {
     private static final VoxelShape ARM_EAST = Block.box(7.0, 0.0, 7.0, 16.0, 16.0, 9.0);
     private static final VoxelShape[] SHAPES = makeShapes();
 
-    public CautionTapeBlock() {
-        super(BlockBehaviour.Properties.of()
-                .mapColor(MapColor.COLOR_YELLOW)
-                .noCollission()
-                .instabreak()
-                .sound(SoundType.WOOL)
-                .pushReaction(PushReaction.DESTROY)
-                .isViewBlocking((state, level, pos) -> false)
-                .isSuffocating((state, level, pos) -> false));
+    public CautionTapeBlock(BlockBehaviour.Properties properties) {
+        super(properties);
         registerDefaultState(stateDefinition.any()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(NORTH, true)
@@ -81,15 +73,17 @@ public final class CautionTapeBlock extends Block {
     @Override
     protected BlockState updateShape(
             BlockState state,
-            Direction facing,
-            BlockState facingState,
-            LevelAccessor level,
-            BlockPos currentPos,
-            BlockPos facingPos) {
-        if (!facing.getAxis().isHorizontal()) {
+            LevelReader level,
+            ScheduledTickAccess ticks,
+            BlockPos pos,
+            Direction directionToNeighbour,
+            BlockPos neighbourPos,
+            BlockState neighbourState,
+            RandomSource random) {
+        if (!directionToNeighbour.getAxis().isHorizontal()) {
             return state;
         }
-        return applyConnections(state, level, currentPos);
+        return applyConnections(state, level, pos);
     }
 
     @Override

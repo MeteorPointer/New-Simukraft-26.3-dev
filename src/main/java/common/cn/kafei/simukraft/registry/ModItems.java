@@ -1,12 +1,7 @@
 package common.cn.kafei.simukraft.registry;
 
 import common.cn.kafei.simukraft.SimuKraft;
-import common.cn.kafei.simukraft.item.CoinItems;
-import common.cn.kafei.simukraft.item.GuideBookItem;
-import common.cn.kafei.simukraft.item.ManifestItem;
-import common.cn.kafei.simukraft.item.GeologicalHammerItem;
-import common.cn.kafei.simukraft.item.ManifestItem;
-import common.cn.kafei.simukraft.item.PortableCityCoreItem;
+import common.cn.kafei.simukraft.item.*;
 import common.cn.kafei.simukraft.item.food.BuffFoodItem;
 import common.cn.kafei.simukraft.item.food.ModFoods;
 import net.minecraft.world.item.Item;
@@ -19,7 +14,7 @@ public final class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(SimuKraft.MOD_ID);
 
     public static final DeferredHolder<Item, Item> MANIFEST = ITEMS.registerItem("manifest", ManifestItem::new);
-    public static final DeferredHolder<Item, Item> GUIDE_BOOK = ITEMS.register("guide_book", GuideBookItem::new);
+    public static final DeferredHolder<Item, Item> GUIDE_BOOK = ITEMS.registerItem("guide_book", GuideBookItem::new, p -> p.stacksTo(1));
     public static final DeferredHolder<Item, Item> PORTABLE_CITY_CORE = ITEMS.registerItem("portable_city_core", PortableCityCoreItem::new);
     public static final DeferredHolder<Item, Item> COPPER_COIN = ITEMS.registerItem("copper_coin", Item::new, p -> p.stacksTo(CoinItems.MAX_STACK));
     public static final DeferredHolder<Item, Item> SILVER_COIN = ITEMS.registerItem("silver_coin", Item::new, p -> p.stacksTo(CoinItems.MAX_STACK));

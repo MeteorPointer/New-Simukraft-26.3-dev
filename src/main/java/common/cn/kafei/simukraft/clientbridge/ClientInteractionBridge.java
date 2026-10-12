@@ -44,7 +44,9 @@ public final class ClientInteractionBridge {
         HANDLER.get().openManifest(stack, hand);
     }
 
-    /** openGuideBook: 分发指南书界面打开请求。 */
+    /**
+     * openGuideBook: 分发指南书界面打开请求。
+     */
     public static void openGuideBook(ItemStack stack) {
         HANDLER.get().openGuideBook(stack);
     }

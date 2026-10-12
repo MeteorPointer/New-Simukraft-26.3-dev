@@ -3,7 +3,7 @@ package common.cn.kafei.simukraft.guidebook;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import common.cn.kafei.simukraft.SimuKraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -24,7 +24,7 @@ public final class GuideBookReloadListener extends SimplePreparableReloadListene
 
     @Override
     protected @Nonnull Integer prepare(@Nonnull ResourceManager resourceManager, @Nonnull ProfilerFiller profiler) {
-        ResourceLocation index = ResourceLocation.fromNamespaceAndPath(SimuKraft.MOD_ID, INDEX_PATH);
+        Identifier index = Identifier.fromNamespaceAndPath(SimuKraft.MOD_ID, INDEX_PATH);
         int pages = 0;
         var resource = resourceManager.getResource(index);
         if (resource.isPresent()) {
