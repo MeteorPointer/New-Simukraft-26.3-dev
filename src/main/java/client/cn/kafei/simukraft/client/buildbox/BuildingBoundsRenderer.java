@@ -10,7 +10,9 @@ import common.cn.kafei.simukraft.building.PlacedBuildingRecord;
 import common.cn.kafei.simukraft.building.PlacedBuildingService;
 import common.cn.kafei.simukraft.config.ServerConfig;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
@@ -32,6 +34,7 @@ public final class BuildingBoundsRenderer {
     private static final int COLOR_INTRUSION_AIR_EDGE = 0xCCFFEE00; // 黄色线框边缘
     private static final int COLOR_INTRUSION_BLOCK_EDGE = 0xCCFF3300; // 红色线框边缘
     private static final int COLOR_SELECTED_BUILDING = 0xAAFFFFFF;
+    private static final int COLOR_PREVIEW_FRAME = 0xEE66FFCC;
     private static final int COLOR_RTS_TARGET = 0xEE22DDFF;
     private static final int COLOR_RTS_SELECTED = 0xEEFFAA22;
     private static final int COLOR_RTS_MOVE_PREVIEW = 0xEE66FF99;
@@ -205,6 +208,7 @@ public final class BuildingBoundsRenderer {
             // RTS 建筑预览只保留城市边界；普通预览仍显示侵入提示。
             if (BuildingPreviewManager.isPreviewActive() && (previewPlayerId == null || previewPlayerId.equals(minecraft.player.getUUID()))) {
                 renderCityBoundary(poseStack, cameraPos, minecraft);
+                renderPreviewFrame(poseStack, cameraPos);
                 if (!rtsPreview) {
                     renderIntrusions(poseStack, cameraPos, minecraft);
                 }
@@ -265,15 +269,15 @@ public final class BuildingBoundsRenderer {
     private static void renderCityBoundary(PoseStack poseStack, Vec3 cameraPos, Minecraft minecraft) {
         ClientCityChunkCache cityData = ClientCityChunkCache.getInstance();
         var cityChunks = cityData.getCurrentCityChunks();
-        if (cityChunks.isEmpty() || activeCollector == null) {
+        if (cityChunks.isEmpty() || activeCollector == null || !(minecraft.level instanceof ClientLevel level)) {
             return;
         }
         float red = ((COLOR_CITY_BORDER >> 16) & 0xFF) / 255.0f;
         float green = ((COLOR_CITY_BORDER >> 8) & 0xFF) / 255.0f;
         float blue = (COLOR_CITY_BORDER & 0xFF) / 255.0f;
         float alpha = ((COLOR_CITY_BORDER >> 24) & 0xFF) / 255.0f;
-        final double minY = -64 - cameraPos.y;
-        final double maxY = 320 - cameraPos.y;
+        final double minY = level.getMinY() - cameraPos.y;
+        final double maxY = level.getMaxY() - cameraPos.y;
         activeCollector.submitCustomGeometry(poseStack, RenderTypes.debugQuads(), (pose, buffer) -> {
             for (long chunkLong : cityChunks) {
                 net.minecraft.world.level.ChunkPos chunkPos = net.minecraft.world.level.ChunkPos.unpack(chunkLong);
@@ -343,6 +347,16 @@ public final class BuildingBoundsRenderer {
             case COLOR_INDUSTRIAL_INPUT_CONTAINER -> POINT_MARKER_RADIUS;
             default -> POINT_MARKER_RADIUS;
         };
+    }
+
+    /**
+     * renderPreviewFrame: 画出当前建筑预览的外框，方便对准占地。
+     */
+    private static void renderPreviewFrame(PoseStack poseStack, Vec3 cameraPos) {
+        AABB frame = previewBounds(BuildingPreviewManager.getCachedMesh().blocks());
+        if (frame != null) {
+            renderWireBox(poseStack, cameraPos, frame.inflate(0.01D), COLOR_PREVIEW_FRAME, true);
+        }
     }
 
     private static AABB previewBounds(List<PreviewBlockData> blocks) {
@@ -495,11 +509,25 @@ public final class BuildingBoundsRenderer {
         activeCollector.submitShapeOutline(
                 poseStack,
                 Shapes.create(bounds),
-                throughWalls ? RenderTypes.linesTranslucentNoDepthWrite() : RenderTypes.lines(),
+                wireRenderType(throughWalls),
                 color,
                 throughWalls ? 2.5F : 2.0F,
                 true);
         poseStack.popPose();
+    }
+
+    /**
+     * wireRenderType: 半透明线框在华丽画质下会进 OIT。
+     * lines() 没有 OIT 管线，华丽画质下一提交就会崩。
+     */
+    private static RenderType wireRenderType(boolean throughWalls) {
+        if (throughWalls) {
+            return RenderTypes.linesTranslucentNoDepthWrite();
+        }
+        if (Minecraft.getInstance().gameRenderer.useImprovedTransparency()) {
+            return RenderTypes.linesDepthBias();
+        }
+        return RenderTypes.linesTranslucent();
     }
 
     private static void drawQuad(VertexConsumer buffer, PoseStack.Pose pose, double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3, double x4, double y4, double z4, float red, float green, float blue, float alpha) {

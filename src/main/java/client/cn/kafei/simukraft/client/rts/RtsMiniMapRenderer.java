@@ -95,7 +95,7 @@ public final class RtsMiniMapRenderer {
                 layout.right() + FRAME_SIZE, layout.bottom() + FRAME_SIZE, COLOR_FRAME);
         int textureSize = RtsMiniMapTexture.size();
         graphics.blit(RenderPipelines.GUI_TEXTURED, texture, layout.left(), layout.top(), 0.0F, 0.0F,
-                layout.size(), layout.size(), textureSize, textureSize);
+                layout.size(), layout.size(), textureSize, textureSize, textureSize, textureSize);
         drawBorder(graphics, layout);
         drawViewport(graphics, layout);
     }
@@ -233,14 +233,12 @@ public final class RtsMiniMapRenderer {
         if (!camera.isInitialized()) {
             return;
         }
-        Camera.NearPlane nearPlane = camera.getNearPlane(camera.getFov());
-        Vec3 center = nearPlane.getPointOnPlane(0.0F, 0.0F);
-        Vec3 forward = center.normalize();
+        Vec3 forward = new Vec3(camera.forwardVector().x(), camera.forwardVector().y(), camera.forwardVector().z());
         if (Math.abs(forward.y) < 0.0001D) {
             return;
         }
-        Vec3 right = nearPlane.getPointOnPlane(1.0F, 0.0F).subtract(center).normalize();
-        Vec3 up = nearPlane.getPointOnPlane(0.0F, 1.0F).subtract(center).normalize();
+        Vec3 right = new Vec3(camera.leftVector().x(), camera.leftVector().y(), camera.leftVector().z()).scale(-1.0D);
+        Vec3 up = new Vec3(camera.upVector().x(), camera.upVector().y(), camera.upVector().z());
         Vec3 focus = FreeCameraManager.rtsFocus();
         double aspect = (double) minecraft.getWindow().getScreenWidth() / minecraft.getWindow().getScreenHeight();
         Vec3[] corners = new Vec3[4];

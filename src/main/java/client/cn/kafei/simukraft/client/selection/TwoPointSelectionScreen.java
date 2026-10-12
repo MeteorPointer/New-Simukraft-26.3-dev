@@ -355,7 +355,11 @@ public final class TwoPointSelectionScreen extends Screen implements FreeCameraS
         releaseSelectionMouse();
         if (minecraft != null) {
             minecraft.gui.setScreen(null);
-            if (next != null) minecraft.execute(next);
+            if (next != null) {
+                minecraft.execute(next);
+            } else if (!rtsPreviewMode) {
+                FreeCameraManager.restoreVanillaMouse();
+            }
         }
     }
 

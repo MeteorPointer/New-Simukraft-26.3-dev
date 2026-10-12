@@ -389,6 +389,9 @@ public final class BuildingPreviewScreen extends Screen implements FreeCameraScr
         ClientPacketDistributor.sendToServer(new BuildBoxStartConstructionPacket(buildBoxPos, building.category(), stripExtension(building.metaFileName()), BuildingPreviewManager.getPreviewOrigin(), BuildingPreviewManager.getRotationDegrees(), replaceWithAir));
         clearPreviewState();
         minecraft.gui.setScreen(null);
+        if (!rtsPreviewMode) {
+            FreeCameraManager.restoreVanillaMouse();
+        }
     }
 
     /**

@@ -1,6 +1,8 @@
 package client.cn.kafei.simukraft.client.freecamera;
 
+import client.cn.kafei.simukraft.client.rts.RtsSelectionManager;
 import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.systems.RenderSystem;
 import common.cn.kafei.simukraft.network.rts.RtsChunkViewPacket;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -70,6 +72,8 @@ public final class FreeCameraManager {
         yaw = player.getYRot();
         pitch = player.getXRot();
         normalizeYaw();
+        RtsViewAreaSynchronizer.sync(position);
+        syncRtsChunkView();
         CameraMouseLock.setLocked(true);
     }
 
@@ -95,11 +99,12 @@ public final class FreeCameraManager {
     }
 
     public static void deactivate() {
-        if (rtsMode) {
+        boolean hadChunkView = lastRtsViewDimension != null;
+        if (active) {
             RtsViewAreaSynchronizer.restore();
-            if (Minecraft.getInstance().getConnection() != null) {
-                ClientPacketDistributor.sendToServer(new RtsChunkViewPacket(false, 0, 0));
-            }
+        }
+        if (hadChunkView && Minecraft.getInstance().getConnection() != null) {
+            ClientPacketDistributor.sendToServer(new RtsChunkViewPacket(false, 0, 0));
         }
         active = false;
         rtsMode = false;
@@ -109,6 +114,30 @@ public final class FreeCameraManager {
         CameraMouseLock.setLocked(false);
         resetMovementState();
         KeyMapping.setAll();
+        restoreVanillaMouse();
+    }
+
+    /**
+     * restoreVanillaMouse: 自由相机结束后，若已经回到游戏世界，再捕获鼠标。
+     * 仍开着界面、RTS 或自由相机时不抢光标。
+     */
+    public static void restoreVanillaMouse() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft == null) {
+            return;
+        }
+        minecraft.execute(() -> {
+            if (isActive() || RtsSelectionManager.isActive()) {
+                return;
+            }
+            if (minecraft.player == null || minecraft.level == null || minecraft.gui.screen() != null) {
+                return;
+            }
+            if (minecraft.player.isDeadOrDying()) {
+                return;
+            }
+            minecraft.mouseHandler.grabMouse();
+        });
     }
 
     public static boolean isActive() {
@@ -161,7 +190,9 @@ public final class FreeCameraManager {
         }
         float halfHeight = (float) rtsZoom * 0.5F;
         float halfWidth = halfHeight * width / height;
-        return new Matrix4f().setOrtho(-halfWidth, halfWidth, -halfHeight, halfHeight, -3000.0F, 3000.0F);
+        boolean zZeroToOne = RenderSystem.getDevice().getDeviceInfo().isZZeroToOne();
+        // 世界渲染用反向深度。近远对调后，近处深度更大，正交画面才不会整片被裁掉。
+        return new Matrix4f().setOrtho(-halfWidth, halfWidth, -halfHeight, halfHeight, 3000.0F, -3000.0F, zZeroToOne);
     }
 
     public static Vec3 getPosition() {
@@ -280,10 +311,8 @@ public final class FreeCameraManager {
             zInput += rtsEdgePanVertical(minecraft);
         }
         if (xInput == 0.0D && yInput == 0.0D && zInput == 0.0D) {
-            if (rtsMode) {
-                RtsViewAreaSynchronizer.sync(rtsFocus);
-                syncRtsChunkView();
-            }
+            RtsViewAreaSynchronizer.sync(rtsMode ? rtsFocus : position);
+            syncRtsChunkView();
             return;
         }
         if (xInput != 0.0D && zInput != 0.0D) {
@@ -303,11 +332,11 @@ public final class FreeCameraManager {
         if (rtsMode) {
             rtsFocus = rtsFocus.add(moveX * moveDistance, 0.0D, moveZ * moveDistance);
             updateRtsCameraPosition();
-            RtsViewAreaSynchronizer.sync(rtsFocus);
-            syncRtsChunkView();
         } else {
             position = position.add(moveX * moveDistance, yInput * moveDistance, moveZ * moveDistance);
         }
+        RtsViewAreaSynchronizer.sync(rtsMode ? rtsFocus : position);
+        syncRtsChunkView();
     }
 
     /**
@@ -329,14 +358,16 @@ public final class FreeCameraManager {
 
     /**
      * syncRtsChunkView: 焦点跨区块或维度切换时请求服务端更新摄像机区块视窗。
+     * 建筑盒自由相机和 RTS 都走这里，否则飞离玩家后客户端没有区块可画。
      */
     private static void syncRtsChunkView() {
         Minecraft minecraft = Minecraft.getInstance();
-        if (!isRtsActive() || minecraft.player == null || minecraft.level == null) {
+        if (!isActive() || minecraft.player == null || minecraft.level == null) {
             return;
         }
-        int chunkX = SectionPos.blockToSectionCoord(Mth.floor(rtsFocus.x));
-        int chunkZ = SectionPos.blockToSectionCoord(Mth.floor(rtsFocus.z));
+        Vec3 focus = rtsMode ? rtsFocus : position;
+        int chunkX = SectionPos.blockToSectionCoord(Mth.floor(focus.x));
+        int chunkZ = SectionPos.blockToSectionCoord(Mth.floor(focus.z));
         net.minecraft.resources.ResourceKey<Level> dimension = minecraft.level.dimension();
         if (chunkX == lastRtsViewChunkX && chunkZ == lastRtsViewChunkZ && dimension.equals(lastRtsViewDimension)) {
             return;

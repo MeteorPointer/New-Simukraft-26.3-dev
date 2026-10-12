@@ -186,9 +186,12 @@ public final class RtsSelectionManager {
         BuildingBoundsRenderer.setRtsSelection(null);
         BuildingBoundsRenderer.setRtsBuildingBounds(null);
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.gui.screen() == null && minecraft.player != null) {
-            minecraft.mouseHandler.grabMouse();
-        }
+        // 排在 CameraMouseLock 的松开之后，避免退出后光标仍可自由移动。
+        minecraft.execute(() -> {
+            if (!active && !FreeCameraManager.isActive() && minecraft.gui.screen() == null && minecraft.player != null) {
+                minecraft.mouseHandler.grabMouse();
+            }
+        });
     }
 
     /**
@@ -558,10 +561,9 @@ public final class RtsSelectionManager {
         double mouseY = minecraft.mouseHandler.ypos();
         Camera.NearPlane nearPlane = camera.getNearPlane(camera.getFov());
         if (FreeCameraManager.isRtsActive()) {
-            Vec3 center = nearPlane.getPointOnPlane(0.0F, 0.0F);
-            Vec3 forward = center.normalize();
-            Vec3 right = nearPlane.getPointOnPlane(1.0F, 0.0F).subtract(center).normalize();
-            Vec3 up = nearPlane.getPointOnPlane(0.0F, 1.0F).subtract(center).normalize();
+            Vec3 forward = cameraAxis(camera.forwardVector());
+            Vec3 right = cameraAxis(camera.leftVector()).scale(-1.0D);
+            Vec3 up = cameraAxis(camera.upVector());
             double aspect = (double) screenWidth / screenHeight;
             double offsetX = (mouseX / screenWidth - 0.5D) * FreeCameraManager.rtsZoom() * aspect;
             double offsetY = (0.5D - mouseY / screenHeight) * FreeCameraManager.rtsZoom();
@@ -601,6 +603,10 @@ public final class RtsSelectionManager {
 
     private static void setTarget(BlockPos newTarget) {
         setTarget(newTarget, null);
+    }
+
+    private static Vec3 cameraAxis(org.joml.Vector3fc axis) {
+        return new Vec3(axis.x(), axis.y(), axis.z());
     }
 
     /**
