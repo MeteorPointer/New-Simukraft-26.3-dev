@@ -12,9 +12,12 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ToolMaterial;
+import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.context.UseOnContext;
@@ -29,6 +32,7 @@ import java.util.function.Consumer;
 
 public final class GeologicalHammerItem extends Item {
     private static final int MAX_DURABILITY = 800;
+    private static final int DURABILITY_COST_PER_BLOCK = 2;
     private static final int PROSPECTING_DEPTH = 60;
     private static final int COOLDOWN_TICKS = 20;
     /**
@@ -44,7 +48,21 @@ public final class GeologicalHammerItem extends Item {
     );
 
     public GeologicalHammerItem(Properties properties) {
-        super(properties.stacksTo(1).pickaxe(HAMMER_MATERIAL, 1.0F, -2.8F));
+        super(properties.stacksTo(1)
+                .pickaxe(HAMMER_MATERIAL, 1.0F, -2.8F)
+                .delayedComponent(DataComponents.TOOL, GeologicalHammerItem::toolWithConfiguredDurabilityCost));
+    }
+
+    /**
+     * pickaxe 固定写入每次破坏消耗 1 点耐久。地质锤覆盖为 2，挖掘规则和速度保持铁镐。
+     */
+    private static Tool toolWithConfiguredDurabilityCost(HolderLookup.Provider context) {
+        return new Tool(List.of(
+                Tool.Rule.deniesDrops(context.getOrThrow(BlockTags.INCORRECT_FOR_IRON_TOOL)),
+                Tool.Rule.minesAndDrops(context.getOrThrow(BlockTags.MINEABLE_WITH_PICKAXE), HAMMER_MATERIAL.speed())),
+                1.0F,
+                DURABILITY_COST_PER_BLOCK,
+                true);
     }
 
     /**
