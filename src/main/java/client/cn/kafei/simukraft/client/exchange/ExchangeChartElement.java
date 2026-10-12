@@ -19,6 +19,7 @@ import dev.vfyjxf.taffy.style.TaffyPosition;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 
@@ -455,7 +456,10 @@ public final class ExchangeChartElement extends UIElement {
                 return;
             }
             HoverTooltips tips = event.hoverTooltips == null ? HoverTooltips.empty() : event.hoverTooltips;
-            event.hoverTooltips = tips.append(lines.toArray(Component[]::new));
+            for (Component line : lines) {
+                tips = tips.append(line);
+            }
+            event.hoverTooltips = tips;
         }
     }
 }
