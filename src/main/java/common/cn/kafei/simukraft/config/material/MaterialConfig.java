@@ -138,15 +138,23 @@ public class MaterialConfig {
                 || MATERIAL_CATEGORY_GROUPS == null || EXPERT_MODE_SKIP_LIST == null) {
             setDefault();
         }
-        if (matchesDefaults()) {
+        JsonObject root = new JsonObject();
+        if (!sameBlocks(ALL_MODE_BLOCK_BLACKLIST, MaterialConfigDefaults.ALL_MODE_BLOCK_BLACKLIST_BLOCKS.get())) {
+            root.add(ALL_MODE_BLOCK_BLACKLIST_KEY, blockArray(ALL_MODE_BLOCK_BLACKLIST));
+        }
+        if (!sameBlocks(BASIC_MATERIALS, MaterialConfigDefaults.BASIC_MATERIALS_BLOCKS.get())) {
+            root.add(BASIC_MATERIALS_KEY, blockArray(BASIC_MATERIALS));
+        }
+        if (!sameHolders(MATERIAL_CATEGORY_GROUPS, MaterialConfigDefaults.MATERIAL_CATEGORY_GROUPS_BLOCKS.get())) {
+            root.add(MATERIAL_CATEGORY_GROUPS_KEY, holderArray(MATERIAL_CATEGORY_GROUPS));
+        }
+        if (!sameBlocks(EXPERT_MODE_SKIP_LIST, MaterialConfigDefaults.EXPERT_MODE_SKIP_LIST_BLOCKS.get())) {
+            root.add(EXPERT_MODE_SKIP_LIST_KEY, blockArray(EXPERT_MODE_SKIP_LIST));
+        }
+        if (root.isEmpty()) {
             deleteConfigFile();
             return;
         }
-        JsonObject root = new JsonObject();
-        root.add(ALL_MODE_BLOCK_BLACKLIST_KEY, blockArray(ALL_MODE_BLOCK_BLACKLIST));
-        root.add(BASIC_MATERIALS_KEY, blockArray(BASIC_MATERIALS));
-        root.add(MATERIAL_CATEGORY_GROUPS_KEY, holderArray(MATERIAL_CATEGORY_GROUPS));
-        root.add(EXPERT_MODE_SKIP_LIST_KEY, blockArray(EXPERT_MODE_SKIP_LIST));
         try {
             Path parent = configFile().getParent();
             if (parent != null) {
@@ -375,7 +383,7 @@ public class MaterialConfig {
     }
 
     /**
-     * 与默认材料配置一致时删掉已有文件。分组编号不参与比较。
+     * 没有任何改动过的表时删掉已有文件。分组编号不参与比较。
      */
     private static void deleteConfigFile() {
         try {
@@ -383,13 +391,6 @@ public class MaterialConfig {
         } catch (IOException exception) {
             SimuKraft.LOGGER.warn("Simukraft: Failed to delete {}", configFile(), exception);
         }
-    }
-
-    private static boolean matchesDefaults() {
-        return sameBlocks(ALL_MODE_BLOCK_BLACKLIST, MaterialConfigDefaults.ALL_MODE_BLOCK_BLACKLIST_BLOCKS.get())
-                && sameBlocks(BASIC_MATERIALS, MaterialConfigDefaults.BASIC_MATERIALS_BLOCKS.get())
-                && sameBlocks(EXPERT_MODE_SKIP_LIST, MaterialConfigDefaults.EXPERT_MODE_SKIP_LIST_BLOCKS.get())
-                && sameHolders(MATERIAL_CATEGORY_GROUPS, MaterialConfigDefaults.MATERIAL_CATEGORY_GROUPS_BLOCKS.get());
     }
 
     private static boolean sameBlocks(Set<ResourceKey<Block>> current, Set<ResourceKey<Block>> defaults) {
