@@ -49,24 +49,25 @@ public final class ConfigButtonHandler {
         if (modButton == null) {
             return;
         }
-        addBeside(event, screen, modButton, true);
+        addBeside(event, screen, modButton, true, true);
     }
 
     /**
      * injectPauseScreenButton：在统计信息按钮右侧添加配置按钮。
+     * 暂停菜单这一排原版已经居中，只补按钮，不再整排二次居中。
      */
     private void injectPauseScreenButton(ScreenEvent.Init.Post event, PauseScreen screen) {
         Button statsButton = findStatsButton(screen);
         if (statsButton == null) {
             return;
         }
-        addBeside(event, screen, statsButton, false);
+        addBeside(event, screen, statsButton, false, false);
     }
 
     /**
-     * addBeside: 把标志按钮放到锚点按钮旁，再把整排挪回屏幕水平中心。
+     * addBeside: 把标志按钮放到锚点按钮旁。recenter 为真时再把整排挪回屏幕水平中心。
      */
-    private void addBeside(ScreenEvent.Init.Post event, Screen screen, Button anchor, boolean left) {
+    private void addBeside(ScreenEvent.Init.Post event, Screen screen, Button anchor, boolean left, boolean recenter) {
         List<Button> row = buttonsOnSameRow(screen, anchor);
         int buttonY = anchor.getY() + (anchor.getHeight() - BUTTON_SIZE) / 2;
         int buttonX = left
@@ -76,6 +77,9 @@ public final class ConfigButtonHandler {
                 b -> Minecraft.getInstance().gui.setScreen(SimuKraftConfigSelectionScreen.create(event.getScreen())));
         btn.setTooltip(Tooltip.create(nn(Component.translatable("gui.simukraft.config_button.title"))));
         event.addListener(nn(btn));
+        if (!recenter) {
+            return;
+        }
         row.add(btn);
         centerRow(screen, row);
     }
