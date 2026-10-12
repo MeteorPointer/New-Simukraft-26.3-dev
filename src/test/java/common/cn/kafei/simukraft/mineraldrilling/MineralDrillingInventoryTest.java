@@ -1,5 +1,6 @@
 package common.cn.kafei.simukraft.mineraldrilling;
 
+import common.cn.kafei.simukraft.MinecraftTestBootstrap;
 import common.cn.kafei.simukraft.registry.ModItems;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponents;
@@ -8,12 +9,18 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 
 class MineralDrillingInventoryTest {
+    @BeforeAll
+    static void bootstrapMinecraft() {
+        MinecraftTestBootstrap.ensure();
+    }
+
     /**
      * serializesValidatedToolSlotsWithNativeComponents: 验证两格工具库存的原版 NBT 往返。
      */

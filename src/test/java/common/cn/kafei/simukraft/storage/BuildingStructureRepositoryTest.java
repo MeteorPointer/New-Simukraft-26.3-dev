@@ -32,7 +32,7 @@ class BuildingStructureRepositoryTest {
                          "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'placed_building_blocks'")) {
                 assertFalse(resultSet.next(), "全新档不得创建 placed_building_blocks");
             }
-            assertEquals(2, userVersion(database));
+            assertEquals(3, userVersion(database));
         }
     }
 
@@ -83,7 +83,7 @@ class BuildingStructureRepositoryTest {
         createLegacyDatabase(path, List.of(legacy(kept, 1), legacy(second, 2)));
 
         try (BuildingStructureSqliteDatabase database = openDatabase(path)) {
-            assertEquals(2, userVersion(database));
+            assertEquals(3, userVersion(database));
             try (Connection connection = database.borrowConnection();
                  Statement statement = connection.createStatement();
                  ResultSet resultSet = statement.executeQuery(

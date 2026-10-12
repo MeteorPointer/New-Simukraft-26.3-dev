@@ -1,8 +1,10 @@
 package common.cn.kafei.simukraft.mineraldrilling;
 
+import common.cn.kafei.simukraft.MinecraftTestBootstrap;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -11,6 +13,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 class MineralDrillingOutputServiceTest {
+    @BeforeAll
+    static void bootstrapMinecraft() {
+        MinecraftTestBootstrap.ensure();
+    }
+
     /**
      * storesAcrossBarrels: 验证产物先补齐同类槽位，再写入下一个木桶。
      */

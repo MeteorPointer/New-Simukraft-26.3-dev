@@ -46,7 +46,7 @@ class DistrictSqliteRepositoryTest {
             CompoundTag kept = list.getCompound(0).get();
             assertEquals(keptDistrictId, NbtUuid.readOrNull(kept, "DistrictId"));
             assertEquals(cityId, NbtUuid.readOrNull(kept, "ParentCityId"));
-            assertEquals("East\u533a", kept.getString("Name"));
+            assertEquals("East\u533a", kept.getString("Name").orElseThrow());
             assertEquals(1, kept.getList("Chunks").get().size());
             assertEquals(1L, ((LongTag) kept.getList("Chunks").get().get(0)).longValue());
             assertEquals(1, kept.getList("Cores").get().size());

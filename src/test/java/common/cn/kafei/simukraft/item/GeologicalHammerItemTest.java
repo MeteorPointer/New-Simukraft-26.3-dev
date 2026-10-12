@@ -1,5 +1,6 @@
 package common.cn.kafei.simukraft.item;
 
+import common.cn.kafei.simukraft.MinecraftTestBootstrap;
 import common.cn.kafei.simukraft.registry.ModItems;
 import common.cn.kafei.simukraft.virtualvein.VirtualVeinSlot;
 import common.cn.kafei.simukraft.virtualvein.VirtualVeinSlotState;
@@ -11,6 +12,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.item.component.TooltipDisplay;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -20,6 +22,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 class GeologicalHammerItemTest {
+    @BeforeAll
+    static void bootstrapMinecraft() {
+        MinecraftTestBootstrap.ensure();
+    }
+
     @Test
     void usesIronPickaxeToolPropertiesWithConfiguredDurabilityCost() {
         ItemStack hammer = new ItemStack(ModItems.GEOLOGICAL_HAMMER.get());

@@ -1,10 +1,12 @@
 package common.cn.kafei.simukraft.citizen;
 
+import common.cn.kafei.simukraft.MinecraftTestBootstrap;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -13,6 +15,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 class CitizenInventoryTest {
+    @BeforeAll
+    static void bootstrapMinecraft() {
+        MinecraftTestBootstrap.ensure();
+    }
+
     @Test
     void serializesAllSlotsWithNativeItemStackNbt() {
         RegistryAccess registries = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
