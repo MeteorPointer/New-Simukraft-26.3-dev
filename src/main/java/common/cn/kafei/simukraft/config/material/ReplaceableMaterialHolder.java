@@ -51,6 +51,19 @@ public class ReplaceableMaterialHolder {
         blockSet.addAll(blocks);
     }
 
+    /**
+     * 读档后对齐自动分组编号，避免下一次追加覆盖已有 id。
+     */
+    public void syncSubReplaceableCount() {
+        int next = 1;
+        for (Integer id : this.replaceableBlocks.keySet()) {
+            if (id != null && id >= next) {
+                next = id + 1;
+            }
+        }
+        this.subReplaceableCount = next;
+    }
+
     public void addReplaceableHolder(ReplaceableMaterialHolder replaceableHolder) {
         if (this == replaceableHolder) {
             LogUtils.getLogger().warn("Unable to bind replaceable holder to itself");
