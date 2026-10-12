@@ -79,7 +79,7 @@ final class SimuKraftMaterialConfigPage {
     }
 
     private static UIElement createUi(Screen parent, SimuKraftServerConfigDraft draft, int preferredWidth, Component title, UIElement editor) {
-        UIElement window = SimuKraftConfigWidgets.window(preferredWidth, WINDOW_HEIGHT, MIN_WIDTH, MIN_HEIGHT);
+        UIElement window = SimuKraftConfigWidgets.windowOrFullscreen(preferredWidth, WINDOW_HEIGHT, MIN_WIDTH, MIN_HEIGHT);
         window.addChild(SimuKraftConfigWidgets.header(title, HEADER_HEIGHT));
         window.addChild(editor.layout(layout -> {
             layout.widthPercent(100);

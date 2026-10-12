@@ -3,6 +3,7 @@ package common.cn.kafei.simukraft.network.config;
 import common.cn.kafei.simukraft.SimuKraft;
 import common.cn.kafei.simukraft.citizen.CitizenNameStyle;
 import common.cn.kafei.simukraft.config.ServerConfig;
+import common.cn.kafei.simukraft.config.material.MaterialConfig;
 import common.cn.kafei.simukraft.material.WorkMaterialPolicy;
 import common.cn.kafei.simukraft.protection.NpcBlockProtectionPolicy;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -229,11 +230,8 @@ public record ServerConfigSavePacket(
         ServerConfig.MATERIALS_EXPERT_MODE.set(p.expertMaterials);
         ServerConfig.MATERIALS_CATEGORY_MATCHING.set(p.materialCategoryMatching);
         ServerConfig.MATERIAL_WARNING_COOLDOWN_SECONDS.set(p.materialWarningCooldownSeconds);
-        ServerConfig.ALL_MODE_BLOCK_BLACKLIST.set(List.copyOf(p.allModeBlockBlacklist));
-        ServerConfig.BASIC_MATERIALS.set(List.copyOf(p.basicMaterials));
-        ServerConfig.MATERIAL_CATEGORY_GROUPS.set(List.copyOf(p.materialCategoryGroups));
-        ServerConfig.EXPERT_MODE_SKIP_LIST.set(List.copyOf(p.expertModeSkipList));
         ServerConfig.SPEC.save();
+        MaterialConfig.replaceAll(p.allModeBlockBlacklist, p.basicMaterials, p.materialCategoryGroups, p.expertModeSkipList);
         WorkMaterialPolicy.clearCache();
         NpcBlockProtectionPolicy.clearCache();
     }

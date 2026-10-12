@@ -2,7 +2,7 @@ package client.cn.kafei.simukraft.client.config;
 
 import common.cn.kafei.simukraft.citizen.CitizenNameStyle;
 import common.cn.kafei.simukraft.config.ServerConfig;
-import common.cn.kafei.simukraft.config.material.MaterialConfigDefaults;
+import common.cn.kafei.simukraft.config.material.MaterialConfig;
 import common.cn.kafei.simukraft.network.config.ServerConfigSavePacket;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
@@ -142,10 +142,10 @@ final class SimuKraftServerConfigDraft {
         workMode = WorkMode.from(ServerConfig.MATERIALS_CREATIVE_MODE.get(), ServerConfig.MATERIALS_EXPERT_MODE.get());
         materialCategoryMatching = ServerConfig.MATERIALS_CATEGORY_MATCHING.get();
         materialWarningCooldownSeconds = ServerConfig.MATERIAL_WARNING_COOLDOWN_SECONDS.get();
-        setAllModeBlockBlacklist(ServerConfig.allModeBlockBlacklist());
-        setBasicMaterials(ServerConfig.basicMaterials());
-        setMaterialCategoryGroups(ServerConfig.materialCategoryGroups());
-        setExpertModeSkipList(ServerConfig.expertModeSkipList());
+        setAllModeBlockBlacklist(MaterialConfig.blacklistIds());
+        setBasicMaterials(MaterialConfig.basicMaterialIds());
+        setMaterialCategoryGroups(MaterialConfig.categoryLines());
+        setExpertModeSkipList(MaterialConfig.expertSkipIds());
     }
 
     /**
@@ -207,10 +207,10 @@ final class SimuKraftServerConfigDraft {
         workMode = WorkMode.NORMAL;
         materialCategoryMatching = true;
         materialWarningCooldownSeconds = 20;
-        setAllModeBlockBlacklist(MaterialConfigDefaults.ALL_MODE_BLOCK_BLACKLIST);
-        setBasicMaterials(MaterialConfigDefaults.BASIC_MATERIALS);
-        setMaterialCategoryGroups(MaterialConfigDefaults.MATERIAL_CATEGORY_GROUPS);
-        setExpertModeSkipList(MaterialConfigDefaults.EXPERT_MODE_SKIP_LIST);
+        setAllModeBlockBlacklist(MaterialConfig.defaultBlacklistIds());
+        setBasicMaterials(MaterialConfig.defaultBasicMaterialIds());
+        setMaterialCategoryGroups(MaterialConfig.defaultCategoryLines());
+        setExpertModeSkipList(MaterialConfig.defaultExpertSkipIds());
     }
 
     /**

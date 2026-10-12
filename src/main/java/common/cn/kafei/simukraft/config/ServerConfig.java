@@ -1,10 +1,7 @@
 package common.cn.kafei.simukraft.config;
 
 import common.cn.kafei.simukraft.citizen.CitizenNameStyle;
-import common.cn.kafei.simukraft.config.material.MaterialConfigDefaults;
 import net.neoforged.neoforge.common.ModConfigSpec;
-
-import java.util.List;
 
 
 public final class ServerConfig {
@@ -21,10 +18,6 @@ public final class ServerConfig {
     public static final ModConfigSpec.BooleanValue MATERIALS_CREATIVE_MODE;
     public static final ModConfigSpec.BooleanValue MATERIALS_EXPERT_MODE;
     public static final ModConfigSpec.BooleanValue MATERIALS_CATEGORY_MATCHING;
-    public static final ModConfigSpec.ConfigValue<List<? extends String>> BASIC_MATERIALS;
-    public static final ModConfigSpec.ConfigValue<List<? extends String>> MATERIAL_CATEGORY_GROUPS;
-    public static final ModConfigSpec.ConfigValue<List<? extends String>> EXPERT_MODE_SKIP_LIST;
-    public static final ModConfigSpec.ConfigValue<List<? extends String>> ALL_MODE_BLOCK_BLACKLIST;
     public static final ModConfigSpec.IntValue MATERIAL_WARNING_COOLDOWN_SECONDS;
     public static final ModConfigSpec.BooleanValue BUILDER_PAUSE_AT_NIGHT;
     public static final ModConfigSpec.IntValue PATH_MAX_LOADED_CITIZEN_ENTITIES;
@@ -134,62 +127,18 @@ public final class ServerConfig {
         MATERIALS_EXPERT_MODE = builder
                 .comment(
                         "Whether expert material mode is enabled.",
-                        "Expert mode requires every build block except entries in expertModeSkipList.",
-                        "Normal mode uses basicMaterials and materialCategoryGroups."
+                        "Expert mode requires every build block except the expert skip list in config/simukraft-materials.json.",
+                        "Normal mode uses the basic materials and category groups in that config folder file."
                 )
                 .translation("config.simukraft.materials.enableExpertMode")
                 .define("enableExpertMode", false);
         MATERIALS_CATEGORY_MATCHING = builder
                 .comment(
                         "Whether normal mode allows category material matching.",
-                        "When enabled, a configured category header item can satisfy matching member blocks."
+                        "When enabled, a block can be satisfied by the replaceable blocks of its material group."
                 )
                 .translation("config.simukraft.materials.enableMaterialCategoryMatching")
                 .define("enableMaterialCategoryMatching", true);
-        BASIC_MATERIALS = builder
-                .comment(
-                        "Normal mode material list.",
-                        "Only these single block/item ids require materials directly.",
-                        "Format: modid:item_name"
-                )
-                .translation("config.simukraft.materials.basicMaterials")
-                .defineListAllowEmpty("basicMaterials",
-                        () -> MaterialConfigDefaults.BASIC_MATERIALS,
-                        () -> "minecraft:stone",
-                        ServerConfig::isStringEntry);
-        MATERIAL_CATEGORY_GROUPS = builder
-                .comment(
-                        "Normal mode category matching groups.",
-                        "Format: group_name|headers|members",
-                        "Headers are items players may provide for matching member blocks.",
-                        "If headers are empty, all members can replace each other."
-                )
-                .translation("config.simukraft.materials.materialCategoryGroups")
-                .defineListAllowEmpty("materialCategoryGroups",
-                        () -> MaterialConfigDefaults.MATERIAL_CATEGORY_GROUPS,
-                        () -> "custom_group||minecraft:stone",
-                        ServerConfig::isStringEntry);
-        EXPERT_MODE_SKIP_LIST = builder
-                .comment(
-                        "Expert mode skip list.",
-                        "Blocks in this list do not consume materials in expert mode.",
-                        "Format: modid:block_name"
-                )
-                .translation("config.simukraft.materials.expertModeSkipList")
-                .defineListAllowEmpty("expertModeSkipList",
-                        () -> MaterialConfigDefaults.EXPERT_MODE_SKIP_LIST,
-                        () -> "minecraft:bedrock",
-                        ServerConfig::isStringEntry);
-        ALL_MODE_BLOCK_BLACKLIST = builder
-                .comment(
-                        "Blocks protected from builder and planner destruction in every material mode.",
-                        "Format: modid:block_name"
-                )
-                .translation("config.simukraft.materials.allModeBlockBlacklist")
-                .defineListAllowEmpty("allModeBlockBlacklist",
-                        () -> MaterialConfigDefaults.ALL_MODE_BLOCK_BLACKLIST,
-                        () -> "minecraft:bedrock",
-                        ServerConfig::isStringEntry);
         MATERIAL_WARNING_COOLDOWN_SECONDS = builder
                 .comment("Cooldown in seconds before repeating the same missing material popup.")
                 .translation("config.simukraft.materials.warningCooldownSeconds")
@@ -438,22 +387,6 @@ public final class ServerConfig {
         return MATERIALS_CATEGORY_MATCHING.get();
     }
 
-    public static List<String> basicMaterials() {
-        return copyStringList(BASIC_MATERIALS.get());
-    }
-
-    public static List<String> materialCategoryGroups() {
-        return copyStringList(MATERIAL_CATEGORY_GROUPS.get());
-    }
-
-    public static List<String> expertModeSkipList() {
-        return copyStringList(EXPERT_MODE_SKIP_LIST.get());
-    }
-
-    public static List<String> allModeBlockBlacklist() {
-        return copyStringList(ALL_MODE_BLOCK_BLACKLIST.get());
-    }
-
     public static int materialWarningCooldownTicks() {
         return MATERIAL_WARNING_COOLDOWN_SECONDS.get() * 20;
     }
@@ -620,19 +553,5 @@ public final class ServerConfig {
 
     public static int medicalDiseaseTreatmentTicks() {
         return MEDICAL_DISEASE_TREATMENT_TICKS.get();
-    }
-
-    private static boolean isStringEntry(Object value) {
-        return value instanceof String string && !string.isBlank();
-    }
-
-    private static List<String> copyStringList(List<? extends String> values) {
-        if (values == null || values.isEmpty()) {
-            return List.of();
-        }
-        return values.stream()
-                .filter(value -> value != null && !value.isBlank())
-                .map(String::trim)
-                .toList();
     }
 }

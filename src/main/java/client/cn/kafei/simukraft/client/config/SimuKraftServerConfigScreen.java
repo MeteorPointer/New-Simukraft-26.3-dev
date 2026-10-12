@@ -59,8 +59,12 @@ public final class SimuKraftServerConfigScreen {
      * createUi: 组装旧版五 Tab 服务端配置页。
      */
     private static UIElement createUi(Screen parent, SimuKraftServerConfigDraft draft, String selectedTabKey) {
-        int windowWidth = SimuKraftConfigWidgets.windowWidth(WINDOW_WIDTH, MIN_WINDOW_WIDTH);
-        int windowHeight = SimuKraftConfigWidgets.windowHeight(WINDOW_HEIGHT, MIN_WINDOW_HEIGHT);
+        int windowWidth = SimuKraftConfigWidgets.needsFullscreen(WINDOW_WIDTH, WINDOW_HEIGHT)
+                ? Minecraft.getInstance().getWindow().getGuiScaledWidth()
+                : SimuKraftConfigWidgets.windowWidth(WINDOW_WIDTH, MIN_WINDOW_WIDTH);
+        int windowHeight = SimuKraftConfigWidgets.needsFullscreen(WINDOW_WIDTH, WINDOW_HEIGHT)
+                ? Minecraft.getInstance().getWindow().getGuiScaledHeight()
+                : SimuKraftConfigWidgets.windowHeight(WINDOW_HEIGHT, MIN_WINDOW_HEIGHT);
         int footerHeight = footerHeight(windowWidth);
         UIElement window = SimuKraftConfigWidgets.window(windowWidth, windowHeight);
         window.addChild(SimuKraftConfigWidgets.header(Component.translatable("gui.simukraft.config.server"), HEADER_HEIGHT));
@@ -370,4 +374,5 @@ public final class SimuKraftServerConfigScreen {
             layout.flexShrink(1);
         });
     }
+
 }

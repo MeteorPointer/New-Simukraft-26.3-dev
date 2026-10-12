@@ -2,8 +2,12 @@ package common.cn.kafei.simukraft.material;
 
 import common.cn.kafei.simukraft.SimuKraft;
 import common.cn.kafei.simukraft.config.ServerConfig;
+import common.cn.kafei.simukraft.config.material.MaterialConfig;
+import common.cn.kafei.simukraft.config.material.ReplaceableMaterialHolder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -11,7 +15,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -39,7 +46,7 @@ public final class WorkMaterialPolicy {
         if (rules.basicMaterials().contains(blockId)) {
             return true;
         }
-        return ServerConfig.materialCategoryMatchingEnabled() && rules.findGroup(blockId) != null;
+        return ServerConfig.materialCategoryMatchingEnabled() && rules.covers(blockKey(blockId));
     }
 
     public static WorkMaterialRequest requestForBlock(BlockState state) {
@@ -68,17 +75,7 @@ public final class WorkMaterialPolicy {
         if (snapshot.expertMode()) {
             addAcceptedMaterialId(acceptedItems, blockId);
         } else if (snapshot.categoryMatching()) {
-            MaterialGroupInfo group = rules.findGroup(blockId);
-            if (group != null) {
-                if (!group.headers().isEmpty()) {
-                    if (!group.isHeader(blockId)) {
-                        addAcceptedMaterialId(acceptedItems, blockId);
-                    }
-                    group.headers().forEach(materialId -> addAcceptedMaterialId(acceptedItems, materialId));
-                } else {
-                    group.members().forEach(materialId -> addAcceptedMaterialId(acceptedItems, materialId));
-                }
-            }
+            rules.acceptedIds(blockKey(blockId)).forEach(materialId -> addAcceptedMaterialId(acceptedItems, materialId));
         }
         if (acceptedItems.isEmpty()) {
             addAcceptedMaterialId(acceptedItems, blockId);
@@ -112,76 +109,25 @@ public final class WorkMaterialPolicy {
     }
 
     private static ParsedRules parseRules(ConfigSnapshot snapshot) {
-        LinkedHashSet<String> basicMaterials = normalizeEntries(snapshot.basicMaterials());
-        LinkedHashSet<String> expertSkipList = normalizeEntries(snapshot.expertSkipList());
-        Map<String, MaterialGroupInfo> groups = parseMaterialCategoryGroups(snapshot.categoryGroups());
-        return new ParsedRules(basicMaterials, expertSkipList, groups);
+        return new ParsedRules(blockIdSet(MaterialConfig.BASIC_MATERIALS), blockIdSet(MaterialConfig.EXPERT_MODE_SKIP_LIST),
+                MaterialConfig.MATERIAL_CATEGORY_GROUPS == null ? Set.of() : Set.copyOf(MaterialConfig.MATERIAL_CATEGORY_GROUPS));
     }
 
-    private static Map<String, MaterialGroupInfo> parseMaterialCategoryGroups(List<String> entries) {
-        LinkedHashMap<String, MaterialGroupInfo> groups = new LinkedHashMap<>();
-        for (String rawEntry : entries) {
-            if (rawEntry == null || rawEntry.isBlank()) {
-                continue;
-            }
-            MaterialGroupInfo groupInfo = parseGroup(rawEntry.trim());
-            if (groupInfo != null) {
-                groups.put(groupInfo.groupName(), groupInfo);
-            }
-        }
-        return Map.copyOf(groups);
-    }
-
-    private static MaterialGroupInfo parseGroup(String entry) {
-        if (entry.contains("|")) {
-            String[] parts = entry.split("\\|", 3);
-            if (parts.length >= 2) {
-                String groupName = parts[0].trim();
-                List<String> headers = splitMaterialIds(parts[1]);
-                List<String> members = parts.length >= 3 ? splitMaterialIds(parts[2]) : List.of();
-                if (!groupName.isBlank() && (!headers.isEmpty() || !members.isEmpty())) {
-                    return new MaterialGroupInfo(groupName, headers, members);
-                }
-            }
-            return null;
-        }
-        String[] parts = entry.split(":", 2);
-        if (parts.length == 2 && !parts[0].isBlank()) {
-            List<String> headers = splitMaterialIds(parts[1]);
-            if (!headers.isEmpty()) {
-                return new MaterialGroupInfo(parts[0].trim(), headers, List.of());
-            }
-        }
-        return null;
-    }
-
-    private static List<String> splitMaterialIds(String value) {
-        if (value == null || value.isBlank()) {
-            return List.of();
+    private static Set<String> blockIdSet(Set<ResourceKey<Block>> blocks) {
+        if (blocks == null || blocks.isEmpty()) {
+            return Set.of();
         }
         LinkedHashSet<String> ids = new LinkedHashSet<>();
-        for (String rawId : value.split(",")) {
-            String id = normalizeMaterialId(rawId);
-            if (!id.isBlank()) {
-                ids.add(id);
+        for (ResourceKey<Block> block : blocks) {
+            if (block != null) {
+                ids.add(block.identifier().toString().toLowerCase(Locale.ROOT));
             }
         }
-        return List.copyOf(ids);
+        return Set.copyOf(ids);
     }
 
-    private static LinkedHashSet<String> normalizeEntries(List<String> entries) {
-        LinkedHashSet<String> result = new LinkedHashSet<>();
-        for (String entry : entries) {
-            String normalized = normalizeMaterialId(entry);
-            if (!normalized.isBlank()) {
-                result.add(normalized);
-            }
-        }
-        return result;
-    }
-
-    private static String normalizeMaterialId(String id) {
-        return id == null ? "" : id.trim().toLowerCase(Locale.ROOT);
+    private static ResourceKey<Block> blockKey(String blockId) {
+        return ResourceKey.create(Registries.BLOCK, Identifier.parse(blockId));
     }
 
     private static void addAcceptedMaterialId(Set<Item> acceptedItems, String materialId) {
@@ -232,9 +178,7 @@ public final class WorkMaterialPolicy {
                 ServerConfig.materialsCreativeMode(),
                 ServerConfig.materialsExpertMode(),
                 ServerConfig.materialCategoryMatchingEnabled(),
-                ServerConfig.basicMaterials(),
-                ServerConfig.materialCategoryGroups(),
-                ServerConfig.expertModeSkipList()
+                MaterialConfig.revision()
         );
     }
 
@@ -251,47 +195,49 @@ public final class WorkMaterialPolicy {
             boolean creativeMode,
             boolean expertMode,
             boolean categoryMatching,
-            List<String> basicMaterials,
-            List<String> categoryGroups,
-            List<String> expertSkipList
+            int materialRevision
     ) {
-        private ConfigSnapshot {
-            basicMaterials = List.copyOf(basicMaterials);
-            categoryGroups = List.copyOf(categoryGroups);
-            expertSkipList = List.copyOf(expertSkipList);
-        }
-
         private String cacheKey() {
-            return creativeMode + "|" + expertMode + "|" + categoryMatching + "|" + basicMaterials + "|" + categoryGroups + "|" + expertSkipList;
+            return creativeMode + "|" + expertMode + "|" + categoryMatching + "|" + materialRevision;
         }
     }
 
     private record ParsedRules(Set<String> basicMaterials, Set<String> expertSkipList,
-                               Map<String, MaterialGroupInfo> groups) {
-        private static final ParsedRules EMPTY = new ParsedRules(Set.of(), Set.of(), Map.of());
+                               Set<ReplaceableMaterialHolder> holders) {
+        private static final ParsedRules EMPTY = new ParsedRules(Set.of(), Set.of(), Set.of());
 
-        private MaterialGroupInfo findGroup(String materialId) {
-            for (MaterialGroupInfo group : groups.values()) {
-                if (group.contains(materialId)) {
-                    return group;
+        private boolean covers(ResourceKey<Block> block) {
+            for (ReplaceableMaterialHolder holder : holders) {
+                if (containsBlock(holder, block)) {
+                    return true;
                 }
             }
-            return null;
-        }
-    }
-
-    private record MaterialGroupInfo(String groupName, List<String> headers, List<String> members) {
-        private MaterialGroupInfo {
-            headers = List.copyOf(headers);
-            members = List.copyOf(members);
+            return false;
         }
 
-        private boolean isHeader(String materialId) {
-            return headers.contains(materialId);
+        private Set<String> acceptedIds(ResourceKey<Block> block) {
+            LinkedHashSet<String> ids = new LinkedHashSet<>();
+            ids.add(block.identifier().toString().toLowerCase(Locale.ROOT));
+            for (ReplaceableMaterialHolder holder : holders) {
+                if (!containsBlock(holder, block)) {
+                    continue;
+                }
+                for (ResourceKey<Block> replacement : holder.getAllReplaceableBlocks(block)) {
+                    if (replacement != null) {
+                        ids.add(replacement.identifier().toString().toLowerCase(Locale.ROOT));
+                    }
+                }
+            }
+            return ids;
         }
 
-        private boolean contains(String materialId) {
-            return headers.contains(materialId) || members.contains(materialId);
+        private static boolean containsBlock(ReplaceableMaterialHolder holder, ResourceKey<Block> block) {
+            for (Set<ResourceKey<Block>> blocks : holder.replaceableBlocks.values()) {
+                if (blocks.contains(block)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

@@ -60,7 +60,7 @@ final class SimuKraftMaterialListEditor {
         root.addChild(SimuKraftConfigWidgets.compactSection(title));
         root.addChild(SimuKraftConfigWidgets.label(hint, Horizontal.LEFT, SimuKraftConfigWidgets.TEXT_MUTED, HINT_HEIGHT, TextWrap.WRAP));
         root.addChild(searchAndAddArea());
-        root.addChild(SimuKraftConfigWidgets.scroller(listColumn));
+        root.addChild(SimuKraftConfigWidgets.scroller(listColumn, false));
         refreshList();
         return root;
     }

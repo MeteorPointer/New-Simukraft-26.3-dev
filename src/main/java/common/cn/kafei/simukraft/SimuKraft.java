@@ -9,6 +9,7 @@ import common.cn.kafei.simukraft.command.SimuKraftCommand;
 import common.cn.kafei.simukraft.commercial.*;
 import common.cn.kafei.simukraft.config.ClientConfig;
 import common.cn.kafei.simukraft.config.ServerConfig;
+import common.cn.kafei.simukraft.config.material.MaterialConfig;
 import common.cn.kafei.simukraft.economy.ResidentialRentService;
 import common.cn.kafei.simukraft.event.CityPlacementRestrictionHandler;
 import common.cn.kafei.simukraft.event.PlayerWelcomeService;
@@ -93,6 +94,7 @@ public final class SimuKraft {
         modEventBus.addListener(BuildingStructureDataPack::onAddPackFinders);
         modContainer.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
         modContainer.registerConfig(ModConfig.Type.LOCAL, ServerConfig.SPEC);
+        MaterialConfig.init();
         modEventBus.register(ModNetwork.class);
         modEventBus.addListener(this::onConfigLoading);
         modEventBus.addListener(this::onConfigReloading);

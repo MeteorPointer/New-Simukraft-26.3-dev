@@ -11,12 +11,10 @@ import com.lowdragmc.lowdraglib2.gui.ui.utils.UIElementProvider;
 import com.lowdragmc.lowdraglib2.utils.search.IResultHandler;
 import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.FlexDirection;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
@@ -25,30 +23,34 @@ import java.util.function.Consumer;
 final class SimuKraftMaterialCategoryGroupEditor {
     private static final int ROW_HEIGHT = 28;
     private static final int ICON_SIZE = 16;
-    private static final int HEADER_COLOR = 0xFFFFAA00;
-    private static final int MEMBER_COLOR = 0xFF88AAFF;
+    private static final int SUBGROUP_COLOR = 0xFFFFAA00;
+    private static final int BLOCK_COLOR = 0xFF88AAFF;
     private static final int MAX_SEARCH_RESULTS = 16;
     private static final int HINT_HEIGHT = 22;
 
     private final CopyOnWriteArrayList<String> groupNames = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<String> availableItems = new CopyOnWriteArrayList<>(SimuKraftMaterialConfigItems.allItems());
-    private final ConcurrentHashMap<String, CopyOnWriteArrayList<String>> groupHeaders = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, CopyOnWriteArrayList<String>> groupMembers = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, TreeMap<Integer, CopyOnWriteArrayList<String>>> blockGroups = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CopyOnWriteArrayList<String>> groupLinks = new ConcurrentHashMap<>();
     private final Consumer<List<String>> onChanged;
     private final UIElement groupList = SimuKraftConfigWidgets.scrollColumn(0, 4);
-    private final UIElement headerList = SimuKraftConfigWidgets.scrollColumn(0, 4);
-    private final UIElement memberList = SimuKraftConfigWidgets.scrollColumn(0, 4);
+    private final UIElement subgroupList = SimuKraftConfigWidgets.scrollColumn(0, 4);
+    private final UIElement linkList = SimuKraftConfigWidgets.scrollColumn(0, 4);
+    private final UIElement blockList = SimuKraftConfigWidgets.scrollColumn(0, 4);
     private TextField groupField;
+    private TextField linkField;
     private String selectedGroup;
+    private int selectedSubId;
 
     private SimuKraftMaterialCategoryGroupEditor(List<String> values, Consumer<List<String>> onChanged) {
         this.onChanged = onChanged;
         parse(values);
         selectedGroup = groupNames.isEmpty() ? null : groupNames.getFirst();
+        selectedSubId = 0;
     }
 
     /**
-     * create: 创建旧版三栏通类匹配组编辑器。
+     * create: 创建材料分组编辑器，编辑分组编号、组内方块和上游分组。
      */
     static UIElement create(Component title, Component hint, List<String> values, Consumer<List<String>> onChanged) {
         SimuKraftMaterialCategoryGroupEditor editor = new SimuKraftMaterialCategoryGroupEditor(values, onChanged);
@@ -59,7 +61,7 @@ final class SimuKraftMaterialCategoryGroupEditor {
         UIElement root = SimuKraftConfigWidgets.column(6, 4);
         root.addChild(SimuKraftConfigWidgets.compactSection(title));
         root.addChild(SimuKraftConfigWidgets.label(hint, Horizontal.LEFT, SimuKraftConfigWidgets.TEXT_MUTED, HINT_HEIGHT, TextWrap.WRAP));
-        root.addChild(SimuKraftConfigWidgets.isNarrowScreen() ? stackedContent() : splitContent());
+        root.addChild(useStackedLayout() ? stackedContent() : splitContent());
         refreshAll();
         return root;
     }
@@ -68,8 +70,8 @@ final class SimuKraftMaterialCategoryGroupEditor {
         UIElement right = SimuKraftConfigWidgets.split(
                 "config.material.category.items.split",
                 50F, 30F, 70F,
-                itemPanel(Component.translatable("gui.simukraft.config.material.headers"), HEADER_COLOR, headerList, this::addHeader),
-                itemPanel(Component.translatable("gui.simukraft.config.material.members"), MEMBER_COLOR, memberList, this::addMember));
+                structurePanel(),
+                blockPanel());
         return SimuKraftConfigWidgets.split(
                 "config.material.category.group.split",
                 32F, 22F, 48F,
@@ -77,11 +79,16 @@ final class SimuKraftMaterialCategoryGroupEditor {
                 right);
     }
 
+    private static boolean useStackedLayout() {
+        var gui = Minecraft.getInstance().getWindow();
+        return gui.getGuiScaledWidth() < 560;
+    }
+
     private UIElement stackedContent() {
         UIElement column = SimuKraftConfigWidgets.scrollColumn(0, 6);
-        column.addChild(stackedPanel(groupPanel(), 130));
-        column.addChild(stackedPanel(itemPanel(Component.translatable("gui.simukraft.config.material.headers"), HEADER_COLOR, headerList, this::addHeader), 150));
-        column.addChild(stackedPanel(itemPanel(Component.translatable("gui.simukraft.config.material.members"), MEMBER_COLOR, memberList, this::addMember), 150));
+        column.addChild(stackedPanel(groupPanel(), 140));
+        column.addChild(stackedPanel(structurePanel(), 260));
+        column.addChild(stackedPanel(blockPanel(), 160));
         return SimuKraftConfigWidgets.scroller(column);
     }
 
@@ -97,7 +104,7 @@ final class SimuKraftMaterialCategoryGroupEditor {
         UIElement panel = panel();
         panel.addChild(title(Component.translatable("gui.simukraft.config.material.groups"), SimuKraftConfigWidgets.TEXT_TITLE));
         panel.addChild(inputRow(Component.translatable("gui.simukraft.config.material.group_name"), field -> groupField = field, this::addGroup));
-        panel.addChild(SimuKraftConfigWidgets.scroller(groupList));
+        panel.addChild(SimuKraftConfigWidgets.scroller(groupList, false));
         panel.addChild(SimuKraftConfigWidgets.button(Component.translatable("gui.simukraft.config.material.delete_group"), this::deleteSelectedGroup, true).layout(layout -> {
             layout.widthPercent(100);
             layout.height(22);
@@ -106,11 +113,31 @@ final class SimuKraftMaterialCategoryGroupEditor {
         return panel;
     }
 
-    private UIElement itemPanel(Component title, int titleColor, UIElement list, Consumer<String> addAction) {
+    private UIElement structurePanel() {
         UIElement panel = panel();
-        panel.addChild(title(title, titleColor));
-        panel.addChild(itemSearchRow(addAction));
-        panel.addChild(SimuKraftConfigWidgets.scroller(list));
+        panel.addChild(title(Component.translatable("gui.simukraft.config.material.subgroups"), SUBGROUP_COLOR));
+        panel.addChild(SimuKraftConfigWidgets.scroller(subgroupList, false));
+        panel.addChild(SimuKraftConfigWidgets.button(Component.translatable("gui.simukraft.config.material.add_subgroup"), this::addSubgroup, true).layout(layout -> {
+            layout.widthPercent(100);
+            layout.height(22);
+            layout.flexShrink(0);
+        }));
+        panel.addChild(SimuKraftConfigWidgets.button(Component.translatable("gui.simukraft.config.material.delete_subgroup"), this::deleteSelectedSubgroup, true).layout(layout -> {
+            layout.widthPercent(100);
+            layout.height(22);
+            layout.flexShrink(0);
+        }));
+        panel.addChild(title(Component.translatable("gui.simukraft.config.material.links"), SimuKraftConfigWidgets.TEXT_TITLE));
+        panel.addChild(inputRow(Component.translatable("gui.simukraft.config.material.link_name"), field -> linkField = field, this::addLink));
+        panel.addChild(SimuKraftConfigWidgets.scroller(linkList, false));
+        return panel;
+    }
+
+    private UIElement blockPanel() {
+        UIElement panel = panel();
+        panel.addChild(title(Component.translatable("gui.simukraft.config.material.blocks"), BLOCK_COLOR));
+        panel.addChild(itemSearchRow(this::addBlock));
+        panel.addChild(SimuKraftConfigWidgets.scroller(blockList, false));
         return panel;
     }
 
@@ -119,6 +146,7 @@ final class SimuKraftMaterialCategoryGroupEditor {
                 .style(style -> style.backgroundTexture(new GuiTextureGroup(
                         new ColorRectTexture(SimuKraftConfigWidgets.PANEL_BG),
                         new ColorBorderTexture(1, 0xFF5A5A5A))))
+                .setOverflowVisible(false)
                 .layout(layout -> {
                     layout.widthPercent(100);
                     layout.heightPercent(100);
@@ -159,9 +187,6 @@ final class SimuKraftMaterialCategoryGroupEditor {
         return row;
     }
 
-    /**
-     * itemSearchRow: 使用 SearchComponent 搜索物品/方块并限制候选渲染量。
-     */
     private SearchComponent<String> itemSearchRow(Consumer<String> addAction) {
         SearchComponent<String> search = new SearchComponent<>(new SearchComponent.ISearchUI<>() {
             @Override
@@ -237,8 +262,9 @@ final class SimuKraftMaterialCategoryGroupEditor {
 
     private void refreshAll() {
         refreshGroups();
-        refreshHeaders();
-        refreshMembers();
+        refreshSubgroups();
+        refreshLinks();
+        refreshBlocks();
     }
 
     private void refreshGroups() {
@@ -256,6 +282,8 @@ final class SimuKraftMaterialCategoryGroupEditor {
         boolean selected = groupName.equals(selectedGroup);
         Button row = rowButton(() -> {
             selectedGroup = groupName;
+            selectedSubId = 0;
+            ensureSubgroup(groupName, 0);
             refreshAll();
         }, selected ? 0xFF5555AA : SimuKraftConfigWidgets.CARD_BG);
         row.addChild(SimuKraftConfigWidgets.label(Component.literal(groupName), Horizontal.LEFT, selected ? SimuKraftConfigWidgets.TEXT_TITLE : SimuKraftConfigWidgets.TEXT, ROW_HEIGHT - 8, TextWrap.HOVER_ROLL).layout(layout -> {
@@ -265,31 +293,59 @@ final class SimuKraftMaterialCategoryGroupEditor {
         return row;
     }
 
-    private void refreshHeaders() {
-        headerList.clearAllChildren();
-        List<String> headers = selectedEntries(groupHeaders);
-        if (headers.isEmpty()) {
-            headerList.addChild(emptyRow());
+    private void refreshSubgroups() {
+        subgroupList.clearAllChildren();
+        TreeMap<Integer, CopyOnWriteArrayList<String>> groups = selectedBlocks();
+        if (groups.isEmpty()) {
+            subgroupList.addChild(emptyRow());
             return;
         }
-        headers.forEach(itemId -> headerList.addChild(itemRow(itemId, HEADER_COLOR, () -> removeHeader(itemId))));
+        for (Integer subId : groups.keySet()) {
+            subgroupList.addChild(subgroupRow(subId));
+        }
     }
 
-    private void refreshMembers() {
-        memberList.clearAllChildren();
-        List<String> members = selectedEntries(groupMembers);
-        if (members.isEmpty()) {
-            memberList.addChild(emptyRow());
+    private Button subgroupRow(int subId) {
+        boolean selected = subId == selectedSubId;
+        Button row = rowButton(() -> {
+            selectedSubId = subId;
+            refreshAll();
+        }, selected ? 0xFF5555AA : SimuKraftConfigWidgets.CARD_BG);
+        Component label = subId == 0
+                ? Component.translatable("gui.simukraft.config.material.subgroup_fixed")
+                : Component.translatable("gui.simukraft.config.material.subgroup_replaceable", subId);
+        row.addChild(SimuKraftConfigWidgets.label(label, Horizontal.LEFT, SUBGROUP_COLOR, ROW_HEIGHT - 8, TextWrap.HOVER_ROLL).layout(layout -> {
+            layout.flex(1);
+            layout.height(ROW_HEIGHT - 8);
+        }));
+        return row;
+    }
+
+    private void refreshLinks() {
+        linkList.clearAllChildren();
+        List<String> links = selectedGroup == null ? List.of() : groupLinks.getOrDefault(selectedGroup, new CopyOnWriteArrayList<>());
+        if (links.isEmpty()) {
+            linkList.addChild(emptyRow());
             return;
         }
-        members.forEach(itemId -> memberList.addChild(itemRow(itemId, MEMBER_COLOR, () -> removeMember(itemId))));
+        for (String link : links) {
+            linkList.addChild(textRow(link, () -> removeLink(link)));
+        }
     }
 
-    private List<String> selectedEntries(ConcurrentHashMap<String, CopyOnWriteArrayList<String>> source) {
-        return selectedGroup == null ? List.of() : source.getOrDefault(selectedGroup, new CopyOnWriteArrayList<>());
+    private void refreshBlocks() {
+        blockList.clearAllChildren();
+        List<String> blocks = selectedBlocks().getOrDefault(selectedSubId, new CopyOnWriteArrayList<>());
+        if (blocks.isEmpty()) {
+            blockList.addChild(emptyRow());
+            return;
+        }
+        for (String itemId : blocks) {
+            blockList.addChild(itemRow(itemId, () -> removeBlock(itemId)));
+        }
     }
 
-    private Button itemRow(String itemId, int textColor, Runnable deleteAction) {
+    private Button itemRow(String itemId, Runnable deleteAction) {
         Button row = rowButton(() -> {
         }, SimuKraftConfigWidgets.CARD_BG);
         row.addChild(new UIElement().layout(layout -> {
@@ -304,9 +360,24 @@ final class SimuKraftMaterialCategoryGroupEditor {
             layout.alignItems(AlignItems.STRETCH);
         });
         text.setOverflowVisible(false);
-        text.addChild(SimuKraftConfigWidgets.label(SimuKraftMaterialConfigItems.displayName(itemId), Horizontal.LEFT, textColor, 12, TextWrap.HOVER_ROLL));
+        text.addChild(SimuKraftConfigWidgets.label(SimuKraftMaterialConfigItems.displayName(itemId), Horizontal.LEFT, BLOCK_COLOR, 12, TextWrap.HOVER_ROLL));
         text.addChild(SimuKraftConfigWidgets.label(Component.literal(itemId), Horizontal.LEFT, SimuKraftConfigWidgets.TEXT_MUTED, 10, TextWrap.HOVER_ROLL));
         row.addChild(text);
+        row.addChild(SimuKraftConfigWidgets.button(Component.literal("X"), deleteAction, true).layout(layout -> {
+            layout.width(22);
+            layout.height(20);
+            layout.flexShrink(0);
+        }));
+        return row;
+    }
+
+    private Button textRow(String value, Runnable deleteAction) {
+        Button row = rowButton(() -> {
+        }, SimuKraftConfigWidgets.CARD_BG);
+        row.addChild(SimuKraftConfigWidgets.label(Component.literal(value), Horizontal.LEFT, SimuKraftConfigWidgets.TEXT, ROW_HEIGHT - 8, TextWrap.HOVER_ROLL).layout(layout -> {
+            layout.flex(1);
+            layout.height(ROW_HEIGHT - 8);
+        }));
         row.addChild(SimuKraftConfigWidgets.button(Component.literal("X"), deleteAction, true).layout(layout -> {
             layout.width(22);
             layout.height(20);
@@ -344,14 +415,17 @@ final class SimuKraftMaterialCategoryGroupEditor {
             return;
         }
         String groupName = groupField.getText().trim();
-        if (groupName.isBlank() || groupName.contains("|") || groupNames.contains(groupName)) {
+        if (!validName(groupName) || groupNames.contains(groupName)) {
             return;
         }
         groupNames.add(groupName);
         groupNames.sort(String::compareTo);
-        groupHeaders.put(groupName, new CopyOnWriteArrayList<>());
-        groupMembers.put(groupName, new CopyOnWriteArrayList<>());
+        TreeMap<Integer, CopyOnWriteArrayList<String>> groups = new TreeMap<>();
+        groups.put(0, new CopyOnWriteArrayList<>());
+        blockGroups.put(groupName, groups);
+        groupLinks.put(groupName, new CopyOnWriteArrayList<>());
         selectedGroup = groupName;
+        selectedSubId = 0;
         groupField.setText("", false);
         publishAndRefresh();
     }
@@ -360,22 +434,71 @@ final class SimuKraftMaterialCategoryGroupEditor {
         if (selectedGroup == null) {
             return;
         }
-        groupNames.remove(selectedGroup);
-        groupHeaders.remove(selectedGroup);
-        groupMembers.remove(selectedGroup);
+        String removed = selectedGroup;
+        groupNames.remove(removed);
+        blockGroups.remove(removed);
+        groupLinks.remove(removed);
+        for (CopyOnWriteArrayList<String> links : groupLinks.values()) {
+            links.remove(removed);
+        }
         selectedGroup = groupNames.isEmpty() ? null : groupNames.getFirst();
+        selectedSubId = 0;
         publishAndRefresh();
     }
 
-    private void addHeader(String itemId) {
-        addItem(itemId, groupHeaders);
+    private void addSubgroup() {
+        if (selectedGroup == null) {
+            return;
+        }
+        TreeMap<Integer, CopyOnWriteArrayList<String>> groups = selectedBlocks();
+        int next = groups.isEmpty() ? 1 : groups.lastKey() + 1;
+        if (next <= 0) {
+            next = 1;
+        }
+        groups.put(next, new CopyOnWriteArrayList<>());
+        selectedSubId = next;
+        publishAndRefresh();
     }
 
-    private void addMember(String itemId) {
-        addItem(itemId, groupMembers);
+    private void deleteSelectedSubgroup() {
+        if (selectedGroup == null || selectedSubId == 0) {
+            return;
+        }
+        selectedBlocks().remove(selectedSubId);
+        selectedSubId = 0;
+        ensureSubgroup(selectedGroup, 0);
+        publishAndRefresh();
     }
 
-    private void addItem(String rawId, ConcurrentHashMap<String, CopyOnWriteArrayList<String>> target) {
+    private void addLink() {
+        if (selectedGroup == null || linkField == null) {
+            return;
+        }
+        String linkName = linkField.getText().trim();
+        if (!groupNames.contains(linkName) || linkName.equals(selectedGroup)) {
+            return;
+        }
+        CopyOnWriteArrayList<String> links = groupLinks.computeIfAbsent(selectedGroup, key -> new CopyOnWriteArrayList<>());
+        if (!links.contains(linkName)) {
+            links.add(linkName);
+            links.sort(String::compareTo);
+            publish();
+        }
+        linkField.setText("", false);
+        refreshAll();
+    }
+
+    private void removeLink(String linkName) {
+        if (selectedGroup == null) {
+            return;
+        }
+        CopyOnWriteArrayList<String> links = groupLinks.get(selectedGroup);
+        if (links != null && links.remove(linkName)) {
+            publishAndRefresh();
+        }
+    }
+
+    private void addBlock(String rawId) {
         if (selectedGroup == null) {
             return;
         }
@@ -383,30 +506,35 @@ final class SimuKraftMaterialCategoryGroupEditor {
         if (itemId.isBlank()) {
             return;
         }
-        CopyOnWriteArrayList<String> list = target.computeIfAbsent(selectedGroup, key -> new CopyOnWriteArrayList<>());
-        if (!list.contains(itemId)) {
-            list.add(itemId);
+        CopyOnWriteArrayList<String> blocks = ensureSubgroup(selectedGroup, selectedSubId);
+        if (!blocks.contains(itemId)) {
+            blocks.add(itemId);
             publish();
         }
         refreshAll();
     }
 
-    private void removeHeader(String itemId) {
-        removeItem(itemId, groupHeaders);
-    }
-
-    private void removeMember(String itemId) {
-        removeItem(itemId, groupMembers);
-    }
-
-    private void removeItem(String itemId, ConcurrentHashMap<String, CopyOnWriteArrayList<String>> target) {
-        if (selectedGroup == null) {
-            return;
-        }
-        CopyOnWriteArrayList<String> list = target.get(selectedGroup);
-        if (list != null && list.remove(itemId)) {
+    private void removeBlock(String itemId) {
+        CopyOnWriteArrayList<String> blocks = selectedBlocks().get(selectedSubId);
+        if (blocks != null && blocks.remove(itemId)) {
             publishAndRefresh();
         }
+    }
+
+    private TreeMap<Integer, CopyOnWriteArrayList<String>> selectedBlocks() {
+        if (selectedGroup == null) {
+            return new TreeMap<>();
+        }
+        return blockGroups.computeIfAbsent(selectedGroup, key -> {
+            TreeMap<Integer, CopyOnWriteArrayList<String>> groups = new TreeMap<>();
+            groups.put(0, new CopyOnWriteArrayList<>());
+            return groups;
+        });
+    }
+
+    private CopyOnWriteArrayList<String> ensureSubgroup(String groupName, int subId) {
+        TreeMap<Integer, CopyOnWriteArrayList<String>> groups = blockGroups.computeIfAbsent(groupName, key -> new TreeMap<>());
+        return groups.computeIfAbsent(subId, key -> new CopyOnWriteArrayList<>());
     }
 
     private void publishAndRefresh() {
@@ -421,10 +549,21 @@ final class SimuKraftMaterialCategoryGroupEditor {
     private List<String> serialize() {
         List<String> values = new ArrayList<>();
         for (String groupName : groupNames) {
-            List<String> headers = groupHeaders.getOrDefault(groupName, new CopyOnWriteArrayList<>());
-            List<String> members = groupMembers.getOrDefault(groupName, new CopyOnWriteArrayList<>());
-            values.add(groupName + "|" + String.join(",", headers) + "|" + String.join(",", members));
+            TreeMap<Integer, CopyOnWriteArrayList<String>> groups = blockGroups.getOrDefault(groupName, new TreeMap<>());
+            List<String> groupParts = new ArrayList<>();
+            for (Map.Entry<Integer, CopyOnWriteArrayList<String>> entry : groups.entrySet()) {
+                if (entry.getValue().isEmpty()) {
+                    continue;
+                }
+                List<String> ids = new ArrayList<>(entry.getValue());
+                ids.sort(Comparator.naturalOrder());
+                groupParts.add(entry.getKey() + "=" + String.join(",", ids));
+            }
+            List<String> links = new ArrayList<>(groupLinks.getOrDefault(groupName, new CopyOnWriteArrayList<>()));
+            links.sort(Comparator.naturalOrder());
+            values.add(groupName + "|" + String.join(";", groupParts) + "|" + String.join(",", links));
         }
+        values.sort(Comparator.naturalOrder());
         return values;
     }
 
@@ -433,52 +572,64 @@ final class SimuKraftMaterialCategoryGroupEditor {
             return;
         }
         for (String entry : values) {
-            GroupEntry group = GroupEntry.parse(entry);
-            if (group == null || groupNames.contains(group.name())) {
+            if (entry == null || entry.isBlank() || !entry.contains("|")) {
                 continue;
             }
-            groupNames.add(group.name());
-            groupHeaders.put(group.name(), new CopyOnWriteArrayList<>(group.headers()));
-            groupMembers.put(group.name(), new CopyOnWriteArrayList<>(group.members()));
+            String[] parts = entry.split("\\|", 3);
+            String name = parts[0].trim();
+            if (!validName(name) || groupNames.contains(name)) {
+                continue;
+            }
+            TreeMap<Integer, CopyOnWriteArrayList<String>> groups = new TreeMap<>();
+            if (parts.length > 1 && !parts[1].isBlank()) {
+                for (String group : parts[1].split(";")) {
+                    int separator = group.indexOf('=');
+                    if (separator <= 0) {
+                        continue;
+                    }
+                    int subId;
+                    try {
+                        subId = Integer.parseInt(group.substring(0, separator).trim());
+                    } catch (NumberFormatException exception) {
+                        continue;
+                    }
+                    if (subId < 0) {
+                        continue;
+                    }
+                    CopyOnWriteArrayList<String> blocks = new CopyOnWriteArrayList<>();
+                    for (String raw : group.substring(separator + 1).split(",")) {
+                        String id = SimuKraftMaterialConfigItems.cleanId(raw, true);
+                        if (!id.isBlank() && !blocks.contains(id)) {
+                            blocks.add(id);
+                        }
+                    }
+                    if (!blocks.isEmpty()) {
+                        groups.put(subId, blocks);
+                    }
+                }
+            }
+            groups.putIfAbsent(0, new CopyOnWriteArrayList<>());
+            CopyOnWriteArrayList<String> links = new CopyOnWriteArrayList<>();
+            if (parts.length > 2 && !parts[2].isBlank()) {
+                for (String rawLink : parts[2].split(",")) {
+                    String link = rawLink.trim();
+                    if (validName(link) && !links.contains(link)) {
+                        links.add(link);
+                    }
+                }
+            }
+            groupNames.add(name);
+            blockGroups.put(name, groups);
+            groupLinks.put(name, links);
         }
         groupNames.sort(String::compareTo);
     }
 
-    private interface FieldSetter {
-        void set(TextField field);
+    private static boolean validName(String name) {
+        return name != null && !name.isBlank() && !name.contains("|") && !name.contains(";") && !name.contains("=") && !name.contains(",");
     }
 
-    private record GroupEntry(String name, List<String> headers, List<String> members) {
-        private static GroupEntry parse(String entry) {
-            if (entry == null || entry.isBlank()) {
-                return null;
-            }
-            if (entry.contains("|")) {
-                String[] parts = entry.split("\\|", 3);
-                if (parts.length >= 2 && !parts[0].isBlank()) {
-                    return new GroupEntry(parts[0].trim(), splitIds(parts[1], true), parts.length >= 3 ? splitIds(parts[2], true) : List.of());
-                }
-                return null;
-            }
-            String[] legacy = entry.split(":", 2);
-            if (legacy.length == 2 && !legacy[0].isBlank()) {
-                return new GroupEntry(legacy[0].trim(), splitIds(legacy[1], true), List.of());
-            }
-            return null;
-        }
-
-        private static List<String> splitIds(String value, boolean addMinecraftNamespace) {
-            if (value == null || value.isBlank()) {
-                return List.of();
-            }
-            LinkedHashSet<String> ids = new LinkedHashSet<>();
-            for (String raw : value.split(",")) {
-                String id = SimuKraftMaterialConfigItems.cleanId(raw, addMinecraftNamespace);
-                if (!id.isBlank()) {
-                    ids.add(id);
-                }
-            }
-            return List.copyOf(ids);
-        }
+    private interface FieldSetter {
+        void set(TextField field);
     }
 }

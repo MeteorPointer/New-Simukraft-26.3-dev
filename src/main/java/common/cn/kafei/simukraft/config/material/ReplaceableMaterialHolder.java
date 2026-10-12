@@ -42,8 +42,7 @@ public class ReplaceableMaterialHolder {
 
     public final int addReplaceableBlock(Collection<ResourceKey<Block>> blocks) {
         addReplaceableBlock(this.subReplaceableCount, blocks);
-        this.subReplaceableCount++;
-        return this.subReplaceableCount;
+        return this.subReplaceableCount++;
     }
 
     public final void addReplaceableBlock(int subId, Collection<ResourceKey<Block>> blocks) {

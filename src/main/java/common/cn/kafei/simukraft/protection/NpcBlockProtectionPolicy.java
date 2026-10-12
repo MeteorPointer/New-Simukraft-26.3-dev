@@ -2,15 +2,16 @@ package common.cn.kafei.simukraft.protection;
 
 import common.cn.kafei.simukraft.SimuKraft;
 import common.cn.kafei.simukraft.config.ServerConfig;
+import common.cn.kafei.simukraft.config.material.MaterialConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -76,26 +77,28 @@ public final class NpcBlockProtectionPolicy {
         }
         synchronized (NpcBlockProtectionPolicy.class) {
             if (!snapshot.equals(cachedSnapshot)) {
-                cachedBlacklist = parseBlacklist(snapshot.blacklist());
+                cachedBlacklist = parseBlacklist();
                 cachedSnapshot = snapshot;
             }
             return cachedBlacklist;
         }
     }
 
-    private static Set<String> parseBlacklist(List<String> entries) {
+    private static Set<String> parseBlacklist() {
         LinkedHashSet<String> ids = new LinkedHashSet<>();
-        for (String entry : entries) {
-            String id = normalize(entry);
-            if (!id.isBlank()) {
-                ids.add(id);
+        Set<ResourceKey<Block>> blocks = MaterialConfig.ALL_MODE_BLOCK_BLACKLIST;
+        if (blocks != null) {
+            for (ResourceKey<Block> block : blocks) {
+                if (block != null) {
+                    ids.add(normalize(block.identifier().toString()));
+                }
             }
         }
         return Set.copyOf(ids);
     }
 
     private static ConfigSnapshot snapshot() {
-        return new ConfigSnapshot(ServerConfig.blacklistProtectionEnabled(), ServerConfig.allModeBlockBlacklist());
+        return new ConfigSnapshot(ServerConfig.blacklistProtectionEnabled(), MaterialConfig.revision());
     }
 
     private static String blockId(Block block) {
@@ -111,9 +114,6 @@ public final class NpcBlockProtectionPolicy {
         LAST_SKIP_LOG_TICKS.entrySet().removeIf(entry -> gameTime - entry.getValue() > LOG_CACHE_TTL_TICKS);
     }
 
-    private record ConfigSnapshot(boolean enabled, List<String> blacklist) {
-        private ConfigSnapshot {
-            blacklist = List.copyOf(blacklist);
-        }
+    private record ConfigSnapshot(boolean enabled, int revision) {
     }
 }

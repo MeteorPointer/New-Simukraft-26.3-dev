@@ -97,6 +97,26 @@ final class SimuKraftConfigWidgets {
         return scaledDimension(preferredHeight, minHeight, Minecraft.getInstance().getWindow().getGuiScaledHeight());
     }
 
+    /**
+     * needsFullscreen: 首选窗口加上边距后超出当前 GUI 画面。
+     */
+    static boolean needsFullscreen(int preferredWidth, int preferredHeight) {
+        var gui = Minecraft.getInstance().getWindow();
+        return preferredWidth > gui.getGuiScaledWidth() - SCREEN_MARGIN
+                || preferredHeight > gui.getGuiScaledHeight() - SCREEN_MARGIN;
+    }
+
+    /**
+     * windowOrFullscreen: 小屏幕装不下时用整个 GUI 画面，否则保持居中窗口。
+     */
+    static UIElement windowOrFullscreen(int preferredWidth, int preferredHeight, int minWidth, int minHeight) {
+        if (!needsFullscreen(preferredWidth, preferredHeight)) {
+            return window(preferredWidth, preferredHeight, minWidth, minHeight);
+        }
+        var gui = Minecraft.getInstance().getWindow();
+        return window(gui.getGuiScaledWidth(), gui.getGuiScaledHeight());
+    }
+
     static boolean isNarrowScreen() {
         return Minecraft.getInstance().getWindow().getGuiScaledWidth() < NARROW_SCREEN_WIDTH;
     }
@@ -272,13 +292,24 @@ final class SimuKraftConfigWidgets {
     }
 
     /**
-     * scroller: 创建垂直滚动区域。
+     * scroller: 创建铺满父容器的垂直滚动区域。
      */
     static UIElement scroller(UIElement child) {
+        return scroller(child, true);
+    }
+
+    /**
+     * scroller: fillParent 为 false 时只占据父栏剩余高度，避免多个列表各自按 100% 把滑块挤出面板。
+     */
+    static UIElement scroller(UIElement child, boolean fillParent) {
         UIElement viewport = new UIElement().setOverflowVisible(false).layout(layout -> {
             layout.widthPercent(100);
-            layout.heightPercent(100);
             layout.flex(1);
+            if (fillParent) {
+                layout.heightPercent(100);
+            } else {
+                layout.minHeight(48);
+            }
             layout.flexDirection(FlexDirection.COLUMN);
             layout.alignItems(AlignItems.STRETCH);
         });
@@ -292,6 +323,9 @@ final class SimuKraftConfigWidgets {
         scroller.layout(layout -> {
             layout.widthPercent(100);
             layout.flex(1);
+            if (fillParent) {
+                layout.heightPercent(100);
+            }
         });
         scroller.addScrollViewChild(child);
         viewport.addChild(scroller);
