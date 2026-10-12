@@ -17,6 +17,7 @@ import common.cn.kafei.simukraft.network.exchange.ExchangeControlBoxOpenResponse
 import common.cn.kafei.simukraft.network.farmland.FarmlandBoxBoundsResponsePacket;
 import common.cn.kafei.simukraft.network.farmland.FarmlandBoxOpenResponsePacket;
 import common.cn.kafei.simukraft.network.geology.GeologicalSurveyHintPacket;
+import common.cn.kafei.simukraft.network.guidebook.ReloadGuideBookPacket;
 import common.cn.kafei.simukraft.network.hud.HudSyncPacket;
 import common.cn.kafei.simukraft.network.industrial.IndustrialControlBoxOpenResponsePacket;
 import common.cn.kafei.simukraft.network.industrial.IndustrialControlBoxViewUpdatePacket;
@@ -260,9 +261,12 @@ public final class ClientboundNetworkBridge {
         HANDLER.get().handleGeologicalSurveyHint(packet);
     }
 
-    /**
-     * handleRtsBuildingBoundsSync: 分发 RTS 建筑边界同步。
-     */
+    /** handleReloadGuideBook: 转发指南书重载。 */
+    public static void handleReloadGuideBook(ReloadGuideBookPacket packet) {
+        HANDLER.get().handleReloadGuideBook(packet);
+    }
+
+    /** handleRtsBuildingBoundsSync: 分发 RTS 建筑边界同步。 */
     public static void handleRtsBuildingBoundsSync(RtsBuildingBoundsSyncPacket packet) {
         HANDLER.get().handleRtsBuildingBoundsSync(packet);
     }

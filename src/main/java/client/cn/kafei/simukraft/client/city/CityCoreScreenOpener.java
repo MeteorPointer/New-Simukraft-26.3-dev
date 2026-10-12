@@ -19,6 +19,14 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.*;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.IGUIContext;
+import client.cn.kafei.simukraft.client.city.map.SimuBlockColors;
+import client.cn.kafei.simukraft.client.city.map.SimuMap3DCamera;
+import client.cn.kafei.simukraft.client.city.map.SimuMap3DMesh;
+import client.cn.kafei.simukraft.client.city.map.SimuMapManager;
+import client.cn.kafei.simukraft.client.citizen.CitizenAvatarFactory;
+import client.cn.kafei.simukraft.client.citizen.CitizenFamilyGraphCanvas;
+import client.cn.kafei.simukraft.client.city.map.SimuMapRegion;
+import client.cn.kafei.simukraft.client.city.map.SimuMapRegionData;
 import common.cn.kafei.simukraft.city.CityPermissionLevel;
 import common.cn.kafei.simukraft.city.FinanceTransactionData;
 import common.cn.kafei.simukraft.network.citizen.manage.*;
@@ -34,10 +42,28 @@ import common.cn.kafei.simukraft.network.city.member.CityCoreMemberActionPacket;
 import common.cn.kafei.simukraft.network.city.member.CityCoreMembersRequestPacket;
 import common.cn.kafei.simukraft.network.city.member.CityCoreMembersResponsePacket;
 import common.cn.kafei.simukraft.ui.RecipeBookSearchUi;
+import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
+import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.ScrollerView;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Tab;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.TextField;
+import com.lowdragmc.lowdraglib2.gui.ui.data.ScrollerMode;
+import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
+import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexSorting;
 import dev.vfyjxf.taffy.style.AlignContent;
 import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.FlexDirection;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -45,6 +71,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.joml.Matrix3x2f;
+import org.joml.Matrix4fStack;
 import org.joml.Vector2f;
 
 import java.util.*;
@@ -1288,7 +1315,7 @@ public final class CityCoreScreenOpener {
         private boolean threeDView;
         private float threeYaw = 0.8F;
         private float threeYawDragStart;
-        private double threeZoom = 2.2D;
+        private double threeZoom = 4.0D;
         private final SimuMap3DMesh threeMesh = new SimuMap3DMesh();
         private int modeButtonX;
         private int modeButtonY;
@@ -1298,6 +1325,7 @@ public final class CityCoreScreenOpener {
         private static final String THREE_D_PAN = "city_map_3d_pan";
         private double threePanOffsetX;
         private double threePanOffsetY;
+        private final float[] threePanDelta = new float[2];
 
         private CityChunkMapElement(CityCoreMapResponsePacket packet) {
             this.packet = packet;
@@ -1857,10 +1885,7 @@ public final class CityCoreScreenOpener {
             return modeButtonW > 0 && !isOutside(mouseX, mouseY, modeButtonX, modeButtonY, modeButtonW, modeButtonH);
         }
 
-        /** 用已扫描的高度和颜色画成可旋转的立体地形。格子四角按同一投影相连。 */
-        /**
-         * 鐢ㄥ钩椤舵煴浣撶敾绔嬩綋娌欑洏銆傜缉鏀惧彧鏀规姇褰憋紝寤虹瓚闈犵珛闈㈠垎鑹层€?
-         */
+        /** 用已扫描的高度和颜色画成立体方块。正交投影保留真实高度，深度测试处理遮挡。 */
         private void render3DMap(GUIContext guiContext, int startX, int startY, int width, int height, double centerX, double centerY) {
             guiContext.graphics.fill(startX, startY, startX + width, startY + height, 0xFF101418);
             int step = threeMesh.resolveStep(threeZoom);
@@ -1878,20 +1903,54 @@ public final class CityCoreScreenOpener {
                         gameTime);
             }
             if (!threeMesh.isEmpty()) {
-                guiContext.graphics.submitGuiElementRenderState(new CityMap3DRenderState(
-                        threeMesh,
-                        new Matrix3x2f(guiContext.graphics.pose()),
-                        threeYaw,
-                        scale,
-                        centerX,
-                        centerY,
-                        liveCenterX,
-                        liveCenterZ,
-                        startX,
-                        startY,
-                        width,
-                        height,
-                        guiContext.graphics.peekScissorStack()));
+                guiContext.graphics.flush();
+                drawThreeDMesh(centerX, centerY, scale, liveCenterX, liveCenterZ);
+            }
+            guiContext.graphics.drawString(minecraft.font, Component.translatable("screen.simukraft.city_core.map.mode_3d_hint"), startX + 6, startY + height - 12, 0xFFDDDDDD, false);
+        }
+
+        /**
+         * drawThreeDMesh: 顶点已经是界面像素。投影必须用整屏范围，不能再乘缩放。
+         * 投影范围如果跟着 threeZoom 变大，滚轮缩放会被抵消。
+         */
+        private void drawThreeDMesh(double centerX, double centerY, float scale, int liveCenterX, int liveCenterZ) {
+            var window = Minecraft.getInstance().getWindow();
+            float guiWidth = (float) (window.getWidth() / window.getGuiScale());
+            float guiHeight = (float) (window.getHeight() / window.getGuiScale());
+            Matrix4f projection = new Matrix4f().setOrtho(0.0F, guiWidth, guiHeight, 0.0F, -8000.0F, 8000.0F);
+            Matrix4f model = SimuMap3DCamera.modelMatrix(
+                    (float) centerX,
+                    (float) centerY,
+                    threeYaw,
+                    scale,
+                    threeMesh.baseHeight());
+            RenderSystem.backupProjectionMatrix();
+            Matrix4fStack modelView = RenderSystem.getModelViewStack();
+            modelView.pushMatrix();
+            try {
+                RenderSystem.setProjectionMatrix(projection, VertexSorting.ORTHOGRAPHIC_Z);
+                modelView.identity();
+                RenderSystem.applyModelViewMatrix();
+                RenderSystem.enableDepthTest();
+                RenderSystem.depthMask(true);
+                RenderSystem.clear(256, Minecraft.ON_OSX);
+                RenderSystem.disableCull();
+                RenderSystem.disableBlend();
+                RenderSystem.setShader(GameRenderer::getPositionColorShader);
+                RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+                BufferBuilder buffer = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+                threeMesh.emit(
+                        buffer,
+                        model,
+                        threeMesh.worldXOf(threeMesh.cellCount() / 2) - liveCenterX,
+                        threeMesh.worldZOf(threeMesh.cellCount() / 2) - liveCenterZ);
+                BufferUploader.drawWithShader(buffer.buildOrThrow());
+            } finally {
+                modelView.popMatrix();
+                RenderSystem.applyModelViewMatrix();
+                RenderSystem.restoreProjectionMatrix();
+                RenderSystem.enableCull();
+                RenderSystem.disableDepthTest();
             }
             guiContext.graphics.text(minecraft.font, Component.translatable("screen.simukraft.city_core.map.mode_3d_hint"), startX + 6, startY + height - 12, 0xFFDDDDDD, false);
         }
@@ -2058,17 +2117,15 @@ public final class CityCoreScreenOpener {
                 return;
             }
             if (THREE_D_PAN.equals(event.dragHandler.getDraggingObject())) {
-                double mouseX = event.x - event.dragStartX;
-                double mouseY = event.y - event.dragStartY;
                 float scale = (float) Math.max(threeZoom, 0.6D);
-                float cos = Mth.cos(threeYaw);
-                float sin = Mth.sin(threeYaw);
-                double ax = -mouseX / scale;
-                double ay = -mouseY / (scale * 0.5D);
-                double panDx = ax * cos + ay * sin;
-                double panDz = -ax * sin + ay * cos;
-                offsetX = threePanOffsetX - panDx * zoomLevel;
-                offsetY = threePanOffsetY - panDz * zoomLevel;
+                SimuMap3DCamera.pan(
+                        (float) (event.x - event.dragStartX),
+                        (float) (event.y - event.dragStartY),
+                        threeYaw,
+                        scale,
+                        threePanDelta);
+                offsetX = threePanOffsetX + threePanDelta[0] * zoomLevel;
+                offsetY = threePanOffsetY + threePanDelta[1] * zoomLevel;
                 event.stopPropagation();
                 return;
             }
