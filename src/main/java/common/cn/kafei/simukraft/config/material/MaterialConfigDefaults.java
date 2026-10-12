@@ -29,6 +29,7 @@ public final class MaterialConfigDefaults {
         set.add(BlockItemIds.STRUCTURE_BLOCK.block());
         set.add(BlockItemIds.STRUCTURE_VOID.block());
         set.add(BlockItemIds.JIGSAW.block());
+        set.add(BlockItemIds.REINFORCED_DEEPSLATE.block());
         set.add(ModBlocks.BUILD_BOX.key());
         set.add(ModBlocks.CITY_CORE.key());
         set.add(ModBlocks.RESIDENTIAL_CONTROL_BOX.key());
@@ -429,6 +430,7 @@ public final class MaterialConfigDefaults {
         set.add(BlockItemIds.STRUCTURE_BLOCK.block());
         set.add(BlockItemIds.STRUCTURE_VOID.block());
         set.add(BlockItemIds.JIGSAW.block());
+        set.add(BlockItemIds.REINFORCED_DEEPSLATE.block());
         set.add(ModBlocks.BUILD_BOX.key());
         set.add(ModBlocks.CITY_CORE.key());
         set.add(ModBlocks.RESIDENTIAL_CONTROL_BOX.key());
