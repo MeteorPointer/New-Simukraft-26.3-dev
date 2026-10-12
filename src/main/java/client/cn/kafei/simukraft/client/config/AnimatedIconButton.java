@@ -5,6 +5,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
 import org.joml.Matrix3x2fStack;
 
 import java.util.Objects;
@@ -34,6 +35,9 @@ public final class AnimatedIconButton extends Button {
 
     @Override
     protected void extractContents(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        if (this.getAlpha() <= 0.01F) {
+            return;
+        }
         // 悬停时旋转角标，松开时还原
         if (this.isHovered()) {
             rotationAngle += ROTATION_SPEED * partialTick;
@@ -55,9 +59,9 @@ public final class AnimatedIconButton extends Button {
      */
     private void renderBackground(GuiGraphicsExtractor guiGraphics) {
         guiGraphics.blit(RenderPipelines.GUI_TEXTURED, WIDGETS_TEXTURE, this.getX(), this.getY(), 0, 0,
-                this.width, this.height, this.width, this.height);
+                this.width, this.height, this.width, this.height, this.fadeColor(0xFFFFFFFF));
         if (this.isHovered()) {
-            int white = 0xFFFFFFFF;
+            int white = this.fadeColor(0xFFFFFFFF);
             guiGraphics.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + 1, white);
             guiGraphics.fill(this.getX(), this.getY() + this.height - 1, this.getX() + this.width, this.getY() + this.height, white);
             guiGraphics.fill(this.getX(), this.getY(), this.getX() + 1, this.getY() + this.height, white);
@@ -72,7 +76,7 @@ public final class AnimatedIconButton extends Button {
         int size = Math.min((int) (Math.min(this.width, this.height) * 0.8f), 20);
         int x = this.getX() + (this.width - size) / 2;
         int y = this.getY() + (this.height - size) / 2;
-        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, MAIN_ICON, x, y, 0, 0, size, size, size, size);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, MAIN_ICON, x, y, 0, 0, size, size, size, size, this.fadeColor(0xFFFFFFFF));
     }
 
     /**
@@ -88,7 +92,17 @@ public final class AnimatedIconButton extends Button {
         pose.translate(cx, cy);
         pose.rotate((float) Math.toRadians(rotationAngle));
         pose.translate(-size / 2.0F, -size / 2.0F);
-        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, CORNER_ICON, 0, 0, 0, 0, size, size, size, size);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, CORNER_ICON, 0, 0, 0, 0, size, size, size, size, this.fadeColor(0xFFFFFFFF));
         pose.popMatrix();
+    }
+
+    /**
+     * fadeColor: 把按钮当前淡入透明度乘进颜色，和主菜单其他组件一起出现。
+     */
+    private int fadeColor(int argb) {
+        int widgetAlpha = Math.round(Mth.clamp(this.getAlpha(), 0.0F, 1.0F) * 255.0F);
+        int colorAlpha = (argb >>> 24) & 0xFF;
+        int combined = colorAlpha * widgetAlpha / 255;
+        return (combined << 24) | (argb & 0x00FFFFFF);
     }
 }
