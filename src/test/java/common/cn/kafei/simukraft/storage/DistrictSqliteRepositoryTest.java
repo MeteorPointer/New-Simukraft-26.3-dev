@@ -1,5 +1,6 @@
 package common.cn.kafei.simukraft.storage;
 
+import common.cn.kafei.simukraft.util.NbtUuid;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -40,17 +41,17 @@ class DistrictSqliteRepositoryTest {
 
             CompoundTag loaded = districts.loadAll(DIMENSION);
             assertNotNull(loaded);
-            ListTag list = loaded.getList("Districts", CompoundTag.TAG_COMPOUND);
+            ListTag list = loaded.getList("Districts").get();
             assertEquals(1, list.size(), "orphan parent_city_id must not fail the whole district batch");
-            CompoundTag kept = list.getCompound(0);
-            assertEquals(keptDistrictId, kept.getUUID("DistrictId"));
-            assertEquals(cityId, kept.getUUID("ParentCityId"));
+            CompoundTag kept = list.getCompound(0).get();
+            assertEquals(keptDistrictId, NbtUuid.readOrNull(kept, "DistrictId"));
+            assertEquals(cityId, NbtUuid.readOrNull(kept, "ParentCityId"));
             assertEquals("East\u533a", kept.getString("Name"));
-            assertEquals(1, kept.getList("Chunks", LongTag.TAG_LONG).size());
-            assertEquals(1L, ((LongTag) kept.getList("Chunks", LongTag.TAG_LONG).get(0)).getAsLong());
-            assertEquals(1, kept.getList("Cores", LongTag.TAG_LONG).size());
-            assertEquals(1, kept.getList("Members", CompoundTag.TAG_COMPOUND).size());
-            assertEquals(mayorId, kept.getList("Members", CompoundTag.TAG_COMPOUND).getCompound(0).getUUID("PlayerId"));
+            assertEquals(1, kept.getList("Chunks").get().size());
+            assertEquals(1L, ((LongTag) kept.getList("Chunks").get().get(0)).longValue());
+            assertEquals(1, kept.getList("Cores").get().size());
+            assertEquals(1, kept.getList("Members").get().size());
+            assertEquals(mayorId, NbtUuid.readOrNull(kept.getList("Members").get().getCompound(0).get(), "PlayerId"));
         }
     }
 
@@ -79,8 +80,8 @@ class DistrictSqliteRepositoryTest {
 
     private static CompoundTag districtTag(UUID districtId, UUID parentCityId, String name, long chunk, long core, UUID mayorId) {
         CompoundTag district = new CompoundTag();
-        district.putUUID("DistrictId", districtId);
-        district.putUUID("ParentCityId", parentCityId);
+        NbtUuid.put(district, "DistrictId", districtId);
+        NbtUuid.put(district, "ParentCityId", parentCityId);
         district.putString("Name", name);
         district.putInt("Color", 0x336699);
         ListTag chunks = new ListTag();
@@ -91,7 +92,7 @@ class DistrictSqliteRepositoryTest {
         district.put("Cores", cores);
         ListTag members = new ListTag();
         CompoundTag member = new CompoundTag();
-        member.putUUID("PlayerId", mayorId);
+        NbtUuid.put(member, "PlayerId", mayorId);
         member.putString("PlayerName", "Mayor");
         member.putInt("Role", 2);
         members.add(member);
@@ -109,7 +110,7 @@ class DistrictSqliteRepositoryTest {
 
     private static CompoundTag cityTag(UUID cityId, String name) {
         CompoundTag city = new CompoundTag();
-        city.putUUID("CityId", cityId);
+        NbtUuid.put(city, "CityId", cityId);
         city.putString("CityName", name);
         city.putString("DimensionId", DIMENSION);
         city.putInt("CoreX", 1);

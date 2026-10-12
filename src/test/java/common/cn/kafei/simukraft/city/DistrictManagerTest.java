@@ -73,7 +73,7 @@ class DistrictManagerTest {
         UUID otherCityId = UUID.randomUUID();
         DistrictData owned = manager.create(cityId, "West", UUID.randomUUID(), "Mayor", Set.of(8L));
         DistrictData other = manager.create(otherCityId, "Keep", UUID.randomUUID(), "Mayor", Set.of(9L));
-        assertTrue(manager.bindCore(owned.districtId(), new net.minecraft.world.level.ChunkPos(8L), BlockPos.ZERO.asLong()));
+        assertTrue(manager.bindCore(owned.districtId(), net.minecraft.world.level.ChunkPos.unpack(8L), BlockPos.ZERO.asLong()));
 
         var cores = manager.removeCity(cityId);
 
