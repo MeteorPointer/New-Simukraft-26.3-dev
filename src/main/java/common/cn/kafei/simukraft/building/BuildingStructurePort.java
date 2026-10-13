@@ -86,11 +86,11 @@ public final class BuildingStructurePort {
         if (id == null || !ownsStructure(record, id)) {
             return null;
         }
-        Optional<Structure> holder = registry.getOptional(ResourceKey.create(Registries.STRUCTURE, id));
-        if (holder.isEmpty()) {
+        Optional<Holder.Reference<Structure>> holder = registry.get(ResourceKey.create(Registries.STRUCTURE, id));
+        if (holder.isEmpty() || !predicate.test(holder.get())) {
             return null;
         }
-        return syntheticStart(holder.get(), record);
+        return syntheticStart(holder.get().value(), record);
     }
 
     private static boolean ownsStructure(PlacedBuildingRecord record, Identifier structureId) {
