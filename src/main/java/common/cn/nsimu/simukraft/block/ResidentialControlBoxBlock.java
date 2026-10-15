@@ -1,0 +1,36 @@
+package common.cn.nsimu.simukraft.block;
+
+import common.cn.nsimu.simukraft.building.PlacedBuildingMoveService;
+import common.cn.nsimu.simukraft.building.controlbox.ResidentialControlBoxService;
+import common.cn.nsimu.simukraft.network.building.controlbox.ResidentialControlBoxOpenRequestPacket;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+
+
+public final class ResidentialControlBoxBlock extends Block {
+    public ResidentialControlBoxBlock(Properties properties) {
+        super(properties);
+    }
+
+    @Override
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
+        if (!PlacedBuildingMoveService.isMovingBuildingBlock(level, pos)) {
+            ResidentialControlBoxService.onRemoved(level, pos);
+        }
+    }
+
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (level instanceof ServerLevel serverLevel && player instanceof ServerPlayer serverPlayer) {
+            ResidentialControlBoxOpenRequestPacket.openFor(serverLevel, serverPlayer, pos);
+        }
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
+    }
+}
