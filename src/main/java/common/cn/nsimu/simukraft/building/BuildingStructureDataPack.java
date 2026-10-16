@@ -58,31 +58,31 @@ public final class BuildingStructureDataPack {
     }
 
     private static void loadPack(java.util.function.Consumer<Pack> consumer) {
-            PackLocationInfo location = new PackLocationInfo(
-                    PACK_ID,
-                    Component.literal("Simukraft Building Structures"),
-                    PackSource.FEATURE,
-                    Optional.empty()
-            );
-            Pack pack = Pack.readMetaAndCreate(
-                    location,
-                    new Pack.ResourcesSupplier() {
-                        @Override
-                        public PackMetadataResources openMetadata(PackLocationInfo packLocation) {
-                            return new Resources(packLocation);
-                        }
+        PackLocationInfo location = new PackLocationInfo(
+                PACK_ID,
+                Component.literal("Simukraft Building Structures"),
+                PackSource.FEATURE,
+                Optional.empty()
+        );
+        Pack pack = Pack.readMetaAndCreate(
+                location,
+                new Pack.ResourcesSupplier() {
+                    @Override
+                    public PackMetadataResources openMetadata(PackLocationInfo packLocation) {
+                        return new Resources(packLocation);
+                    }
 
-                        @Override
-                        public Stream<PackResources> openResources(PackLocationInfo packLocation, Pack.Metadata metadata) {
-                            return Stream.of(new Resources(packLocation));
-                        }
-                    },
-                    PackType.SERVER_DATA,
-                    new PackSelectionConfig(true, Pack.Position.TOP, false)
-            );
-            if (pack != null) {
-                consumer.accept(pack);
-            }
+                    @Override
+                    public Stream<PackResources> openResources(PackLocationInfo packLocation, Pack.Metadata metadata) {
+                        return Stream.of(new Resources(packLocation));
+                    }
+                },
+                PackType.SERVER_DATA,
+                new PackSelectionConfig(true, Pack.Position.TOP, false)
+        );
+        if (pack != null) {
+            consumer.accept(pack);
+        }
     }
 
     private static Map<String, Identifier> scanBuildings() {

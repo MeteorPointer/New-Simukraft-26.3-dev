@@ -1,6 +1,5 @@
 package common.cn.nsimu.simukraft.citizen;
 
-import common.cn.nsimu.simukraft.config.ServerConfig;
 import net.minecraft.util.RandomSource;
 
 import java.util.UUID;

@@ -1,7 +1,7 @@
 package common.cn.nsimu.simukraft.medical;
 
-import common.cn.nsimu.simukraft.building.BuildingCatalog;
 import common.cn.nsimu.simukraft.building.BuildingBlockData;
+import common.cn.nsimu.simukraft.building.BuildingCatalog;
 import common.cn.nsimu.simukraft.building.PlacedBuildingRecord;
 import common.cn.nsimu.simukraft.building.PlacedBuildingService;
 import common.cn.nsimu.simukraft.citizen.CitizenData;
