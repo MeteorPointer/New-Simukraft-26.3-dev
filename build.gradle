@@ -13,7 +13,7 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'idea'
-    id 'net.neoforged.moddev' version '2.0.147'
+    id 'net.neoforged.moddev' version '2.0.148'
 }
 
 tasks.named('wrapper', Wrapper).configure {
@@ -226,6 +226,13 @@ configurations {
     additionalRuntimeClasspath.extendsFrom localRuntime
 }
 
+// 编译可见，并嵌入 Jar-in-Jar。开发运行已走 runtimeClasspath，不必再挂 localRuntime。
+def jij(notation) {
+    def dependency = dependencies.create(notation)
+    dependencies.add('implementation', dependency)
+    dependencies.add('jarJar', dependency)
+}
+
 dependencies {
     // NT 保护层：内测版通过 JiJ 嵌入，正式版构建时用 -Prelease 剔除
     if (!rootProject.hasProperty('release')) {
@@ -233,22 +240,18 @@ dependencies {
         jarJar files(ntJar)
     }
 
-    implementation "maven.modrinth:B1CBVXHX:CcNvp4yE" // ldlib
-    implementation "dev.vfyjxf:taffy:1.1.4"
+    implementation "maven.modrinth:B1CBVXHX:CcNvp4yE" // ldlib2
+    implementation "dev.vfyjxf:taffy:1.1.5"
     compileOnly "org.appliedenergistics.yoga:yoga:1.0.0"
-    implementation "org.xerial:sqlite-jdbc:3.46.1.0"
-    implementation "com.zaxxer:HikariCP:5.1.0"
-    jarJar "com.zaxxer:HikariCP:5.1.0"
-    implementation "maven.modrinth:AANobbMI:VHtnT9Q4" // sodium
-    implementation "maven.modrinth:YL57xq9U:bAdKrpw8" // iris
+    implementation "maven.modrinth:AANobbMI:SS023RVV" // sodium
+    implementation "maven.modrinth:YL57xq9U:Ag5S66CF" // iris
     compileOnly "maven.modrinth:NcUtCpym:p5t2Xn8F" // xaero's world map
-    localRuntime "org.xerial:sqlite-jdbc:3.46.1.0"
-    localRuntime "com.zaxxer:HikariCP:5.1.0"
     implementation "maven.modrinth:l6YH9Als:HwHxykP9" // spark
-    jarJar "org.xerial:sqlite-jdbc:3.46.1.0"
+    jij "com.zaxxer:HikariCP:7.1.0"
+    jij "org.xerial:sqlite-jdbc:3.53.4.0"
 
     // Unit testing: JUnit 5 platform used by the moddev unit test bootstrap.
-    testImplementation platform("org.junit:junit-bom:5.10.2")
+    testImplementation platform("org.junit:junit-bom:6.1.3")
     testImplementation "org.junit.jupiter:junit-jupiter"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 
