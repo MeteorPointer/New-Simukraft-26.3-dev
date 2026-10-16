@@ -65,12 +65,13 @@ public final class MedicalDefinitionLoader {
             JsonObject root = JsonParser.parseString(text).getAsJsonObject();
             String id = string(root, "id", fallbackId);
             String name = string(root, "name", id);
+            String nameEn = string(root, "name_en", "");
             int requestedRings = integer(root, "serviceRangeRings", MedicalDefinition.DEFAULT_SERVICE_RANGE_RINGS);
             int safeRings = Math.clamp(requestedRings, 1, MedicalDefinition.MAX_SERVICE_RANGE_RINGS);
             if (requestedRings != safeRings) {
                 SimuKraft.LOGGER.warn("Simukraft: Medical definition {} serviceRangeRings {} was clamped to {}", id, requestedRings, safeRings);
             }
-            return new LoadResult(new MedicalDefinition(id, name, safeRings, sourcePath), true, "");
+            return new LoadResult(new MedicalDefinition(id, name, nameEn, safeRings, sourcePath), true, "");
         } catch (Exception exception) {
             SimuKraft.LOGGER.warn("Simukraft: Failed to parse medical definition {}", fallbackId, exception);
             return new LoadResult(MedicalDefinition.defaultFor(fallbackId, sourcePath), false, "invalid_medical_json");

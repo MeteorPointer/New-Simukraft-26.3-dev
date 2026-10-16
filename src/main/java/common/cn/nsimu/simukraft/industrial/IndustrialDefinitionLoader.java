@@ -71,8 +71,10 @@ public final class IndustrialDefinitionLoader {
         List<String> errors = new ArrayList<>();
         String id = string(root, "id", fallbackId);
         String name = string(root, "name", id);
+        String nameEn = string(root, "name_en", "");
         String jobType = stringAny(root, "industrial_worker", "jobType", "JobType", "job_type");
         String jobName = stringAny(root, name, "jobName", "JobName", "job_name");
+        String jobNameEn = stringAny(root, "", "jobName_en", "JobName_en", "job_name_en");
         String heldItem = string(root, "heldItem", "");
         Map<String, IndustrialDefinition.PointDefinition> points = parsePoints(root.getAsJsonObject("points"), errors);
         Map<String, IndustrialDefinition.ContainerDefinition> containers = parseContainers(root.getAsJsonObject("containers"), errors);
@@ -82,7 +84,7 @@ public final class IndustrialDefinitionLoader {
         if (recipes.isEmpty()) {
             errors.add("missing_recipes");
         }
-        IndustrialDefinition definition = new IndustrialDefinition(id, name, jobType, jobName, heldItem, Map.copyOf(points), Map.copyOf(containers), workArea, List.copyOf(recipes), spawnEntity, path);
+        IndustrialDefinition definition = new IndustrialDefinition(id, name, nameEn, jobType, jobName, jobNameEn, heldItem, Map.copyOf(points), Map.copyOf(containers), workArea, List.copyOf(recipes), spawnEntity, path);
         return new LoadResult(definition, List.copyOf(errors), path);
     }
 
@@ -221,6 +223,7 @@ public final class IndustrialDefinitionLoader {
             recipes.add(new IndustrialDefinition.RecipeDefinition(
                     id,
                     string(object, "name", id),
+                    string(object, "name_en", ""),
                     string(object, "heldItem", ""),
                     parseInputs(object.getAsJsonArray("inputs"), errors, "recipe:" + id + ":inputs"),
                     parseOutputs(object.getAsJsonArray("outputs"), errors, "recipe:" + id + ":outputs"),

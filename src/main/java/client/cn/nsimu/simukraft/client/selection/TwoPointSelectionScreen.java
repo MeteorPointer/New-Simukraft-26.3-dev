@@ -318,6 +318,7 @@ public final class TwoPointSelectionScreen extends Screen implements FreeCameraS
             closeSelection(null);
             return;
         }
+
         if (mode == TwoPointSelectionManager.SelectionMode.LOGISTICS && logisticsAction != null) {
             TwoPointSelectionManager.clear();
             ClientPacketDistributor.sendToServer(new LogisticsBoxActionPacket(
@@ -337,6 +338,7 @@ public final class TwoPointSelectionScreen extends Screen implements FreeCameraS
             closeSelection(null);
             return;
         }
+
         if (mode == TwoPointSelectionManager.SelectionMode.LOGISTICS) {
             TwoPointSelectionManager.clear();
             if (this.minecraft != null) this.minecraft.gui.setScreen(null);

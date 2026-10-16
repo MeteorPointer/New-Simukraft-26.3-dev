@@ -52,7 +52,6 @@ public final class ModBlocks {
                     .isViewBlocking((s, b, pos, aabb) -> false)
                     .isSuffocating((s, b, pos) -> false));
     public static final DeferredBlock<Block> MINERAL_DRILLING_CONTROL_BOX = registerBlock("mineral_drilling_control_box", MineralDrillingControlBoxBlock::new, metalBox(0.8F));
-    public static final DeferredBlock<Block> MINING_BOX = registerBlock("mining_box", MiningBoxBlock::new, stoneBox());
     public static final DeferredBlock<Block> LOGISTICS_CLIENT_BOX = registerBlock("logistics_client_box", LogisticsClientBoxBlock::new,
             p -> p.mapColor(MapColor.COLOR_ORANGE).strength(1.0F).sound(SoundType.METAL).pushReaction(PushReaction.IMMOVEABLE));
     public static final DeferredBlock<Block> LOGISTICS_SERVER_BOX = registerBlock("logistics_server_box", LogisticsServerBoxBlock::new,

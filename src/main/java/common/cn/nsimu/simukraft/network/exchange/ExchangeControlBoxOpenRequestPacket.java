@@ -1,6 +1,8 @@
 package common.cn.nsimu.simukraft.network.exchange;
 
 import common.cn.nsimu.simukraft.SimuKraft;
+import common.cn.nsimu.simukraft.building.BuildingCatalog;
+import common.cn.nsimu.simukraft.building.BuildingIntegrityService;
 import common.cn.nsimu.simukraft.building.PlacedBuildingRecord;
 import common.cn.nsimu.simukraft.citizen.CitizenData;
 import common.cn.nsimu.simukraft.economy.CoinDenominations;
@@ -87,6 +89,7 @@ public record ExchangeControlBoxOpenRequestPacket(BlockPos pos,
      */
     public static ExchangeControlBoxOpenResponsePacket snapshot(ServerLevel level, ServerPlayer player, BlockPos pos, String selectedCompanyId) {
         PlacedBuildingRecord building = ExchangeControlBoxService.resolveBuilding(level, pos);
+        BuildingIntegrityService.IntegrityPreview integrity = BuildingIntegrityService.preview(level, building);
         CitizenData broker = ExchangeControlBoxService.findAssignedBroker(level, pos);
         UUID cityId = building != null ? building.cityId() : null;
         String statusKey = building == null
@@ -98,7 +101,7 @@ public record ExchangeControlBoxOpenRequestPacket(BlockPos pos,
         return new ExchangeControlBoxOpenResponsePacket(
                 pos,
                 building != null,
-                building != null ? building.displayName() : "",
+                BuildingCatalog.localizedDisplayName(building),
                 cityId,
                 statusKey,
                 broker != null,
@@ -110,6 +113,11 @@ public record ExchangeControlBoxOpenRequestPacket(BlockPos pos,
                 ExchangeMarketClock.isOpen(level.getDefaultClockTime()),
                 ExchangeMarketService.regime(level),
                 selectedCompanyId != null ? selectedCompanyId : "",
-                ExchangeMarketService.snapshot(level, cityId));
+                ExchangeMarketService.snapshot(level, cityId),
+                integrity.available(),
+                integrity.percent(),
+                integrity.repairableBlocks(),
+                integrity.manualRepairBlocks(),
+                integrity.repairCost());
     }
 }

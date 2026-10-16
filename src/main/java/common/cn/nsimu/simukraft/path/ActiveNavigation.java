@@ -237,7 +237,7 @@ final class ActiveNavigation {
         if (isJumpAction(waypoint.mode()) && index > 0 && !jumpTriggered) {
             PathWaypoint start = waypoints.get(index - 1);
             if (!isAtActionLaunch(citizen, waypoint.mode(), start, waypoint)) {
-                return JumpWaypointPolicy.launchTarget(start, waypoint, citizen.getBbWidth());
+                return start.position();
             }
         }
         if (waypoint.mode() == MovementMode.CLIMB) {
@@ -300,11 +300,15 @@ final class ActiveNavigation {
      */
     private boolean isAtActionLaunch(CitizenEntity citizen, MovementMode mode,
                                      PathWaypoint start, PathWaypoint landing) {
-        if (mode == MovementMode.SWIM_EXIT) {
-            return JumpWaypointPolicy.isAtFluidLaunchPoint(citizen.position(), start, landing,
-                    citizen.getBbWidth());
+        try {
+            if (mode == MovementMode.SWIM_EXIT) {
+                return JumpWaypointPolicy.isAtFluidLaunchPoint(citizen.position(), start, landing,
+                        citizen.getBbWidth());
+            }
+            return JumpWaypointPolicy.isAtLaunchPoint(citizen.position(), start, landing, citizen.getBbWidth());
+        } catch (LinkageError error) {
+            return true;
         }
-        return JumpWaypointPolicy.isAtLaunchPoint(citizen.position(), start, landing, citizen.getBbWidth());
     }
 
     /**

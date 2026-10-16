@@ -3,6 +3,8 @@ package client.cn.nsimu.simukraft.client.renderer;
 import common.cn.nsimu.simukraft.entity.CitizenEntity;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.util.Mth;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 public final class CitizenAnimationActions {
     private CitizenAnimationActions() {

@@ -26,6 +26,7 @@ import common.cn.nsimu.simukraft.network.exchange.ExchangeControlBoxActionPacket
 import common.cn.nsimu.simukraft.network.exchange.ExchangeControlBoxDemolishPacket;
 import common.cn.nsimu.simukraft.network.exchange.ExchangeControlBoxOpenRequestPacket;
 import common.cn.nsimu.simukraft.network.exchange.ExchangeControlBoxOpenResponsePacket;
+import common.cn.nsimu.simukraft.network.exchange.ExchangeControlBoxRepairPacket;
 import common.cn.nsimu.simukraft.network.farmland.*;
 import common.cn.nsimu.simukraft.network.geology.GeologicalSurveyHintPacket;
 import common.cn.nsimu.simukraft.network.guidebook.ReloadGuideBookPacket;
@@ -56,7 +57,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 
 public final class ModNetwork {
-    private static final String NETWORK_VERSION = "34";
+    private static final String NETWORK_VERSION = "38";
 
     private ModNetwork() {
     }
@@ -103,6 +104,8 @@ public final class ModNetwork {
         registrar.playToServer(ExchangeControlBoxOpenRequestPacket.TYPE, ExchangeControlBoxOpenRequestPacket.STREAM_CODEC, ExchangeControlBoxOpenRequestPacket::handle);
         registrar.playToServer(ExchangeControlBoxActionPacket.TYPE, ExchangeControlBoxActionPacket.STREAM_CODEC, ExchangeControlBoxActionPacket::handle);
         registrar.playToServer(ExchangeControlBoxDemolishPacket.TYPE, ExchangeControlBoxDemolishPacket.STREAM_CODEC, ExchangeControlBoxDemolishPacket::handle);
+        registrar.playToServer(ExchangeControlBoxRepairPacket.TYPE, ExchangeControlBoxRepairPacket.STREAM_CODEC, ExchangeControlBoxRepairPacket::handle);
+
         registrar.playToServer(MineralDrillingControlBoxOpenRequestPacket.TYPE, MineralDrillingControlBoxOpenRequestPacket.STREAM_CODEC, MineralDrillingControlBoxOpenRequestPacket::handle);
         registrar.playToServer(MedicalControlBoxDemolishPacket.TYPE, MedicalControlBoxDemolishPacket.STREAM_CODEC, MedicalControlBoxDemolishPacket::handle);
         registrar.playToServer(CommercialControlBoxActionPacket.TYPE, CommercialControlBoxActionPacket.STREAM_CODEC, CommercialControlBoxActionPacket::handle);
@@ -149,6 +152,7 @@ public final class ModNetwork {
         registrar.playToClient(MedicalControlBoxOpenResponsePacket.TYPE, MedicalControlBoxOpenResponsePacket.STREAM_CODEC, MedicalControlBoxOpenResponsePacket::handle);
         registrar.playToClient(BankControlBoxOpenResponsePacket.TYPE, BankControlBoxOpenResponsePacket.STREAM_CODEC, BankControlBoxOpenResponsePacket::handle);
         registrar.playToClient(ExchangeControlBoxOpenResponsePacket.TYPE, ExchangeControlBoxOpenResponsePacket.STREAM_CODEC, ExchangeControlBoxOpenResponsePacket::handle);
+
         registrar.playToClient(CommercialTradeOpenResponsePacket.TYPE, CommercialTradeOpenResponsePacket.STREAM_CODEC, CommercialTradeOpenResponsePacket::handle);
         registrar.playToClient(LogisticsServerBoxOpenResponsePacket.TYPE, LogisticsServerBoxOpenResponsePacket.STREAM_CODEC, LogisticsServerBoxOpenResponsePacket::handle);
         registrar.playToClient(LogisticsClientBoxOpenResponsePacket.TYPE, LogisticsClientBoxOpenResponsePacket.STREAM_CODEC, LogisticsClientBoxOpenResponsePacket::handle);

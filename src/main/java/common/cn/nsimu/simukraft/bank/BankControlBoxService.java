@@ -1,5 +1,6 @@
 package common.cn.nsimu.simukraft.bank;
 
+import common.cn.nsimu.simukraft.building.BuildingCatalog;
 import common.cn.nsimu.simukraft.building.PlacedBuildingRecord;
 import common.cn.nsimu.simukraft.building.PlacedBuildingService;
 import common.cn.nsimu.simukraft.building.PublicBuildingTypes;
@@ -32,7 +33,7 @@ public final class BankControlBoxService {
         return new BankControlBoxView(
                 boxPos,
                 building != null,
-                building != null ? building.displayName() : "",
+                BuildingCatalog.localizedDisplayName(building),
                 building != null ? building.cityId() : null,
                 statusKey,
                 teller != null,

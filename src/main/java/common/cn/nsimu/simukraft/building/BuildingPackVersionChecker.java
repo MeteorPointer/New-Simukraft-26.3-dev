@@ -27,14 +27,15 @@ public final class BuildingPackVersionChecker {
      * 读取 JAR 内置 official_building.zip 中的 pack.json version 字段
      */
     public static Optional<String> builtinVersion() {
-        String resourcePath = "assets/simukraft/building/" + BuildingPackageCatalog.OFFICIAL_PACKAGE_NAME;
         ClassLoader cl = BuildingPackVersionChecker.class.getClassLoader();
-        try (InputStream zipStream = cl != null ? cl.getResourceAsStream(resourcePath)
-                : ClassLoader.getSystemResourceAsStream(resourcePath)) {
-            if (zipStream == null) {
-                return Optional.empty();
-            }
-            return readVersionFromZip(zipStream);
+        InputStream stream = cl != null
+                ? cl.getResourceAsStream("assets/simukraft/building/pack.json")
+                : ClassLoader.getSystemResourceAsStream("assets/simukraft/building/pack.json");
+        if (stream == null) {
+            return Optional.empty();
+        }
+        try (InputStream inputStream = stream) {
+            return readVersion(inputStream.readAllBytes());
         } catch (IOException e) {
             SimuKraft.LOGGER.warn("Simukraft: Failed to read builtin building pack version", e);
             return Optional.empty();
@@ -45,16 +46,25 @@ public final class BuildingPackVersionChecker {
      * 读取本地 simukraftbuilding/official_building.zip 中的 pack.json version 字段
      */
     public static Optional<String> localVersion() {
-        Path localZip = BuildingPackageCatalog.rootDirectory().resolve(BuildingPackageCatalog.OFFICIAL_PACKAGE_NAME);
-        if (!Files.exists(localZip)) {
-            return Optional.empty();
-        }
-        try (InputStream zipStream = Files.newInputStream(localZip)) {
-            return readVersionFromZip(zipStream);
+        Path directoryPack = BuildingPackageCatalog.rootDirectory()
+                .resolve(BuildingPackageCatalog.OFFICIAL_PACKAGE_NAME)
+                .resolve(PACK_JSON);
+        Path legacyZip = BuildingPackageCatalog.rootDirectory().resolve(BuildingPackageCatalog.OFFICIAL_PACKAGE_NAME + ".zip");
+        try {
+            if (Files.isRegularFile(directoryPack)) {
+                try (InputStream inputStream = Files.newInputStream(directoryPack)) {
+                    return readVersion(inputStream.readAllBytes());
+                }
+            }
+            if (Files.isRegularFile(legacyZip)) {
+                try (InputStream inputStream = Files.newInputStream(legacyZip)) {
+                    return readVersionFromZip(inputStream);
+                }
+            }
         } catch (IOException e) {
             SimuKraft.LOGGER.warn("Simukraft: Failed to read local building pack version", e);
-            return Optional.empty();
         }
+        return Optional.empty();
     }
 
     /**
@@ -69,6 +79,20 @@ public final class BuildingPackVersionChecker {
         return isOlderThan(local.get(), builtin.get());
     }
 
+    private static Optional<String> readVersion(byte[] json) {
+        try {
+            JsonObject root = JsonParser.parseString(new String(json, StandardCharsets.UTF_8)).getAsJsonObject();
+            if (!root.has("version") || !root.get("version").isJsonPrimitive()) {
+                return Optional.empty();
+            }
+            String version = root.get("version").getAsString();
+            return version == null || version.isBlank() ? Optional.empty() : Optional.of(version.trim());
+        } catch (RuntimeException exception) {
+            SimuKraft.LOGGER.warn("Simukraft: Failed to parse building pack version", exception);
+            return Optional.empty();
+        }
+    }
+
     /**
      * 从 ZIP 输入流中读取 pack.json 的 version 字段
      */
@@ -76,13 +100,8 @@ public final class BuildingPackVersionChecker {
         try (ZipInputStream zis = new ZipInputStream(zipStream)) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
-                if (PACK_JSON.equals(entry.getName())) {
-                    byte[] bytes = zis.readAllBytes();
-                    String jsonText = new String(bytes, StandardCharsets.UTF_8);
-                    JsonObject json = JsonParser.parseString(jsonText).getAsJsonObject();
-                    if (json.has("version")) {
-                        return Optional.of(json.get("version").getAsString());
-                    }
+                if (PACK_JSON.equals(entry.getName()) || entry.getName().endsWith("/" + PACK_JSON)) {
+                    return readVersion(zis.readAllBytes());
                 }
                 zis.closeEntry();
             }

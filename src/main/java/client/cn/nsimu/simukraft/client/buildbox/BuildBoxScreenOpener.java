@@ -267,4 +267,3 @@ public class BuildBoxScreenOpener {
                                    int gridHeight) {
     }
 }
-

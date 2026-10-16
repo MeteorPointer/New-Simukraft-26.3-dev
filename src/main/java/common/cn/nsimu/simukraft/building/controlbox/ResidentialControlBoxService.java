@@ -67,8 +67,8 @@ public final class ResidentialControlBoxService {
                 .map(poi -> poi.pos().immutable())
                 .distinct()
                 .toList();
-        String buildingName = building != null && !building.displayName().isBlank()
-                ? building.displayName()
+        String buildingName = building != null && !BuildingCatalog.localizedDisplayName(building).isBlank()
+                ? BuildingCatalog.localizedDisplayName(building)
                 : "gui.residential_control_box.unknown_building";
         BlockPos min = building != null ? building.minPos() : BlockPos.ZERO;
         BlockPos max = building != null ? building.maxPos() : BlockPos.ZERO;

@@ -1,5 +1,6 @@
 package common.cn.nsimu.simukraft.commercial;
 
+import common.cn.nsimu.simukraft.building.BuildingCatalog;
 import common.cn.nsimu.simukraft.building.BuildingIntegrityService;
 import common.cn.nsimu.simukraft.building.PlacedBuildingRecord;
 import common.cn.nsimu.simukraft.building.PlacedBuildingService;
@@ -36,7 +37,7 @@ public final class CommercialControlBoxService {
         return new CommercialControlBoxView(
                 boxPos.immutable(),
                 building != null,
-                building != null ? building.displayName() : "",
+                BuildingCatalog.localizedDisplayName(building),
                 loadResult.valid(),
                 definition != null ? definition.name() : "",
                 resolveStatusKey(data, building, loadResult, worker),

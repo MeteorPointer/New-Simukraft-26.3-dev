@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import common.cn.nsimu.simukraft.SimuKraft;
 import common.cn.nsimu.simukraft.building.BuildingCatalog;
+import common.cn.nsimu.simukraft.building.BuildingLocale;
 import common.cn.nsimu.simukraft.building.PlacedBuildingRecord;
 import net.minecraft.core.BlockPos;
 
@@ -111,7 +112,7 @@ public final class CommercialDefinitionLoader {
             return new LoadResult(null, List.of("invalid_root"), sourcePath);
         }
         String id = stringAny(root, fallbackId, "id", "buildingId", "building_id");
-        String name = stringAny(root, id, "name", "buildingName", "building_name");
+        String name = BuildingLocale.textAny(root, id, "name", "buildingName", "building_name");
         CommercialDefinition.JobDefinition job = parseJob(root);
         CommercialDefinition.WorkTime workTime = parseWorkTime(root.getAsJsonObject("workTime"));
         Map<String, CommercialDefinition.ContainerDefinition> containers = parseContainers(root.getAsJsonObject("containers"), errors);
@@ -131,13 +132,14 @@ public final class CommercialDefinitionLoader {
         if (object == null) {
             return new CommercialDefinition.JobDefinition(
                     stringAny(root, "commercial_worker", "jobType", "job_type"),
-                    stringAny(root, "商业员工", "jobName", "job_name"),
+                    BuildingLocale.textAny(root, "商业员工", "jobName", "job_name"),
                     stringAny(root, "", "heldItem", "held_item")
             );
         }
         return new CommercialDefinition.JobDefinition(
                 string(object, "id", "commercial_worker"),
                 string(object, "name", string(object, "id", "商业员工")),
+                string(object, "name_en", ""),
                 stringAny(object, "", "heldItem", "held_item")
         );
     }

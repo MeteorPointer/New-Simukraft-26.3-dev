@@ -8,6 +8,8 @@ import com.lowdragmc.lowdraglib2.gui.ui.rendering.IGUIContext;
 import common.cn.nsimu.simukraft.citizen.family.CitizenFamilyGraphSnapshot;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.joml.Vector2f;
 
 import java.util.*;

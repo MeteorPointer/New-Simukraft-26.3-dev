@@ -31,7 +31,6 @@ public final class MaterialConfigDefaults {
         set.add(BlockItemIds.REINFORCED_DEEPSLATE.block());
         set.add(ModBlocks.BUILD_BOX.key());
         set.add(ModBlocks.CITY_CORE.key());
-        set.add(ModBlocks.MINING_BOX.key());
         set.add(ModBlocks.RESIDENTIAL_CONTROL_BOX.key());
         set.add(ModBlocks.COMMERCIAL_CONTROL_BOX.key());
         set.add(ModBlocks.INDUSTRIAL_CONTROL_BOX.key());
@@ -434,7 +433,6 @@ public final class MaterialConfigDefaults {
         set.add(BlockItemIds.REINFORCED_DEEPSLATE.block());
         set.add(ModBlocks.BUILD_BOX.key());
         set.add(ModBlocks.CITY_CORE.key());
-        set.add(ModBlocks.MINING_BOX.key());
         set.add(ModBlocks.RESIDENTIAL_CONTROL_BOX.key());
         set.add(ModBlocks.COMMERCIAL_CONTROL_BOX.key());
         set.add(ModBlocks.INDUSTRIAL_CONTROL_BOX.key());

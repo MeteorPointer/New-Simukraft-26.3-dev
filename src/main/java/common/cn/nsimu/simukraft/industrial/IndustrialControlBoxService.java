@@ -45,9 +45,9 @@ public final class IndustrialControlBoxService {
         return new IndustrialControlBoxView(
                 boxPos.immutable(),
                 building != null,
-                building != null ? building.displayName() : "",
+                BuildingCatalog.localizedDisplayName(building),
                 loadResult.valid(),
-                definition != null ? definition.name() : "",
+                definition != null ? definition.localizedName() : "",
                 statusKey,
                 statusText,
                 data.running(),
@@ -136,9 +136,9 @@ public final class IndustrialControlBoxService {
                 data.buildingId(),
                 data.definitionId(),
                 building != null ? building.buildingFileName() : "",
-                building != null ? building.displayName() : "",
+                BuildingCatalog.localizedDisplayName(building),
                 definition != null ? definition.id() : "",
-                definition != null ? definition.name() : "")) {
+                definition != null ? definition.localizedName() : "")) {
             CitizenVoiceService.playAt(level, boxPos, ModSoundEvents.CHEESE_MACHINE_START.get());
         }
         manager.persist(data);
@@ -404,7 +404,7 @@ public final class IndustrialControlBoxService {
     private static IndustrialControlBoxView.RecipeEntry recipeEntry(IndustrialDefinition.RecipeDefinition recipe) {
         return new IndustrialControlBoxView.RecipeEntry(
                 recipe.id(),
-                recipe.name(),
+                recipe.localizedName(),
                 inputEntries(recipe.inputs()),
                 recipe.outputs().stream()
                         .map(output -> new IndustrialControlBoxView.ItemEntry(output.spec(), output.baseAmount(), ""))

@@ -10,6 +10,7 @@
     "MixinFrustum",
     "MixinGameRendererProjection",
     "MixinKeyboardHandler",
+    "MixinCloudRenderer",
     "MixinLevelRenderer",
     "MixinLdlibTextField",
     "MixinMouseHandler",

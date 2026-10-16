@@ -20,7 +20,7 @@ import java.util.zip.ZipFile;
 
 public final class BuildingPackageCatalog {
     public static final String ROOT_DIR = "simukraftbuilding";
-    public static final String OFFICIAL_PACKAGE_NAME = "official_building.zip";
+    public static final String OFFICIAL_PACKAGE_NAME = "official_building";
     private static final String BUILDING_ROOT = "buildings/";
     private static final String MANIFEST_FILE = "_files.txt";
     private static final List<String> CATEGORIES = List.of("residential", "commercial", "industry", "public", "other");
@@ -87,6 +87,11 @@ public final class BuildingPackageCatalog {
         if (copyOfficialPackage) {
             BuildingBuiltinResourceService.ensureCopied(rootDirectory);
         }
+        BuildingZipMerger.MergeResult merged = BuildingZipMerger.mergeDroppedZips(rootDirectory);
+        if (merged.zipCount() > 0) {
+            SimuKraft.LOGGER.info("Simukraft: Merged {} dropped building zip(s) ({} files) into {}: {}",
+                    merged.zipCount(), merged.fileCount(), OFFICIAL_PACKAGE_NAME, merged.zipNames());
+        }
         List<Path> packages = listPackages(rootDirectory);
         Map<String, Map<String, BuildingCatalog.BuildingDefinition>> byCategory = new HashMap<>();
         for (String category : CATEGORIES) {
@@ -120,9 +125,9 @@ public final class BuildingPackageCatalog {
             return List.of();
         }
         try (var stream = Files.list(rootDirectory)) {
+            boolean officialDirectory = Files.isDirectory(rootDirectory.resolve(OFFICIAL_PACKAGE_NAME));
             return stream
-                    .filter(Files::isRegularFile)
-                    .filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".zip"))
+                    .filter(path -> isPackagePath(path, officialDirectory))
                     .sorted(Comparator.comparing(path -> path.getFileName().toString().toLowerCase(Locale.ROOT)))
                     .toList();
         } catch (IOException exception) {
@@ -131,7 +136,30 @@ public final class BuildingPackageCatalog {
         }
     }
 
+    /**
+     * isPackagePath: 目录包含 buildings/，压缩包仍兼容。官方目录存在时忽略同名旧 zip。
+     */
+    public static boolean isPackagePath(Path path, boolean officialDirectoryPresent) {
+        if (path == null || !Files.exists(path)) {
+            return false;
+        }
+        String name = path.getFileName().toString().toLowerCase(Locale.ROOT);
+        if (officialDirectoryPresent && (OFFICIAL_PACKAGE_NAME + ".zip").equals(name)) {
+            return false;
+        }
+        if (Files.isDirectory(path)) {
+            return Files.isDirectory(path.resolve("buildings"));
+        }
+        return Files.isRegularFile(path) && name.endsWith(".zip");
+    }
+
     private static void scanPackage(Path packagePath, Map<String, Map<String, BuildingCatalog.BuildingDefinition>> byCategory) {
+        if (Files.isDirectory(packagePath)) {
+            for (String category : CATEGORIES) {
+                scanCategory(packagePath, null, category, byCategory.get(category));
+            }
+            return;
+        }
         try (ZipFile zipFile = new ZipFile(packagePath.toFile(), StandardCharsets.UTF_8)) {
             for (String category : CATEGORIES) {
                 scanCategory(packagePath, zipFile, category, byCategory.get(category));
@@ -147,23 +175,27 @@ public final class BuildingPackageCatalog {
                                      Map<String, BuildingCatalog.BuildingDefinition> target) {
         Map<String, String> packageFiles = new HashMap<>();
         List<String> metaFiles = new ArrayList<>();
-        Enumeration<? extends ZipEntry> entries = zipFile.entries();
-        while (entries.hasMoreElements()) {
-            ZipEntry entry = entries.nextElement();
-            if (entry.isDirectory()) {
-                continue;
-            }
-            Optional<String> fileName = directCategoryFileName(category, entry.getName());
-            if (fileName.isEmpty() || MANIFEST_FILE.equalsIgnoreCase(fileName.get())) {
-                continue;
-            }
-            if (!isSafePackageFileName(fileName.get())) {
-                SimuKraft.LOGGER.warn("Simukraft: Ignored unsafe building package entry {} in {}", entry.getName(), packagePath);
-                continue;
-            }
-            putPackageFile(packageFiles, fileName.get(), false);
-            if (fileName.get().toLowerCase(Locale.ROOT).endsWith(".sk")) {
-                metaFiles.add(fileName.get());
+        if (zipFile == null) {
+            collectDirectoryFiles(packagePath, category, packageFiles, metaFiles);
+        } else {
+            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                if (entry.isDirectory()) {
+                    continue;
+                }
+                Optional<String> fileName = directCategoryFileName(category, entry.getName());
+                if (fileName.isEmpty() || MANIFEST_FILE.equalsIgnoreCase(fileName.get())) {
+                    continue;
+                }
+                if (!isSafePackageFileName(fileName.get())) {
+                    SimuKraft.LOGGER.warn("Simukraft: Ignored unsafe building package entry {} in {}", entry.getName(), packagePath);
+                    continue;
+                }
+                putPackageFile(packageFiles, fileName.get(), false);
+                if (fileName.get().toLowerCase(Locale.ROOT).endsWith(".sk")) {
+                    metaFiles.add(fileName.get());
+                }
             }
         }
 
@@ -187,28 +219,25 @@ public final class BuildingPackageCatalog {
                                                String category,
                                                Map<String, String> packageFiles) {
         String manifestPath = categoryPath(category, MANIFEST_FILE);
+        if (zipFile == null) {
+            Path manifestFile = resolvePackageFile(packagePath, manifestPath);
+            if (manifestFile == null || !Files.isRegularFile(manifestFile)) {
+                return;
+            }
+            try (BufferedReader reader = Files.newBufferedReader(manifestFile, StandardCharsets.UTF_8)) {
+                applyManifestLines(packagePath, packageFiles, reader);
+            } catch (IOException exception) {
+                SimuKraft.LOGGER.warn("Simukraft: Failed to read building calibration file {} in {}", manifestPath, packagePath, exception);
+            }
+            return;
+        }
         ZipEntry manifestEntry = zipFile.getEntry(manifestPath);
         if (manifestEntry == null || manifestEntry.isDirectory()) {
             return;
         }
         try (InputStream inputStream = zipFile.getInputStream(manifestEntry);
              BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String fileName = stripUtf8Bom(line).trim();
-                if (fileName.isEmpty() || fileName.startsWith("#")) {
-                    continue;
-                }
-                if (!isSafePackageFileName(fileName)) {
-                    SimuKraft.LOGGER.warn("Simukraft: Ignored unsafe building calibration entry {} in {}", fileName, packagePath);
-                    continue;
-                }
-                String actualName = actualFileName(packageFiles, fileName);
-                if (actualName == null) {
-                    continue;
-                }
-                putPackageFile(packageFiles, actualName, true);
-            }
+            applyManifestLines(packagePath, packageFiles, reader);
         } catch (IOException exception) {
             SimuKraft.LOGGER.warn("Simukraft: Failed to read building calibration file {} in {}", manifestPath, packagePath, exception);
         }
@@ -219,16 +248,19 @@ public final class BuildingPackageCatalog {
                                                                      String category,
                                                                      String metaFile,
                                                                      Map<String, String> packageFiles) {
-        Optional<String> metaText = readText(zipFile, categoryPath(category, metaFile));
+        Optional<String> metaText = readText(packagePath, zipFile, categoryPath(category, metaFile));
         if (metaText.isEmpty()) {
             return null;
         }
         String baseName = stripExtension(metaFile);
-        String displayName = findValue(metaText.get(), "name", baseName);
-        String author = findValue(metaText.get(), "author", "External");
-        String size = findValue(metaText.get(), "size", "-");
-        String amount = findValue(metaText.get(), "amount", findValue(metaText.get(), "price", "-"));
-        String description = findValue(metaText.get(), "description", findValue(metaText.get(), "desc", ""));
+        String meta = metaText.get();
+        String displayName = findValue(meta, "name", baseName);
+        String displayNameEn = findDeclaredValue(meta, "name_en");
+        String author = findValue(meta, "author", "External");
+        String size = findValue(meta, "size", "-");
+        String amount = findValue(meta, "amount", findValue(meta, "price", "-"));
+        String description = findValue(meta, "description", findValue(meta, "desc", ""));
+        String descriptionEn = findDeclaredValue(meta, "description_en");
         int unlockLevel = readUnlockLevel(metaText.get());
         String structureFile = findValue(metaText.get(), "structure", findValue(metaText.get(), "file", ""));
         if (structureFile.isBlank()) {
@@ -244,10 +276,12 @@ public final class BuildingPackageCatalog {
         return new BuildingCatalog.BuildingDefinition(
                 category,
                 displayName,
+                displayNameEn == null ? "" : displayNameEn,
                 size,
                 amount,
                 author,
                 description,
+                descriptionEn == null ? "" : descriptionEn,
                 unlockLevel,
                 metaFile,
                 actualStructureFile,
@@ -283,7 +317,7 @@ public final class BuildingPackageCatalog {
         if (actualFile == null) {
             return BuildingCatalog.BuildingType.STANDARD;
         }
-        Optional<String> jsonText = readText(zipFile, categoryPath(category, actualFile));
+        Optional<String> jsonText = readText(packagePath, zipFile, categoryPath(category, actualFile));
         if (jsonText.isEmpty()) {
             return BuildingCatalog.BuildingType.STANDARD;
         }
@@ -332,7 +366,7 @@ public final class BuildingPackageCatalog {
         if (actualFile == null) {
             return fallbackPublicType(declaredKey);
         }
-        Optional<String> jsonText = readText(zipFile, categoryPath(category, actualFile));
+        Optional<String> jsonText = readText(packagePath, zipFile, categoryPath(category, actualFile));
         if (jsonText.isEmpty()) {
             return fallbackPublicType(declaredKey);
         }
@@ -415,7 +449,7 @@ public final class BuildingPackageCatalog {
             SimuKraft.LOGGER.warn("Simukraft: Drilling definition {} is missing in {}", configuredFile, packagePath);
             return BuildingCatalog.BuildingType.STANDARD;
         }
-        Optional<String> jsonText = readText(zipFile, categoryPath(category, actualFile));
+        Optional<String> jsonText = readText(packagePath, zipFile, categoryPath(category, actualFile));
         if (jsonText.isEmpty()) {
             SimuKraft.LOGGER.warn("Simukraft: Failed to read drilling definition {} in {}", actualFile, packagePath);
             return BuildingCatalog.BuildingType.STANDARD;
@@ -467,6 +501,13 @@ public final class BuildingPackageCatalog {
         }
         String normalizedCategory = normalizeCategory(category);
         String entryPath = categoryPath(normalizedCategory, source.actualFileName(normalizedCategory, fileName));
+        if (Files.isDirectory(source.packagePath())) {
+            Path file = resolvePackageFile(source.packagePath(), entryPath);
+            if (file == null || !Files.isRegularFile(file)) {
+                return Optional.empty();
+            }
+            return Optional.of(Files.newInputStream(file));
+        }
         ZipFile zipFile = new ZipFile(source.packagePath().toFile(), StandardCharsets.UTF_8);
         ZipEntry entry = zipFile.getEntry(entryPath);
         if (entry == null || entry.isDirectory()) {
@@ -508,6 +549,78 @@ public final class BuildingPackageCatalog {
         }
     }
 
+    private static void collectDirectoryFiles(Path packagePath,
+                                              String category,
+                                              Map<String, String> packageFiles,
+                                              List<String> metaFiles) {
+        Path categoryDir = packagePath.resolve("buildings").resolve(normalizeCategory(category));
+        if (!Files.isDirectory(categoryDir)) {
+            return;
+        }
+        try (var stream = Files.list(categoryDir)) {
+            for (Path file : stream.filter(Files::isRegularFile).toList()) {
+                String fileName = file.getFileName().toString();
+                if (MANIFEST_FILE.equalsIgnoreCase(fileName)) {
+                    continue;
+                }
+                if (!isSafePackageFileName(fileName)) {
+                    SimuKraft.LOGGER.warn("Simukraft: Ignored unsafe building package entry {} in {}", fileName, packagePath);
+                    continue;
+                }
+                putPackageFile(packageFiles, fileName, false);
+                if (fileName.toLowerCase(Locale.ROOT).endsWith(".sk")) {
+                    metaFiles.add(fileName);
+                }
+            }
+        } catch (IOException exception) {
+            SimuKraft.LOGGER.warn("Simukraft: Failed to list building directory {} in {}", category, packagePath, exception);
+        }
+    }
+
+    private static void applyManifestLines(Path packagePath, Map<String, String> packageFiles, BufferedReader reader) throws IOException {
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String fileName = stripUtf8Bom(line).trim();
+            if (fileName.isEmpty() || fileName.startsWith("#")) {
+                continue;
+            }
+            if (!isSafePackageFileName(fileName)) {
+                SimuKraft.LOGGER.warn("Simukraft: Ignored unsafe building calibration entry {} in {}", fileName, packagePath);
+                continue;
+            }
+            String actualName = actualFileName(packageFiles, fileName);
+            if (actualName == null) {
+                continue;
+            }
+            putPackageFile(packageFiles, actualName, true);
+        }
+    }
+
+    private static Optional<String> readText(Path packagePath, ZipFile zipFile, String entryPath) {
+        if (zipFile == null) {
+            Path file = resolvePackageFile(packagePath, entryPath);
+            if (file == null || !Files.isRegularFile(file)) {
+                return Optional.empty();
+            }
+            try {
+                return Optional.of(Files.readString(file, StandardCharsets.UTF_8));
+            } catch (IOException exception) {
+                SimuKraft.LOGGER.warn("Simukraft: Failed to read building package entry {}", entryPath, exception);
+                return Optional.empty();
+            }
+        }
+        return readText(zipFile, entryPath);
+    }
+
+    private static Path resolvePackageFile(Path packagePath, String entryPath) {
+        if (packagePath == null || entryPath == null || entryPath.isBlank() || entryPath.contains("..") || entryPath.contains("\\")) {
+            return null;
+        }
+        Path root = packagePath.toAbsolutePath().normalize();
+        Path file = root.resolve(entryPath).normalize();
+        return file.startsWith(root) ? file : null;
+    }
+
     private static Optional<String> readText(ZipFile zipFile, String entryPath) {
         ZipEntry entry = zipFile.getEntry(entryPath);
         if (entry == null || entry.isDirectory()) {
@@ -521,9 +634,33 @@ public final class BuildingPackageCatalog {
         }
     }
 
+    /**
+     * displayAmount: 英文界面去掉造价里的“元”。
+     */
+    private static String displayAmount(String amount) {
+        if (amount == null || amount.isBlank() || !BuildingLocale.preferEnglish()) {
+            return amount;
+        }
+        return amount.replace("元", "").trim();
+    }
+
     private static String findValue(String text, String key, String fallback) {
         String value = findDeclaredValue(text, key);
         return value == null || value.isBlank() ? fallback : value;
+    }
+
+    /**
+     * localizedText: 英文客户端优先读 {@code englishKey}，缺省回退中文键。
+     * 专用服务器没有语言选择，始终使用中文键。
+     */
+    static String localizedText(String text, String key, String englishKey, String fallback) {
+        if (BuildingLocale.preferEnglish()) {
+            String english = findDeclaredValue(text, englishKey);
+            if (english != null && !english.isBlank()) {
+                return english;
+            }
+        }
+        return findValue(text, key, fallback);
     }
 
     private static String findDeclaredValue(String text, String key) {

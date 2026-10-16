@@ -353,4 +353,3 @@ public final class BuildingConfirmScreen extends ModularUIScreen {
         return false;
     }
 }
-

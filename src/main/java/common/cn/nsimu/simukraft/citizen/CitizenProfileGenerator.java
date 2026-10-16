@@ -105,7 +105,7 @@ public final class CitizenProfileGenerator {
     }
 
     private static String createName(String gender, RandomSource random) {
-        if (ServerConfig.npcNameStyle() == CitizenNameStyle.ENGLISH) {
+        if (CitizenNameLibrary.useEnglish()) {
             return createEnglishName(gender, random);
         }
         return createChineseName(gender, random);
@@ -124,9 +124,9 @@ public final class CitizenProfileGenerator {
      * createEnglishName: 按英式名在前、姓在后的规则生成 NPC 名字。
      */
     private static String createEnglishName(String gender, RandomSource random) {
-        String[] givenNames = "female".equals(gender) ? ENGLISH_FEMALE_GIVEN_NAMES : ENGLISH_MALE_GIVEN_NAMES;
-        String givenName = givenNames[random.nextInt(givenNames.length)];
-        String familyName = ENGLISH_FAMILY_NAMES[random.nextInt(ENGLISH_FAMILY_NAMES.length)];
+        String[] givenFallback = "female".equals(gender) ? ENGLISH_FEMALE_GIVEN_NAMES : ENGLISH_MALE_GIVEN_NAMES;
+        String givenName = CitizenNameLibrary.givenName(gender, random, givenFallback);
+        String familyName = CitizenNameLibrary.familyName(random, ENGLISH_FAMILY_NAMES);
         return givenName + " " + familyName;
     }
 
@@ -173,9 +173,12 @@ public final class CitizenProfileGenerator {
         if (familyName.isEmpty()) {
             familyName = FAMILY_NAMES[random.nextInt(FAMILY_NAMES.length)];
         }
-        if (ServerConfig.npcNameStyle() == CitizenNameStyle.ENGLISH) {
-            String[] givenNames = "female".equals(childGender) ? ENGLISH_FEMALE_GIVEN_NAMES : ENGLISH_MALE_GIVEN_NAMES;
-            return givenNames[random.nextInt(givenNames.length)] + " " + familyName;
+        if (CitizenNameLibrary.useEnglish()) {
+            if (familyName.isEmpty() || CitizenNameLibrary.containsCjk(familyName)) {
+                familyName = CitizenNameLibrary.familyName(random, ENGLISH_FAMILY_NAMES);
+            }
+            String[] givenFallback = "female".equals(childGender) ? ENGLISH_FEMALE_GIVEN_NAMES : ENGLISH_MALE_GIVEN_NAMES;
+            return CitizenNameLibrary.givenName(childGender, random, givenFallback) + " " + familyName;
         }
         String[] givenNames = "female".equals(childGender) ? FEMALE_GIVEN_NAMES : MALE_GIVEN_NAMES;
         return familyName + givenNames[random.nextInt(givenNames.length)];

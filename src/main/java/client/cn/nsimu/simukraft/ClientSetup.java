@@ -94,6 +94,7 @@ public final class ClientSetup {
         RtsSelectionManager.onClientTick();
         RtsMiniMapRenderer.onClientTick();
         ExchangeControlBoxScreenOpener.onClientTick();
+        client.cn.nsimu.simukraft.client.caution.CautionTapePreview.onClientTick();
     }
 
     @SubscribeEvent

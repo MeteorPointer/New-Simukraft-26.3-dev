@@ -7,6 +7,7 @@ import java.util.Objects;
 
 public record VirtualVeinDefinition(String id,
                                     String displayName,
+                                    String displayNameEn,
                                     int priority,
                                     VirtualVeinRange continentalness,
                                     VirtualVeinRange erosion,
@@ -23,9 +24,29 @@ public record VirtualVeinDefinition(String id,
     private static final int OVERWORLD_MIN_Y = -64;
     private static final int OVERWORLD_MAX_Y = 320;
 
+    public VirtualVeinDefinition(String id,
+                                 String displayName,
+                                 int priority,
+                                 VirtualVeinRange continentalness,
+                                 VirtualVeinRange erosion,
+                                 VirtualVeinRange depth,
+                                 VirtualVeinRange temperature,
+                                 VirtualVeinRange humidity,
+                                 VirtualVeinRange weirdness,
+                                 int minY,
+                                 int maxY,
+                                 Identifier productId,
+                                 int minAmount,
+                                 int maxAmount,
+                                 int periodTicks) {
+        this(id, displayName, "", priority, continentalness, erosion, depth, temperature, humidity, weirdness,
+                minY, maxY, productId, minAmount, maxAmount, periodTicks);
+    }
+
     public VirtualVeinDefinition {
         id = requireText(id, "id");
         displayName = requireText(displayName, "displayName");
+        displayNameEn = displayNameEn == null ? "" : displayNameEn.trim();
         continentalness = Objects.requireNonNull(continentalness, "continentalness");
         erosion = Objects.requireNonNull(erosion, "erosion");
         depth = Objects.requireNonNull(depth, "depth");
@@ -39,6 +60,17 @@ public record VirtualVeinDefinition(String id,
         if (minAmount <= 0 || maxAmount < minAmount || periodTicks <= 0) {
             throw new IllegalArgumentException("Invalid virtual vein production");
         }
+    }
+
+    /**
+     * localizedName: 英文界面优先用 displayNameEn。
+     */
+    public String localizedName() {
+        if (common.cn.nsimu.simukraft.building.BuildingLocale.preferEnglish()
+                && displayNameEn != null && !displayNameEn.isBlank()) {
+            return displayNameEn;
+        }
+        return displayName;
     }
 
     /**

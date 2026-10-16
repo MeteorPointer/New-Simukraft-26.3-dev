@@ -101,16 +101,25 @@ public record CommercialTradePacket(BlockPos pos, UUID workerId, String offerId,
      * syncChangedSlots: 逐槽对比并用 ClientboundContainerSetSlotPacket 同步变更。
      */
     private static void syncChangedSlots(ServerPlayer player, List<ItemStack> before) {
-        final int containerId = player.containerMenu.containerId;
-        final int stateId = player.containerMenu.getStateId();
-        final int low = 9;
-        final int high = Math.min(player.getInventory().getContainerSize(), 36);
-        for (int i = low; i < high; i++) {
-            ItemStack current = player.getInventory().getItem(i);
-            if (!ItemStack.matches(before.get(i), current)) {
-                final int slot = i - low;
-                player.connection.send(new ClientboundContainerSetSlotPacket(containerId, stateId, slot, current.copy()));
+        int size = Math.min(before.size(), player.getInventory().getContainerSize());
+        for (int slot = 0; slot < size; slot++) {
+            ItemStack current = player.getInventory().getItem(slot);
+            if (!ItemStack.matches(before.get(slot), current)) {
+                sendPlayerInventorySlot(player, slot, current);
             }
         }
+    }
+
+    private static int playerInventoryContainerId() {
+        return 0;
+    }
+
+    static int[] inventorySlotSync(int inventorySlot) {
+        return new int[]{playerInventoryContainerId(), inventorySlot};
+    }
+
+    private static void sendPlayerInventorySlot(ServerPlayer player, int slot, ItemStack stack) {
+        int[] target = inventorySlotSync(slot);
+        player.connection.send(new ClientboundContainerSetSlotPacket(target[0], 0, target[1], stack.copy()));
     }
 }

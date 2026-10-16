@@ -79,6 +79,7 @@ public final class SimuKraft {
 
     public SimuKraft(IEventBus modEventBus, ModContainer modContainer) {
         NtIntegrityGuard.verify(); // 内测版启动前校验 NT 保护层完整性，防止用户删除 JiJ 绕过
+        common.cn.nsimu.simukraft.block.CautionTapeZones.registerPathCost();
         ModFluidTypes.register(modEventBus);
         ModFluids.register(modEventBus);
         ModItems.register(modEventBus);
@@ -93,7 +94,7 @@ public final class SimuKraft {
         ModTicketTypes.register(modEventBus);
         modEventBus.addListener(BuildingStructureDataPack::onAddPackFinders);
         modContainer.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
-        modContainer.registerConfig(ModConfig.Type.LOCAL, ServerConfig.SPEC);
+        modContainer.registerConfig(ModConfig.Type.SERVER, ServerConfig.SPEC);
         MaterialConfig.init();
         modEventBus.register(ModNetwork.class);
         modEventBus.addListener(this::onConfigLoading);
@@ -148,7 +149,7 @@ public final class SimuKraft {
             PlayerWelcomeService.handleLogin(player);
             CityChunkSyncService.syncToPlayer(player);
         } catch (RuntimeException exception) {
-            LOGGER.error("Failed to handle player login for {}", player.getGameProfile().name(), exception);
+            LOGGER.error("Failed to handle player login for {}", player.getGameProfile().getName(), exception);
         }
     }
 
@@ -249,6 +250,7 @@ public final class SimuKraft {
      */
     private void onServerStarted(ServerStartedEvent event) {
         BuildingPackageCatalog.ensurePrepared();
+        common.cn.nsimu.simukraft.block.CautionTapeZones.rebuild(null);
     }
 
     private void onPlayerInteractBed(PlayerInteractEvent.RightClickBlock event) {

@@ -88,6 +88,7 @@ public record NpcHireAssignPacket(BlockPos sourcePos, String sourceType, String 
             if (ExchangeControlBoxService.HIRE_SOURCE_TYPE.equals(access.sourceType())) {
                 PacketDistributor.sendToPlayer(player, ExchangeControlBoxOpenRequestPacket.snapshot(level, player, access.sourcePos(), ""));
             }
+
             if (LogisticsConstants.SERVER_SOURCE_TYPE.equals(access.sourceType())) {
                 PacketDistributor.sendToPlayer(player, LogisticsServerBoxOpenResponsePacket.from(LogisticsControlBoxService.buildServerView(level, access.sourcePos())));
             }

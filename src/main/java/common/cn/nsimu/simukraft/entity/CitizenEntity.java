@@ -1,5 +1,6 @@
 package common.cn.nsimu.simukraft.entity;
 
+import common.cn.nsimu.simukraft.building.BuilderConstructionService;
 import common.cn.nsimu.simukraft.citizen.*;
 import common.cn.nsimu.simukraft.commercial.CommercialControlBoxService;
 import common.cn.nsimu.simukraft.medical.MedicalService;
@@ -228,6 +229,10 @@ public class CitizenEntity extends PathfinderMob {
                 discard();
                 return;
             }
+            if (CitizenManager.get(serverLevel).wasRemoved(getUUID())) {
+                discard();
+                return;
+            }
             CitizenManualControlService.tick(serverLevel, this);
             CitizenPanicService.tick(serverLevel, this);
             if (isSleeping() && !CitizenHomeRestService.isRestTime(serverLevel)
@@ -266,6 +271,10 @@ public class CitizenEntity extends PathfinderMob {
         AABB around = getBoundingBox().inflate(8.0D, 3.0D, 8.0D);
         if (!level.getEntitiesOfClass(Zombie.class, around, zombie -> zombie.isAlive() && !zombie.isBaby()).isEmpty()) {
             CitizenVoiceService.play(level, this, data, CitizenVoiceService.Cue.FLEE);
+            return;
+        }
+        if (BuilderConstructionService.hasActiveBuildTask(level, getUUID())) {
+            CitizenVoiceService.play(level, this, data, CitizenVoiceService.Cue.BUILD);
             return;
         }
         if ((tickCount + stagger) % 80 != 0) {

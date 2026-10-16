@@ -95,6 +95,7 @@ public record NpcHireFirePacket(BlockPos sourcePos, String sourceType, String ro
             if (ExchangeControlBoxService.HIRE_SOURCE_TYPE.equals(access.sourceType())) {
                 PacketDistributor.sendToPlayer(player, ExchangeControlBoxOpenRequestPacket.snapshot(level, player, access.sourcePos(), ""));
             }
+
             CityGroupMessageService.successToCity(level, access.cityId(), Component.translatable("message.simukraft.fire_npc.success", citizen.name()));
         }
     }

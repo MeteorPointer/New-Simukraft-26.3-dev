@@ -5,6 +5,7 @@ import common.cn.nsimu.simukraft.economy.CoinDenominations;
 import common.cn.nsimu.simukraft.exchange.ExchangeCandle;
 import common.cn.nsimu.simukraft.exchange.ExchangeMarketClock;
 import common.cn.nsimu.simukraft.exchange.ExchangePriceMath;
+import common.cn.nsimu.simukraft.exchange.ExchangeCompanyLoader;
 import common.cn.nsimu.simukraft.exchange.ExchangeQuote;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -126,7 +127,7 @@ final class ExchangeChartPlot {
         double amplitudePct = prev <= 0.0D ? 0.0D : amplitude / prev;
         int color = change >= 0 ? UP : DOWN;
         List<Component> lines = new ArrayList<>();
-        lines.add(Component.literal(quote.displayName()).withStyle(style -> style.withColor(0xFFFFFF)));
+        lines.add(Component.literal(ExchangeCompanyLoader.INSTANCE.localizedName(quote.id(), quote.displayName())).withStyle(style -> style.withColor(0xFFFFFF)));
         lines.add(Component.translatable("gui.simukraft.exchange.candle.time", candle.marketDay() + 1,
                 ExchangeMarketClock.clockLabel(candle.hourIndex())));
         lines.add(Component.translatable("gui.simukraft.exchange.candle.open", CoinDenominations.formatYuan(candle.open())));

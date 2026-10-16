@@ -1,5 +1,6 @@
 package common.cn.nsimu.simukraft.medical;
 
+import common.cn.nsimu.simukraft.building.BuildingCatalog;
 import common.cn.nsimu.simukraft.building.BuildingBlockData;
 import common.cn.nsimu.simukraft.building.PlacedBuildingRecord;
 import common.cn.nsimu.simukraft.building.PlacedBuildingService;
@@ -41,7 +42,7 @@ public final class MedicalControlBoxService {
         return new MedicalControlBoxView(
                 boxPos,
                 building != null,
-                building != null ? building.displayName() : "",
+                BuildingCatalog.localizedDisplayName(building),
                 definitionResult.valid(),
                 definition != null ? definition.name() : "",
                 rings,

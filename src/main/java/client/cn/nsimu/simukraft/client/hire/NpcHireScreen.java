@@ -811,4 +811,3 @@ public final class NpcHireScreen {
         }
     }
 }
-

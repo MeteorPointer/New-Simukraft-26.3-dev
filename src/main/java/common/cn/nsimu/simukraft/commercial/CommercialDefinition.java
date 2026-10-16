@@ -53,10 +53,15 @@ public record CommercialDefinition(String id,
         return offers.stream().filter(CommercialOffer::visibleToNpc).toList();
     }
 
-    public record JobDefinition(String id, String name, String heldItem) {
+    public record JobDefinition(String id, String name, String nameEn, String heldItem) {
+        public JobDefinition(String id, String name, String heldItem) {
+            this(id, name, "", heldItem);
+        }
+
         public JobDefinition {
             id = id != null && !id.isBlank() ? id.trim() : "commercial_worker";
             name = name != null && !name.isBlank() ? name.trim() : id;
+            nameEn = nameEn != null ? nameEn.trim() : "";
             heldItem = heldItem != null ? heldItem.trim() : "";
         }
     }

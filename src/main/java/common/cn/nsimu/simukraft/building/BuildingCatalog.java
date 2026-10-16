@@ -12,6 +12,19 @@ public final class BuildingCatalog {
     }
 
     /**
+     * localizedDisplayName: 已放置建筑按目录定义取当前语言名称，找不到时用存档里的名字。
+     */
+    public static String localizedDisplayName(PlacedBuildingRecord building) {
+        if (building == null) {
+            return "";
+        }
+        return findBuilding(building.category(), building.buildingFileName())
+                .map(BuildingDefinition::localizedDisplayName)
+                .filter(name -> !name.isBlank())
+                .orElse(building.displayName() == null ? "" : building.displayName());
+    }
+
+    /**
      * findBuilding: 按分类和 .sk 文件名查找建筑，兼容不带扩展名的旧保存值。
      */
     public static Optional<BuildingDefinition> findBuilding(String category, String buildingFileName) {
@@ -74,10 +87,12 @@ public final class BuildingCatalog {
 
     public record BuildingDefinition(String category,
                                      String displayName,
+                                     String displayNameEn,
                                      String size,
                                      String amount,
                                      String author,
                                      String description,
+                                     String descriptionEn,
                                      int unlockLevel,
                                      String metaFileName,
                                      String structureFileName,
@@ -109,6 +124,39 @@ public final class BuildingCatalog {
          */
         public boolean isExchange() {
             return buildingType == BuildingType.EXCHANGE;
+        }
+
+        /**
+         * localizedDisplayName: 按当前玩家语言选择建筑名。
+         */
+        public String localizedDisplayName() {
+            if (BuildingLocale.preferEnglish() && displayNameEn != null && !displayNameEn.isBlank()) {
+                return displayNameEn;
+            }
+            return displayName == null ? "" : displayName;
+        }
+
+        /**
+         * localizedDescription: 按当前玩家语言选择建筑说明。
+         */
+        public String localizedDescription() {
+            if (BuildingLocale.preferEnglish() && descriptionEn != null && !descriptionEn.isBlank()) {
+                return descriptionEn;
+            }
+            return description == null ? "" : description;
+        }
+
+        /**
+         * localizedAmount: 英文界面去掉造价里的“元”。
+         */
+        public String localizedAmount() {
+            if (amount == null) {
+                return "";
+            }
+            if (BuildingLocale.preferEnglish()) {
+                return amount.replace("元", "").trim();
+            }
+            return amount;
         }
 
         public Optional<InputStream> openMeta() throws IOException {

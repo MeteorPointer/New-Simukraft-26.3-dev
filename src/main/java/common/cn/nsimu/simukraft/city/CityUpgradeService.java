@@ -165,7 +165,7 @@ public final class CityUpgradeService {
                 financeTransaction = new FinanceTransactionData(
                         level.getGameTime(),
                         player.getUUID(),
-                        player.getGameProfile().name(),
+                        player.getGameProfile().getName(),
                         -definition.requiredFunds(),
                         city.funds(),
                         FinanceTransactionData.Type.EXPENSE,

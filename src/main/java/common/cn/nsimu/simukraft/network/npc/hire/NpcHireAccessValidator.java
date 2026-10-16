@@ -204,6 +204,7 @@ final class NpcHireAccessValidator {
         if (ExchangeControlBoxService.HIRE_SOURCE_TYPE.equals(sourceType)) {
             return "message.simukraft.exchange.too_far";
         }
+
         if (LogisticsConstants.SERVER_SOURCE_TYPE.equals(sourceType)) {
             return "message.simukraft.logistics.too_far";
         }

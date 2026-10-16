@@ -8,13 +8,17 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
 import javax.annotation.Nullable;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -50,8 +54,10 @@ public final class CitizenVoiceService {
     }
 
     static final long AMBIENT_LOCK_TICKS = 100L;
+    private static final float BUILD_APPROACH_CHANCE = 0.4F;
     private static final ConcurrentMap<String, Long> COOLDOWNS = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, Long> AMBIENT_LOCKS = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<UUID, Set<UUID>> BUILD_NEARBY = new ConcurrentHashMap<>();
 
     private CitizenVoiceService() {
     }
@@ -213,6 +219,7 @@ public final class CitizenVoiceService {
     static void clearLocksForTest() {
         COOLDOWNS.clear();
         AMBIENT_LOCKS.clear();
+        BUILD_NEARBY.clear();
     }
 
     private static boolean isCoolingDown(UUID uuid, Cue cue, long gameTime) {
@@ -222,7 +229,7 @@ public final class CitizenVoiceService {
 
     private static void markCooldown(UUID uuid, Cue cue, long gameTime) {
         long duration = switch (cue) {
-            case BUILD -> 50L;
+            case BUILD -> 200L;
             case CHAT, GREET -> 400L;
             case FLEE, SICK -> 80L;
             case PANEL, MORNING, EVENING -> 40L;

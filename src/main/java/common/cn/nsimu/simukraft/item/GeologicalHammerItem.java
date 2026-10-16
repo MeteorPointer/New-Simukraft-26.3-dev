@@ -22,6 +22,7 @@ import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -96,7 +97,7 @@ public final class GeologicalHammerItem extends Item {
             return InteractionResult.CONSUME;
         }
         if (!serverLevel.dimension().equals(Level.OVERWORLD)) {
-            GeologicalSurveyHintService.send(player, Component.translatable("message.simukraft.geological_hammer.not_overworld"));
+            sendHint(player, Component.translatable("message.simukraft.geological_hammer.not_overworld"));
             return InteractionResult.FAIL;
         }
         player.getCooldowns().addCooldown(heldStack, COOLDOWN_TICKS);
@@ -136,14 +137,18 @@ public final class GeologicalHammerItem extends Item {
                         "message.simukraft.geological_hammer.result",
                         slot.displayName()));
             }
-            GeologicalSurveyHintService.send(player, result);
+            sendHint(player, result);
             return;
         }
         if (!nearbySlots.isEmpty()) {
-            GeologicalSurveyHintService.send(player, Component.translatable("message.simukraft.geological_hammer.depleted"));
+            sendHint(player, Component.translatable("message.simukraft.geological_hammer.depleted"));
             return;
         }
-        GeologicalSurveyHintService.send(player, Component.translatable("message.simukraft.geological_hammer.no_nearby"));
+        sendHint(player, Component.translatable("message.simukraft.geological_hammer.no_nearby"));
+    }
+
+    private static void sendHint(ServerPlayer player, Component message) {
+        player.sendSystemMessage(message);
     }
 
     /**
