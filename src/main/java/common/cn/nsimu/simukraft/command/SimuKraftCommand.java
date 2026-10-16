@@ -859,7 +859,7 @@ public final class SimuKraftCommand {
         ServerLevel level = targetPlayer.level();
         Optional<CityData> city = CityService.findPlayerCity(level, targetPlayer.getUUID());
         if (city.isEmpty()) {
-            source.sendFailure(Component.translatable("message.simukraft.command.city_funds.no_city", targetPlayer.getGameProfile().getName()));
+            source.sendFailure(Component.translatable("message.simukraft.command.city_funds.no_city", targetPlayer.getGameProfile().name()));
             return 0;
         }
         ServerPlayer actor = source.getPlayer();
@@ -875,7 +875,7 @@ public final class SimuKraftCommand {
                 "message.simukraft.command.city_funds.added",
                 amountText,
                 city.get().cityName(),
-                targetPlayer.getGameProfile().getName(),
+                targetPlayer.getGameProfile().name(),
                 balanceText
         ), true);
         return Command.SINGLE_SUCCESS;
@@ -903,7 +903,7 @@ public final class SimuKraftCommand {
         ServerLevel level = targetPlayer.level();
         Optional<CityData> city = CityService.findPlayerCity(level, targetPlayer.getUUID());
         if (city.isEmpty()) {
-            source.sendFailure(Component.translatable("message.simukraft.command.city_funds.no_city", targetPlayer.getGameProfile().getName()));
+            source.sendFailure(Component.translatable("message.simukraft.command.city_funds.no_city", targetPlayer.getGameProfile().name()));
             return 0;
         }
         ServerPlayer actor = source.getPlayer();
@@ -919,7 +919,7 @@ public final class SimuKraftCommand {
                 "message.simukraft.command.city_funds.removed",
                 amountText,
                 city.get().cityName(),
-                targetPlayer.getGameProfile().getName(),
+                targetPlayer.getGameProfile().name(),
                 balanceText
         ), true);
         return Command.SINGLE_SUCCESS;
@@ -943,7 +943,7 @@ public final class SimuKraftCommand {
         ServerLevel level = targetPlayer.level();
         Optional<CityData> city = CityService.findPlayerCity(level, targetPlayer.getUUID());
         if (city.isEmpty()) {
-            source.sendFailure(Component.translatable("message.simukraft.command.city_funds.no_city", targetPlayer.getGameProfile().getName()));
+            source.sendFailure(Component.translatable("message.simukraft.command.city_funds.no_city", targetPlayer.getGameProfile().name()));
             return 0;
         }
         if (!CityService.setFunds(level, city.get().cityId(), normalizedAmount)) {
@@ -955,7 +955,7 @@ public final class SimuKraftCommand {
         source.sendSuccess(() -> Component.translatable(
                 "message.simukraft.command.city_funds.set",
                 city.get().cityName(),
-                targetPlayer.getGameProfile().getName(),
+                targetPlayer.getGameProfile().name(),
                 balanceText
         ), true);
         return Command.SINGLE_SUCCESS;
@@ -989,11 +989,11 @@ public final class SimuKraftCommand {
         Optional<CityData> targetCityOpt = CityService.findPlayerCity(level, toPlayer.getUUID());
         if (targetCityOpt.isPresent()) {
             source.sendFailure(Component.translatable("message.simukraft.command.city_mayor.target_has_city",
-                    toPlayer.getGameProfile().getName(), targetCityOpt.get().cityName()));
+                    toPlayer.getGameProfile().name(), targetCityOpt.get().cityName()));
             return 0;
         }
         boolean ok = CityService.transferMayor(level, city.cityId(), mayorId,
-                toPlayer.getUUID(), toPlayer.getGameProfile().getName());
+                toPlayer.getUUID(), toPlayer.getGameProfile().name());
         if (!ok) {
             source.sendFailure(Component.translatable("message.simukraft.command.city_mayor.failed"));
             return 0;
@@ -1002,7 +1002,7 @@ public final class SimuKraftCommand {
         source.sendSuccess(() -> Component.translatable("message.simukraft.command.city_mayor.success",
                 city.cityName(),
                 mayorName,
-                toPlayer.getGameProfile().getName()), true);
+                toPlayer.getGameProfile().name()), true);
         return Command.SINGLE_SUCCESS;
     }
 
@@ -1013,23 +1013,23 @@ public final class SimuKraftCommand {
         ServerLevel level = fromPlayer.level();
         Optional<CityData> cityOpt = CityService.findPlayerCity(level, fromPlayer.getUUID());
         if (cityOpt.isEmpty()) {
-            source.sendFailure(Component.translatable("message.simukraft.command.city_mayor.no_city", fromPlayer.getGameProfile().getName()));
+            source.sendFailure(Component.translatable("message.simukraft.command.city_mayor.no_city", fromPlayer.getGameProfile().name()));
             return 0;
         }
         CityData city = cityOpt.get();
         if (!city.hasPermission(fromPlayer.getUUID(), CityPermissionLevel.MAYOR)) {
             source.sendFailure(Component.translatable("message.simukraft.command.city_mayor.not_mayor",
-                    fromPlayer.getGameProfile().getName(), city.cityName()));
+                    fromPlayer.getGameProfile().name(), city.cityName()));
             return 0;
         }
         Optional<CityData> targetCityOpt = CityService.findPlayerCity(level, toPlayer.getUUID());
         if (targetCityOpt.isPresent()) {
             source.sendFailure(Component.translatable("message.simukraft.command.city_mayor.target_has_city",
-                    toPlayer.getGameProfile().getName(), targetCityOpt.get().cityName()));
+                    toPlayer.getGameProfile().name(), targetCityOpt.get().cityName()));
             return 0;
         }
         boolean ok = CityService.transferMayor(level, city.cityId(), fromPlayer.getUUID(),
-                toPlayer.getUUID(), toPlayer.getGameProfile().getName());
+                toPlayer.getUUID(), toPlayer.getGameProfile().name());
         if (!ok) {
             source.sendFailure(Component.translatable("message.simukraft.command.city_mayor.failed"));
             return 0;
@@ -1037,8 +1037,8 @@ public final class SimuKraftCommand {
         syncCityMembersHud(level, city);
         source.sendSuccess(() -> Component.translatable("message.simukraft.command.city_mayor.success",
                 city.cityName(),
-                fromPlayer.getGameProfile().getName(),
-                toPlayer.getGameProfile().getName()), true);
+                fromPlayer.getGameProfile().name(),
+                toPlayer.getGameProfile().name()), true);
         return Command.SINGLE_SUCCESS;
     }
 

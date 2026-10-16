@@ -29,7 +29,7 @@ public final class BuildingLocale {
         if (online != null) {
             return online;
         }
-        if (FMLEnvironment.dist == null || FMLEnvironment.dist.isDedicatedServer()) {
+        if (FMLEnvironment.getDist() == null || FMLEnvironment.getDist().isDedicatedServer()) {
             return "zh_cn";
         }
         return clientLanguage();

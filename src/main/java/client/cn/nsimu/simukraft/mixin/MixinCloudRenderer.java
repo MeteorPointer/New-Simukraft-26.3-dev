@@ -1,8 +1,12 @@
 package client.cn.nsimu.simukraft.mixin;
 
 import client.cn.nsimu.simukraft.client.freecamera.FreeCameraManager;
+import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import net.minecraft.client.CloudStatus;
 import net.minecraft.client.renderer.CloudRenderer;
+import net.minecraft.client.renderer.oit.OitRenderPassProvider;
+import net.minecraft.client.renderer.oit.OitStage;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -16,8 +20,8 @@ public class MixinCloudRenderer {
     /**
      * simukraft$skipRtsClouds: 经典半透明路径不提交云网格。
      */
-    @Inject(method = "render(Lnet/minecraft/client/CloudStatus;Lcom/mojang/blaze3d/systems/RenderPass;)V", at = @At("HEAD"), cancellable = true)
-    private void simukraft$skipRtsClouds(CloudStatus cloudStatus, Object renderPass, CallbackInfo callbackInfo) {
+    @Inject(method = "render(Lnet/minecraft/client/CloudStatus;Lcom/mojang/renderpearl/api/commands/RenderPass;)V", at = @At("HEAD"), cancellable = true)
+    private void simukraft$skipRtsClouds(CloudStatus cloudStatus, RenderPass renderPass, CallbackInfo callbackInfo) {
         if (FreeCameraManager.isRtsActive()) {
             callbackInfo.cancel();
         }
@@ -29,9 +33,9 @@ public class MixinCloudRenderer {
     @Inject(method = "renderOit", at = @At("HEAD"), cancellable = true)
     private void simukraft$skipRtsCloudsOit(
             CloudStatus cloudStatus,
-            Object stage,
-            Object mainDepthTextureView,
-            Object params,
+            OitStage stage,
+            GpuTextureView mainDepthTextureView,
+            OitRenderPassProvider.Parameters params,
             CallbackInfo callbackInfo
     ) {
         if (FreeCameraManager.isRtsActive()) {

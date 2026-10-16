@@ -94,7 +94,7 @@ public final class SimuKraft {
         ModTicketTypes.register(modEventBus);
         modEventBus.addListener(BuildingStructureDataPack::onAddPackFinders);
         modContainer.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
-        modContainer.registerConfig(ModConfig.Type.SERVER, ServerConfig.SPEC);
+        modContainer.registerConfig(ModConfig.Type.LOCAL, ServerConfig.SPEC);
         MaterialConfig.init();
         modEventBus.register(ModNetwork.class);
         modEventBus.addListener(this::onConfigLoading);
@@ -149,7 +149,7 @@ public final class SimuKraft {
             PlayerWelcomeService.handleLogin(player);
             CityChunkSyncService.syncToPlayer(player);
         } catch (RuntimeException exception) {
-            LOGGER.error("Failed to handle player login for {}", player.getGameProfile().getName(), exception);
+            LOGGER.error("Failed to handle player login for {}", player.getGameProfile().name(), exception);
         }
     }
 
