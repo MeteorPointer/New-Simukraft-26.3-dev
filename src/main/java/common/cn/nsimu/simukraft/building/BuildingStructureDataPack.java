@@ -22,9 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 /**
  * 把建筑包里的每一座建筑登记成数据包结构，让 FTB Quests 的结构列表能选到它们。
@@ -87,7 +85,6 @@ public final class BuildingStructureDataPack {
 
     private static Map<String, Identifier> scanBuildings() {
         Map<String, Identifier> structures = new LinkedHashMap<>();
-        readZip(BuildingBuiltinResourceService.openOfficialPackage(), "official_building.zip", structures);
         Path root = FMLPaths.GAMEDIR.get().resolve(BuildingPackageCatalog.ROOT_DIR);
         try {
             BuildingBuiltinResourceService.ensureCopied(root);
@@ -135,21 +132,6 @@ public final class BuildingStructureDataPack {
             }
         } catch (IOException exception) {
             SimuKraft.LOGGER.warn("Simukraft: Failed to read building directory {} while exposing structures", packagePath, exception);
-        }
-    }
-
-    private static void readZip(InputStream inputStream, String sourceName, Map<String, Identifier> structures) {
-        if (inputStream == null) {
-            return;
-        }
-        try (ZipInputStream zip = new ZipInputStream(inputStream, StandardCharsets.UTF_8)) {
-            ZipEntry entry;
-            while ((entry = zip.getNextEntry()) != null) {
-                addEntry(entry.getName(), structures);
-                zip.closeEntry();
-            }
-        } catch (IOException exception) {
-            SimuKraft.LOGGER.warn("Simukraft: Failed to read building package {} while exposing structures", sourceName, exception);
         }
     }
 
