@@ -12,7 +12,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
+import net.minecraft.network.protocol.game.ClientboundSetPlayerInventoryPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -98,7 +98,7 @@ public record CommercialTradePacket(BlockPos pos, UUID workerId, String offerId,
     }
 
     /**
-     * syncChangedSlots: 逐槽对比并用 ClientboundContainerSetSlotPacket 同步变更。
+     * syncChangedSlots: 逐槽对比并用玩家背包槽同步包刷新变更。
      */
     private static void syncChangedSlots(ServerPlayer player, List<ItemStack> before) {
         int size = Math.min(before.size(), player.getInventory().getContainerSize());
@@ -110,16 +110,16 @@ public record CommercialTradePacket(BlockPos pos, UUID workerId, String offerId,
         }
     }
 
-    private static int playerInventoryContainerId() {
-        return 0;
-    }
-
+    /**
+     * inventorySlotSync: 快捷栏、主背包、盔甲和副手都属于玩家背包容器。
+     * 26.3 的 ClientboundContainerSetSlotPacket 容器 0 是合成界面槽位，不能再拿来写这些格子。
+     */
     static int[] inventorySlotSync(int inventorySlot) {
-        return new int[]{playerInventoryContainerId(), inventorySlot};
+        return new int[]{-2, inventorySlot};
     }
 
     private static void sendPlayerInventorySlot(ServerPlayer player, int slot, ItemStack stack) {
         int[] target = inventorySlotSync(slot);
-        player.connection.send(new ClientboundContainerSetSlotPacket(target[0], 0, target[1], stack.copy()));
+        player.connection.send(new ClientboundSetPlayerInventoryPacket(target[1], stack.copy()));
     }
 }
