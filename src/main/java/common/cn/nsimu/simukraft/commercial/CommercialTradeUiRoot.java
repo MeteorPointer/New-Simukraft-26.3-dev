@@ -70,7 +70,7 @@ public final class CommercialTradeUiRoot extends UIElement {
     private static final int TEXT_COLOR = 0xFF404040;
     private static final int MUTED_COLOR = 0xFF555555;
     private static final int ERROR_COLOR = 0xFF8A2020;
-    private static final int LEFT_PANEL_BACKGROUND = 0xFF404040;
+    private static final int LEFT_PANEL_BACKGROUND = 0xFFC6B17A;
     private static WeakReference<CommercialTradeUiRoot> activeRoot = new WeakReference<>(null);
     private CommercialTradeOpenResponsePacket packet;
     private final ItemSlot costSlotA = displaySlot(COST_A_X, TRADE_SLOT_Y);
@@ -119,7 +119,7 @@ public final class CommercialTradeUiRoot extends UIElement {
         int frameLeft = (int) getPositionX();
         int top = (int) getPositionY();
         Font font = guiContext.mc.font;
-        guiContext.graphics.blit(RenderPipelines.GUI, VILLAGER_LOCATION, frameLeft, top, 0.0F, 0.0F, IMAGE_WIDTH, IMAGE_HEIGHT, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+        guiContext.graphics.blit(RenderPipelines.GUI_TEXTURED, VILLAGER_LOCATION, frameLeft, top, 0.0F, 0.0F, IMAGE_WIDTH, IMAGE_HEIGHT, TEXTURE_WIDTH, TEXTURE_HEIGHT);
         renderLeftPanelBackground(guiContext, frameLeft, top);
         CommercialTradeTabStrip.render(guiContext, font, frameLeft, top, activeTab);
         renderSearchBox(guiContext, frameLeft, top);
