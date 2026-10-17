@@ -1,6 +1,7 @@
 package client.cn.nsimu.simukraft.client.city.map;
 
 import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.logging.LogUtils;
 import common.cn.nsimu.simukraft.SimuKraft;
 import net.minecraft.client.Minecraft;
@@ -73,11 +74,17 @@ public class SimuMapRegion {
     }
 
     /**
-     * 获取或创建渲染图像。
+     * 获取或创建 CPU 侧渲染图像。
+     * 26.3 的 DynamicTexture 会立刻申请 GPU 资源，只能在渲染线程创建。
      */
     public NativeImage getOrCreateImage() {
-        ensureTexture();
-        return dynamicTexture.getPixels();
+        if (renderedImage == null || renderedImage.isClosed()) {
+            renderedImage = new NativeImage(512, 512, true);
+            renderedImage.fillRect(0, 0, 512, 512, 0);
+            textureNeedsUpload = true;
+            imageLoaded = false;
+        }
+        return renderedImage;
     }
 
     /**
@@ -85,7 +92,8 @@ public class SimuMapRegion {
      */
     public int sampleRenderedArgb(int localX, int localZ) {
         synchronized (this) {
-            if (renderedImage == null || localX < 0 || localX >= 512 || localZ < 0 || localZ >= 512) {
+            if (renderedImage == null || renderedImage.isClosed()
+                    || localX < 0 || localX >= 512 || localZ < 0 || localZ >= 512) {
                 return 0;
             }
             int argb = renderedImage.getPixel(localX, localZ);
@@ -109,34 +117,37 @@ public class SimuMapRegion {
      */
     @Nullable
     public Identifier getTextureLocation() {
-        ensureTexture();
-        if (textureNeedsUpload) {
-            Minecraft.getInstance().execute(this::uploadNow);
+        if (renderedImage == null) {
+            return null;
+        }
+        if (dynamicTexture == null || textureNeedsUpload) {
+            if (RenderSystem.isOnRenderThread()) {
+                uploadNow();
+            } else {
+                Minecraft.getInstance().execute(this::uploadNow);
+            }
         }
         return textureLocation;
-    }
-
-    private void ensureTexture() {
-        if (dynamicTexture != null) {
-            return;
-        }
-        textureLocation = Identifier.fromNamespaceAndPath(SimuKraft.MOD_ID, "map/region_" + regionX + "_" + regionZ);
-        dynamicTexture = new DynamicTexture("simukraft-map-" + regionX + "-" + regionZ, 512, 512, true);
-        NativeImage pixels = dynamicTexture.getPixels();
-        if (pixels != null) {
-            pixels.fillRect(0, 0, 512, 512, 0);
-        }
-        renderedImage = pixels;
-        Minecraft.getInstance().getTextureManager().register(textureLocation, dynamicTexture);
     }
 
     private void uploadNow() {
         try {
             synchronized (this) {
-                if (dynamicTexture == null) {
+                NativeImage pixels = renderedImage;
+                if (pixels == null || pixels.isClosed()) {
                     return;
                 }
-                dynamicTexture.upload();
+                if (dynamicTexture == null) {
+                    textureLocation = Identifier.fromNamespaceAndPath(
+                            SimuKraft.MOD_ID, "map/region_" + regionX + "_" + regionZ);
+                    dynamicTexture = new DynamicTexture(() -> "simukraft-map-" + regionX + "-" + regionZ, pixels);
+                    Minecraft.getInstance().getTextureManager().register(textureLocation, dynamicTexture);
+                } else if (dynamicTexture.getPixels() != pixels) {
+                    dynamicTexture.setPixels(pixels);
+                    dynamicTexture.upload();
+                } else {
+                    dynamicTexture.upload();
+                }
                 imageLoaded = true;
                 textureNeedsUpload = false;
             }
@@ -173,7 +184,7 @@ public class SimuMapRegion {
      * 释放 region 占用的全部 CPU/GPU 资源。
      */
     public void release() {
-        renderedImage = null;
+        closeCpuImage();
         deleteTextureOnRenderThread();
         imageLoaded = false;
         data = null;
@@ -183,9 +194,17 @@ public class SimuMapRegion {
      * 释放纹理资源但保留地图数据。
      */
     public void releaseTexture() {
-        renderedImage = null;
+        closeCpuImage();
         deleteTextureOnRenderThread();
         imageLoaded = false;
+    }
+
+    private void closeCpuImage() {
+        NativeImage image = renderedImage;
+        renderedImage = null;
+        if (image != null && !image.isClosed() && dynamicTexture == null) {
+            image.close();
+        }
     }
 
     /**

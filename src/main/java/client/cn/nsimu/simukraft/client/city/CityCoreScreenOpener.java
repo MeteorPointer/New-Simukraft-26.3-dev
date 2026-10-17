@@ -2000,13 +2000,22 @@ public final class CityCoreScreenOpener {
         }
 
         private int sampleMapColor(int worldX, int worldZ) {
-            SimuMapRegionData data = mapColumnData(worldX, worldZ);
+            int regionX = Math.floorDiv(worldX, SimuMapRegionData.SIZE);
+            int regionZ = Math.floorDiv(worldZ, SimuMapRegionData.SIZE);
+            int localX = worldX - regionX * SimuMapRegionData.SIZE;
+            int localZ = worldZ - regionZ * SimuMapRegionData.SIZE;
+            SimuMapRegion region = mapManager.getRegion(regionX, regionZ);
+            if (region != null) {
+                int baked = region.sampleRenderedArgb(localX, localZ);
+                if (baked != 0) {
+                    return baked;
+                }
+            }
+            SimuMapRegionData data = region == null ? null : region.getData();
             if (data == null) {
                 return 0xFF6E8B5A;
             }
-            int regionX = Math.floorDiv(worldX, SimuMapRegionData.SIZE);
-            int regionZ = Math.floorDiv(worldZ, SimuMapRegionData.SIZE);
-            int color = data.getColor(worldX - regionX * SimuMapRegionData.SIZE, worldZ - regionZ * SimuMapRegionData.SIZE);
+            int color = data.getColor(localX, localZ);
             return color == 0 ? 0xFF6E8B5A : color;
         }
 
