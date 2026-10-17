@@ -1918,19 +1918,17 @@ public final class CityCoreScreenOpener {
                         gameTime);
             }
             if (!threeMesh.isEmpty()) {
-                guiContext.graphics.submitGuiElementRenderState(new CityMap3DRenderState(
+                guiContext.graphics.submitPictureInPictureRenderState(new CityMap3DPipState(
                         threeMesh,
-                        new Matrix3x2f(),
                         threeYaw,
                         scale,
-                        centerX,
-                        centerY,
                         liveCenterX,
                         liveCenterZ,
                         startX,
                         startY,
                         width,
                         height,
+                        new Matrix3x2f(),
                         new ScreenRectangle(startX, startY, width, height)));
             }
             guiContext.graphics.text(minecraft.font, Component.translatable("screen.simukraft.city_core.map.mode_3d_hint"), startX + 6, startY + height - 12, 0xFFDDDDDD, false);

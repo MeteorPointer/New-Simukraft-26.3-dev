@@ -67,6 +67,26 @@ class SimuMap3DMeshTest {
     }
 
     @Test
+    void screenArea_isPositiveForCounterClockwiseScreenQuads() {
+        assertTrue(SimuMap3DMesh.screenArea(
+                new float[]{0.0F, 10.0F, 10.0F, 0.0F},
+                new float[]{0.0F, 0.0F, 10.0F, 10.0F}) > 0.0F);
+        assertTrue(SimuMap3DMesh.screenArea(
+                new float[]{0.0F, 0.0F, 10.0F, 10.0F},
+                new float[]{0.0F, 10.0F, 10.0F, 0.0F}) < 0.0F);
+    }
+
+    @Test
+    void topEdgeDepth_ignoresTheSkirtSoWallsStayWithTheirRoof() {
+        assertEquals(1.5F, SimuMap3DMesh.topEdgeDepth(
+                new float[]{64.0F, 64.0F, 50.0F, 50.0F},
+                new float[]{1.0F, 2.0F, -20.0F, -19.0F}), 0.01F);
+        assertEquals(3.0F, SimuMap3DMesh.topEdgeDepth(
+                new float[]{64.0F, 64.0F, 64.0F, 64.0F},
+                new float[]{1.0F, 2.0F, 4.0F, 5.0F}), 0.01F);
+    }
+
+    @Test
     void needsRebuild_ignoresSmallPansAndZoomScale() {
         SimuMap3DMesh mesh = new SimuMap3DMesh();
         mesh.rebuild(new FlatSource(), 20, 20, 1, 0L);

@@ -3,6 +3,9 @@ package client.cn.nsimu.simukraft;
 import client.cn.nsimu.simukraft.client.bridge.ClientInteractionHandlerImpl;
 import client.cn.nsimu.simukraft.client.buildbox.BuildingBoundsRenderer;
 import client.cn.nsimu.simukraft.client.citizen.CitizenScreenOpener;
+import client.cn.nsimu.simukraft.client.city.map.CityMap3DPipRenderer;
+import client.cn.nsimu.simukraft.client.city.map.CityMap3DPipState;
+import client.cn.nsimu.simukraft.client.city.map.SimuMap3DPipelines;
 import client.cn.nsimu.simukraft.client.city.map.SimuMapManager;
 import client.cn.nsimu.simukraft.client.config.ConfigButtonHandler;
 import client.cn.nsimu.simukraft.client.config.SimuKraftConfigScreen;
@@ -33,6 +36,8 @@ import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterPictureInPictureRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.event.TextureAtlasStitchedEvent;
@@ -52,6 +57,16 @@ public final class ClientModBusSetup {
     /**
      * onClientSetup: 安装客户端桥接实现并注册运行时渲染监听。
      */
+    @SubscribeEvent
+    public static void onRegisterPipelines(RegisterRenderPipelinesEvent event) {
+        SimuMap3DPipelines.register(event);
+    }
+
+    @SubscribeEvent
+    public static void onRegisterPictureInPicture(RegisterPictureInPictureRenderersEvent event) {
+        event.register(CityMap3DPipState.class, CityMap3DPipRenderer::new);
+    }
+
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         ClientboundNetworkBridge.install(ClientboundNetworkHandlerImpl.INSTANCE);

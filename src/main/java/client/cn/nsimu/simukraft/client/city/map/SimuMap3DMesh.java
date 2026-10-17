@@ -1,15 +1,17 @@
 package client.cn.nsimu.simukraft.client.city.map;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.util.Mth;
 import org.joml.Matrix3x2fc;
 import org.joml.Matrix4f;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import java.util.Arrays;
 
 /**
- * 城市核心立体沙盘：每格一块完整立方柱，顶面、立面和底边分开着色。
+ * 城市核心立体沙盘：每格一块立方柱，只提交顶面和露出来的立面。
  * 顶点留在方块坐标系里，屏幕投影由调用方的正交矩阵完成。
  */
 public final class SimuMap3DMesh {
@@ -166,7 +168,29 @@ public final class SimuMap3DMesh {
     }
 
     /**
-     * emit: 把方块坐标投影成界面像素。远的面先画，近的面盖住它。
+     * emitWorld: 顶点留在相机空间里，Z 交给 Picture-in-Picture 的深度测试。
+     */
+    public void emitWorld(VertexConsumer consumer, PoseStack.Pose pose, float yaw, float scale,
+                          int liveCenterX, int liveCenterZ) {
+        if (faceCount <= 0) {
+            return;
+        }
+        Matrix4f model = SimuMap3DCamera.modelMatrix(0.0F, 0.0F, yaw, scale, baseHeight);
+        float shiftX = worldXOf(cells / 2) - liveCenterX;
+        float shiftZ = worldZOf(cells / 2) - liveCenterZ;
+        Vector3f point = new Vector3f();
+        for (int face = 0; face < faceCount; face++) {
+            int origin = face * 4;
+            for (int corner = 0; corner < 4; corner++) {
+                int index = origin + corner;
+                model.transformPosition(fx[index] + shiftX, fy[index], fz[index] + shiftZ, point);
+                consumer.addVertex(pose, point.x, point.y, point.z).setColor(fc[index]);
+            }
+        }
+    }
+
+    /**
+     * emit: 远的面先画。GUI 的 Y 朝下，屏幕逆时针到 NDC 里是背面，投影后改成顺时针，顶面才不会被裁成两条外墙。
      */
     public void emit(VertexConsumer consumer, Matrix3x2fc pose, float yaw, float scale,
                      double centerScreenX, double centerScreenY, int liveCenterX, int liveCenterZ) {
@@ -180,26 +204,68 @@ public final class SimuMap3DMesh {
         Integer[] order = new Integer[faceCount];
         float[] depth = new float[faceCount];
         Vector3f point = new Vector3f();
+        Vector2f screen = new Vector2f();
+        float[] cornerY = new float[4];
+        float[] cornerZ = new float[4];
         for (int i = 0; i < faceCount; i++) {
             order[i] = i;
-            float z = 0.0F;
             int origin = i * 4;
             for (int corner = 0; corner < 4; corner++) {
                 int index = origin + corner;
                 model.transformPosition(fx[index] + shiftX, fy[index], fz[index] + shiftZ, point);
-                z += point.z;
+                cornerY[corner] = fy[index];
+                cornerZ[corner] = point.z;
             }
-            depth[i] = z / 4.0F;
+            depth[i] = topEdgeDepth(cornerY, cornerZ);
         }
         Arrays.sort(order, (left, right) -> Float.compare(depth[right], depth[left]));
+        float[] sx = new float[4];
+        float[] sy = new float[4];
+        int[] sc = new int[4];
         for (int face : order) {
             int origin = face * 4;
             for (int corner = 0; corner < 4; corner++) {
                 int index = origin + corner;
                 model.transformPosition(fx[index] + shiftX, fy[index], fz[index] + shiftZ, point);
-                consumer.addVertexWith2DPose(pose, point.x, point.y).setColor(fc[index]);
+                pose.transformPosition(point.x, point.y, screen);
+                sx[corner] = screen.x;
+                sy[corner] = screen.y;
+                sc[corner] = fc[index];
+            }
+            boolean reverse = screenArea(sx, sy) > 0.0F;
+            for (int corner = 0; corner < 4; corner++) {
+                int index = reverse ? 3 - corner : corner;
+                consumer.addVertex(sx[index], sy[index], 0.0F).setColor(sc[index]);
             }
         }
+    }
+
+    static float screenArea(float[] sx, float[] sy) {
+        float area = 0.0F;
+        for (int i = 0; i < 4; i++) {
+            int next = (i + 1) & 3;
+            area += sx[i] * sy[next] - sx[next] * sy[i];
+        }
+        return area;
+    }
+
+    /**
+     * topEdgeDepth: 只用最高那条边的视图深度，裙边底不再把墙排到所有顶面前面。
+     */
+    static float topEdgeDepth(float[] ys, float[] zs) {
+        float maxY = ys[0];
+        for (int i = 1; i < 4; i++) {
+            maxY = Math.max(maxY, ys[i]);
+        }
+        float sum = 0.0F;
+        int count = 0;
+        for (int i = 0; i < 4; i++) {
+            if (ys[i] >= maxY - 0.01F) {
+                sum += zs[i];
+                count++;
+            }
+        }
+        return count == 0 ? 0.0F : sum / count;
     }
 
     public static int lodStep(double zoom) {
