@@ -1,6 +1,6 @@
 package client.cn.nsimu.simukraft.client.caution;
 
-import common.cn.nsimu.simukraft.item.CautionTapeRollItem;
+import common.cn.nsimu.simukraft.item.CautionTapeItem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -25,7 +25,7 @@ public final class CautionTapePreview {
         }
         Player player = minecraft.player;
         ItemStack stack = heldTape(player);
-        BlockPos start = stack == null ? null : CautionTapeRollItem.readStart(stack);
+        BlockPos start = stack == null ? null : CautionTapeItem.readStart(stack);
         if (start == null) {
             return;
         }
@@ -35,21 +35,21 @@ public final class CautionTapePreview {
             return;
         }
         BlockPos end = blockHit.getBlockPos().relative(blockHit.getDirection());
-        if (!CautionTapeRollItem.isStraightSameHeight(start, end)) {
+        if (!CautionTapeItem.isStraightSameHeight(start, end)) {
             return;
         }
-        for (BlockPos pos : CautionTapeRollItem.line(start, end)) {
+        for (BlockPos pos : CautionTapeItem.line(start, end)) {
             spawn(minecraft, pos.getX() + 0.5D, pos.getY() + 0.7D, pos.getZ() + 0.5D);
         }
     }
 
     private static ItemStack heldTape(Player player) {
         ItemStack main = player.getMainHandItem();
-        if (main.getItem() instanceof CautionTapeRollItem) {
+        if (main.getItem() instanceof CautionTapeItem) {
             return main;
         }
         ItemStack off = player.getOffhandItem();
-        return off.getItem() instanceof CautionTapeRollItem ? off : null;
+        return off.getItem() instanceof CautionTapeItem ? off : null;
     }
 
     private static void spawn(Minecraft minecraft, double x, double y, double z) {

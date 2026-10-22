@@ -28,9 +28,9 @@ public final class ModItems {
     public static final DeferredHolder<Item, Item> CHEESE_BURGER = ITEMS.registerItem("cheese_burger", BuffFoodItem::new,
             p -> p.food(ModFoods.CHEESE_BURGER.food(), ModFoods.CHEESE_BURGER.consumable()));
     public static final DeferredHolder<Item, Item> GEOLOGICAL_HAMMER = ITEMS.registerItem("geological_hammer", GeologicalHammerItem::new);
-    public static final DeferredHolder<Item, CautionTapeRollItem> CAUTION_TAPE_ROLL = ITEMS.registerItem("caution_tape_roll",
-            properties -> new CautionTapeRollItem(ModBlocks.CAUTION_TAPE.get(), properties),
-            properties -> properties.durability(CautionTapeRollItem.USES_PER_ROLL));
+    public static final DeferredHolder<Item, CautionTapeItem> CAUTION_TAPE_ROLL = ITEMS.registerItem("caution_tape",
+            properties -> new CautionTapeItem(ModBlocks.CAUTION_TAPE.get(), properties),
+            properties -> properties.durability(CautionTapeItem.USES_PER_ROLL).stacksTo(1));
     public static final DeferredHolder<Item, Item> DRILL_ROD_SEGMENT = ITEMS.registerSimpleItem("drill_rod_segment");
     public static final DeferredHolder<Item, Item> SHALLOW_DRILL_BIT = ITEMS.registerItem("shallow_drill_bit", Item::new, p -> p.durability(500));
     public static final DeferredHolder<Item, Item> DEEP_DRILL_BIT = ITEMS.registerItem("deep_drill_bit", Item::new, p -> p.durability(900));

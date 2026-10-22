@@ -32,7 +32,7 @@ public final class ModBlocks {
 
     public static final DeferredBlock<Block> BLUE_LIGHT_BLOCK = registerLightBlock("blue_light_block");
     public static final DeferredBlock<Block> BUILD_BOX = registerBlock("build_box", BuildBoxBlock::new, woodBox());
-    public static final DeferredBlock<Block> CAUTION_TAPE = registerBlock("caution_tape", CautionTapeBlock::new, cautionTape());
+    public static final DeferredBlock<Block> CAUTION_TAPE = BLOCKS.registerBlock("caution_tape", CautionTapeBlock::new, cautionTape());
     public static final DeferredBlock<Block> CHEESE_BLOCK = registerBlock("cheese_block", Block::new, ModBlocks::cheeseProperties);
     public static final DeferredBlock<Block> CITY_CORE = registerBlock("city_core", CityCoreBlock::new,
             p -> p.mapColor(MapColor.METAL).strength(1.0F).explosionResistance(3600000.0F).sound(SoundType.METAL)

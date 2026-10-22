@@ -4,7 +4,7 @@
     "block.simukraft.blue_light_block":  "NSUK-蓝色灯块",
     "block.simukraft.build_box":  "NSUK-建造盒",
     "block.simukraft.caution_tape":  "NSUK-警戒线",
-    "item.simukraft.caution_tape_roll":  "NSUK-成卷的警戒线胶带",
+    "item.simukraft.caution_tape":  "NSUK-成卷的警戒线胶带",
     "message.simukraft.caution_tape.start":  "起点已定在 %s, %s, %s。沿同一高度瞄准终点后再右键。",
     "message.simukraft.caution_tape.not_straight":  "警戒线必须在同一高度，并且在一条直线上，不能斜向。",
     "message.simukraft.caution_tape.placed":  "已放置 %s 格警戒线。",

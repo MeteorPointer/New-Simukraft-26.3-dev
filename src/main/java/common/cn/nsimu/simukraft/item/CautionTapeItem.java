@@ -22,16 +22,21 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * CautionTapeRollItem: 一卷可铺 50 格。右键定起点，再瞄同一高度的直线终点。
+ * CautionTapeItem: 一卷可铺 50 格。右键定起点，再瞄同一高度的直线终点。
  */
-public final class CautionTapeRollItem extends BlockItem {
+public final class CautionTapeItem extends BlockItem {
     public static final int USES_PER_ROLL = 50;
 
     private final Block tapeBlock;
 
-    public CautionTapeRollItem(Block tapeBlock, Properties properties) {
+    public CautionTapeItem(Block tapeBlock, Properties properties) {
         super(tapeBlock, properties);
         this.tapeBlock = tapeBlock;
+    }
+
+    @Override
+    public Component getName(ItemStack stack) {
+        return Component.translatable("item.simukraft.caution_tape");
     }
 
     @Override

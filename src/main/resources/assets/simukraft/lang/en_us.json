@@ -4,7 +4,7 @@
     "block.simukraft.blue_light_block":  "NSUK Blue Light Block",
     "block.simukraft.build_box":  "NSUK Build Box",
     "block.simukraft.caution_tape":  "NSUK Caution Tape",
-    "item.simukraft.caution_tape_roll":  "NSUK Caution Tape Roll",
+    "item.simukraft.caution_tape":  "NSUK Caution Tape Roll",
     "message.simukraft.caution_tape.start":  "Start set at %s, %s, %s. Aim along the same height, then right-click the end.",
     "message.simukraft.caution_tape.not_straight":  "The tape must stay on one height and one straight line. Diagonals are not allowed.",
     "message.simukraft.caution_tape.placed":  "Placed %s caution tape blocks.",
