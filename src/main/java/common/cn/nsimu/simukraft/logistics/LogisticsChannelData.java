@@ -18,7 +18,8 @@ public record LogisticsChannelData(UUID channelId,
                                    List<LogisticsItemFilter> filters,
                                    long updatedAt,
                                    int keepSourceQuantity,
-                                   int keepTargetQuantity) {
+                                   int keepTargetQuantity,
+                                   LogisticsChannelFilterMode filterMode) {
     public LogisticsChannelData {
         channelId = channelId != null ? channelId : UUID.randomUUID();
         direction = direction != null ? direction : LogisticsDirection.WAREHOUSE_TO_CLIENT;
@@ -27,14 +28,20 @@ public record LogisticsChannelData(UUID channelId,
         updatedAt = Math.max(0L, updatedAt);
         keepSourceQuantity = Math.max(0, keepSourceQuantity);
         keepTargetQuantity = Math.max(0, keepTargetQuantity);
+        filterMode = filterMode != null ? filterMode : LogisticsChannelFilterMode.ITEM;
+        if (filterMode == LogisticsChannelFilterMode.MANIFEST) {
+            direction = LogisticsDirection.WAREHOUSE_TO_CLIENT;
+        }
     }
 
     public LogisticsChannelData withEnabled(boolean nextEnabled, long gameTime) {
-        return new LogisticsChannelData(channelId, warehouseId, clientId, direction, name, nextEnabled, filters, gameTime, keepSourceQuantity, keepTargetQuantity);
+        return new LogisticsChannelData(channelId, warehouseId, clientId, direction, name, nextEnabled, filters, gameTime,
+                keepSourceQuantity, keepTargetQuantity, filterMode);
     }
 
     public LogisticsChannelData withKeepQuantities(int sourceQty, int targetQty, long gameTime) {
-        return new LogisticsChannelData(channelId, warehouseId, clientId, direction, name, enabled, filters, gameTime, Math.max(0, sourceQty), Math.max(0, targetQty));
+        return new LogisticsChannelData(channelId, warehouseId, clientId, direction, name, enabled, filters, gameTime,
+                Math.max(0, sourceQty), Math.max(0, targetQty), filterMode);
     }
 
     public CompoundTag toTag() {
@@ -60,6 +67,7 @@ public record LogisticsChannelData(UUID channelId,
         tag.put("Filters", filterTags);
         tag.putInt("KeepSourceQuantity", keepSourceQuantity);
         tag.putInt("KeepQuantity", keepTargetQuantity);
+        tag.putString("FilterMode", filterMode.name());
         return tag;
     }
 
@@ -80,6 +88,7 @@ public record LogisticsChannelData(UUID channelId,
                 filters,
                 tag.getLong("UpdatedAt").get(),
                 tag.contains("KeepSourceQuantity") ? tag.getInt("KeepSourceQuantity").get() : 0,
-                tag.contains("KeepQuantity") ? tag.getInt("KeepQuantity").get() : 0);
+                tag.contains("KeepQuantity") ? tag.getInt("KeepQuantity").get() : 0,
+                LogisticsChannelFilterMode.fromName(tag.getStringOr("FilterMode", "ITEM")));
     }
 }

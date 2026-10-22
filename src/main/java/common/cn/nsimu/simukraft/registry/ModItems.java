@@ -13,7 +13,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(SimuKraft.MOD_ID);
 
-    public static final DeferredHolder<Item, Item> MANIFEST = ITEMS.registerItem("manifest", ManifestItem::new);
+    public static final DeferredHolder<Item, Item> MANIFEST = ITEMS.registerItem("manifest", properties -> new ManifestItem(properties));
     public static final DeferredHolder<Item, Item> GUIDE_BOOK = ITEMS.registerItem("guide_book", GuideBookItem::new, p -> p.stacksTo(1));
     public static final DeferredHolder<Item, Item> PORTABLE_CITY_CORE = ITEMS.registerItem("portable_city_core", PortableCityCoreItem::new);
     public static final DeferredHolder<Item, Item> COPPER_COIN = ITEMS.registerItem("copper_coin", Item::new, p -> p.stacksTo(CoinItems.MAX_STACK));

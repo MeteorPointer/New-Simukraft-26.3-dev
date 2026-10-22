@@ -151,6 +151,7 @@ public final class CityPlacementRestrictionHandler {
                 || block == ModBlocks.MEDICAL_CONTROL_BOX.get()
                 || block == ModBlocks.BANK_CONTROL_BOX.get()
                 || block == ModBlocks.EXCHANGE_CONTROL_BOX.get()
+                || block == ModBlocks.GLOBAL_MARKET_CONTROL_BOX.get()
                 || block == ModBlocks.NSUK_FARMLAND_BOX.get();
     }
 
@@ -188,6 +189,8 @@ public final class CityPlacementRestrictionHandler {
             building = BankControlBoxService.resolveBuilding(level, pos);
         } else if (block == ModBlocks.EXCHANGE_CONTROL_BOX.get()) {
             building = ExchangeControlBoxService.resolveBuilding(level, pos);
+        } else if (block == ModBlocks.GLOBAL_MARKET_CONTROL_BOX.get()) {
+            building = common.cn.nsimu.simukraft.globalmarket.GlobalMarketControlBoxService.resolveBuilding(level, pos);
         }
         return building != null ? building.cityId() : null;
     }
@@ -257,6 +260,9 @@ public final class CityPlacementRestrictionHandler {
         if (block == ModBlocks.EXCHANGE_CONTROL_BOX.get()) {
             return Optional.of(CityPoiType.EXCHANGE);
         }
+        if (block == ModBlocks.GLOBAL_MARKET_CONTROL_BOX.get()) {
+            return Optional.of(CityPoiType.GLOBAL_MARKET);
+        }
         if (block == ModBlocks.OTHER_CONTROL_BOX.get()) {
             return Optional.of(CityPoiType.OTHER);
         }
@@ -276,7 +282,7 @@ public final class CityPlacementRestrictionHandler {
         return switch (type) {
             case RESIDENTIAL -> 0;
             case COMMERCIAL, INDUSTRIAL, FARMLAND -> 2;
-            case MEDICAL, LOGISTICS, STORAGE, GATHERING, DEFENSE, OTHER, BANK, EXCHANGE -> 1;
+            case MEDICAL, LOGISTICS, STORAGE, GATHERING, DEFENSE, OTHER, BANK, EXCHANGE, GLOBAL_MARKET -> 1;
         };
     }
 
@@ -292,6 +298,7 @@ public final class CityPlacementRestrictionHandler {
                 || block == ModBlocks.MEDICAL_CONTROL_BOX.get()
                 || block == ModBlocks.BANK_CONTROL_BOX.get()
                 || block == ModBlocks.EXCHANGE_CONTROL_BOX.get()
+                || block == ModBlocks.GLOBAL_MARKET_CONTROL_BOX.get()
                 || block == ModBlocks.OTHER_CONTROL_BOX.get();
     }
 

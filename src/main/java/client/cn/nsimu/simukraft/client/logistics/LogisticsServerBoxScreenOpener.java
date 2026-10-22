@@ -82,6 +82,7 @@ public final class LogisticsServerBoxScreenOpener {
         private static final int TAB_X = 5;
 
         private static final int ROUTE_ROW_H = 48;
+        private static final int KEEP_FIELD_H = 16;
         private static final int SCROLLBAR_W = 6;
         /**
          * savedRouteScrollRow: 静态保存路由列表滚动行，服务端刷新重建界面后仍保持位置。
@@ -196,12 +197,15 @@ public final class LogisticsServerBoxScreenOpener {
             graphics.fill(lineX, 26, lineX + 1, this.height - 5, LogisticsNativeStyle.PANEL_LINE);
             int contentX = lineX + 8;
             int contentY = 30;
+            if (currentTab == ActiveTab.ROUTES) {
+                renderRouteBadges(graphics, contentX, contentY);
+            }
+            super.extractRenderState(graphics, mouseX, mouseY, partialTick);
             switch (currentTab) {
                 case OVERVIEW -> renderOverview(graphics, contentX + 164, contentY);
                 case MAP -> renderMapTab(graphics, contentX, contentY);
-                case ROUTES -> renderRoutes(graphics, contentX, contentY);
+                case ROUTES -> renderRouteLabels(graphics, contentX, contentY);
             }
-            super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         }
 
         @Override
@@ -310,7 +314,7 @@ public final class LogisticsServerBoxScreenOpener {
                 addRenderableWidget(tgtBox);
                 addRenderableWidget(LogisticsNativeStyle.button(
                         Component.translatable("gui.simukraft.logistics.channel.keep_apply"),
-                        x + 216, rowY + 26, 60, 12,
+                        x + 216, rowY + 26, 60, KEEP_FIELD_H,
                         () -> send(LogisticsBoxActionPacket.Action.SET_CHANNEL_KEEP_QUANTITY, null, channelId, BlockPos.ZERO,
                                 keepValue(srcBox) + "|" + keepValue(tgtBox), LogisticsDirection.WAREHOUSE_TO_CLIENT, List.of())));
             }
@@ -320,7 +324,7 @@ public final class LogisticsServerBoxScreenOpener {
          * keepBox: 创建只接受数字的保有量输入框。
          */
         private net.minecraft.client.gui.components.EditBox keepBox(int x, int y, int value) {
-            net.minecraft.client.gui.components.EditBox box = new net.minecraft.client.gui.components.EditBox(this.font, x, y, 38, 12, Component.empty());
+            net.minecraft.client.gui.components.EditBox box = new net.minecraft.client.gui.components.EditBox(this.font, x, y, 38, KEEP_FIELD_H, Component.empty());
             box.setValue(String.valueOf(Math.max(0, value)));
             box.setMaxLength(7);
             box.setResponder(text -> {
@@ -390,9 +394,31 @@ public final class LogisticsServerBoxScreenOpener {
         }
 
         /**
-         * renderRoutes: 绘制路径列表（与 buildRouteButtons 共用滚动窗口）。
+         * renderRouteBadges: 在背景之后、按钮和文字之前绘制启停色块。
          */
-        private void renderRoutes(GuiGraphicsExtractor graphics, int x, int y) {
+        private void renderRouteBadges(GuiGraphicsExtractor graphics, int x, int y) {
+            List<LogisticsControlBoxService.ChannelEntry> channels = packet.channels();
+            if (channels.isEmpty()) {
+                return;
+            }
+            int panelL = x - 6;
+            int panelT = routeViewportTop() - 6;
+            int panelR = this.width - 6;
+            int panelB = routeViewportBottom() + 4;
+            int top = routeViewportTop();
+            int last = Math.min(channels.size(), routeScrollRow + routeVisibleRows());
+            graphics.enableScissor(panelL + 2, panelT + 1, panelR - SCROLLBAR_W - 2, panelB - 1);
+            for (int i = routeScrollRow; i < last; i++) {
+                int rowY = top + (i - routeScrollRow) * ROUTE_ROW_H;
+                LogisticsNativeStyle.drawStatusBadgeBackground(graphics, channels.get(i).enabled(), x, rowY - 1);
+            }
+            graphics.disableScissor();
+        }
+
+        /**
+         * renderRouteLabels: 绘制路径列表文字，叠在色块和按钮之上。
+         */
+        private void renderRouteLabels(GuiGraphicsExtractor graphics, int x, int y) {
             List<LogisticsControlBoxService.ChannelEntry> channels = packet.channels();
             Component header = Component.translatable("gui.simukraft.logistics.server.tab.routes")
                     .append(Component.literal(" (" + channels.size() + ")"));
@@ -413,7 +439,7 @@ public final class LogisticsServerBoxScreenOpener {
                 LogisticsControlBoxService.ChannelEntry channel = channels.get(i);
                 int rowY = top + (i - routeScrollRow) * ROUTE_ROW_H;
                 String direction = channel.direction() == LogisticsDirection.CLIENT_TO_WAREHOUSE ? "<-" : "->";
-                LogisticsNativeStyle.drawStatusBadge(graphics, this.font, channel.enabled(), x, rowY - 1);
+                graphics.centeredText(this.font, channel.enabled() ? "ON" : "OFF", x + 12, rowY, LogisticsNativeStyle.TEXT);
                 LogisticsNativeStyle.drawFitString(graphics, this.font, direction + " " + LogisticsItemDisplayName.channelName(channel.name(), channel.filters()),
                         x + 31, rowY, 198, LogisticsNativeStyle.TEXT);
                 LogisticsNativeStyle.drawFitString(graphics, this.font, clientName(channel.clientId()) + " | " + LogisticsItemDisplayName.filterText(channel.filters()),
@@ -468,7 +494,5 @@ public final class LogisticsServerBoxScreenOpener {
             }
             return "-";
         }
-
-        /** filterText: 格式化频道物品过滤器。 */
     }
 }

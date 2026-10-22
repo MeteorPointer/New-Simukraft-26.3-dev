@@ -4,9 +4,9 @@ import common.cn.nsimu.simukraft.building.BuildingBlockData;
 import common.cn.nsimu.simukraft.building.BuildingStructure;
 import common.cn.nsimu.simukraft.building.BuildingStructureService;
 import common.cn.nsimu.simukraft.building.BuildingTaskData;
-import common.cn.nsimu.simukraft.clientbridge.ClientInteractionBridge;
 import common.cn.nsimu.simukraft.job.CitizenEmploymentService;
 import common.cn.nsimu.simukraft.material.GenericContainerAccess;
+import common.cn.nsimu.simukraft.network.manifest.ManifestHeldOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.toast.InfoToastService;
 import common.cn.nsimu.simukraft.registry.ModBlocks;
 import common.cn.nsimu.simukraft.storage.SimuSqliteStorage;
@@ -23,21 +23,28 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.function.Consumer;
 
 
-public final class ManifestItem extends Item {
+/**
+ * 清单物品：潜行右键建筑盒/控制箱读取材料；潜行右键其他方块贴地或挂墙。
+ */
+public final class ManifestItem extends BlockItem {
     private static final String TAG_MATERIALS = "Materials";
     private static final String TAG_CHECKED = "Checked";
     private static final String TAG_AVAILABLE = "Available";
@@ -50,28 +57,32 @@ public final class ManifestItem extends Item {
     private static final String TAG_PRODUCTS = "Products";
     private static final String TAG_INDEX = "Index";
 
-    public ManifestItem(Properties properties) {
-        super(properties.stacksTo(1));
+    public ManifestItem(Item.Properties properties) {
+        super(ModBlocks.MANIFEST.get(), properties.stacksTo(1));
     }
 
     @Override
     public @Nonnull InteractionResult use(@Nonnull Level level, @Nonnull Player player, @Nonnull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (level.isClientSide()) {
-            ClientInteractionBridge.openManifest(stack, hand);
+        if (level instanceof ServerLevel serverLevel && player instanceof ServerPlayer serverPlayer) {
+            refreshFromLinkedSource(stack, serverLevel);
+            PacketDistributor.sendToPlayer(serverPlayer, new ManifestHeldOpenResponsePacket(hand, stack));
         }
         return InteractionResult.SUCCESS.heldItemTransformedTo(stack);
     }
 
+    /**
+     * useOn: 潜行时建筑盒/控制箱读表，其它方块则放置清单。
+     */
     @Override
-    public @Nonnull InteractionResult useOn(@Nonnull net.minecraft.world.item.context.UseOnContext context) {
+    public @Nonnull InteractionResult useOn(@Nonnull UseOnContext context) {
         Level level = context.getLevel();
         Player player = context.getPlayer();
         if (player == null || !player.isShiftKeyDown()) {
             return InteractionResult.PASS;
         }
         BlockPos clickedPos = context.getClickedPos();
-        BlockState state = level.getBlockState(context.getClickedPos());
+        BlockState state = level.getBlockState(clickedPos);
         if (isBuildBox(state)) {
             if (level instanceof ServerLevel serverLevel && player instanceof ServerPlayer serverPlayer) {
                 fillFromBuildBox(context.getItemInHand(), serverLevel, clickedPos, serverPlayer);
@@ -90,11 +101,11 @@ public final class ManifestItem extends Item {
             }
             return InteractionResult.SUCCESS.withoutItem();
         }
-        return InteractionResult.PASS;
+        return place(new BlockPlaceContext(context));
     }
 
     @Override
-    public void appendHoverText(@Nonnull ItemStack stack, @Nonnull TooltipContext context, @Nonnull TooltipDisplay tooltipDisplay, @Nonnull Consumer<Component> tooltipComponents, @Nonnull TooltipFlag isAdvanced) {
+    public void appendHoverText(@Nonnull ItemStack stack, @Nonnull Item.TooltipContext context, @Nonnull TooltipDisplay tooltipDisplay, @Nonnull Consumer<Component> tooltipComponents, @Nonnull TooltipFlag isAdvanced) {
         super.appendHoverText(stack, context, tooltipDisplay, tooltipComponents, isAdvanced);
         if (hasData(stack)) {
             tooltipComponents.accept(Component.translatable("tooltip.simukraft.manifest.building", getBuildingName(stack)));
@@ -123,34 +134,79 @@ public final class ManifestItem extends Item {
     }
 
     private static void fillFromBuildBox(ItemStack stack, ServerLevel level, BlockPos buildBoxPos, ServerPlayer player) {
-        UUID buildTaskOwner = findBuildTaskOwner(level, buildBoxPos);
-        if (buildTaskOwner == null) {
+        FillStatus status = applyBuildBoxSnapshot(stack, level, buildBoxPos);
+        if (status == FillStatus.NO_TASK) {
             InfoToastService.warning(player, Component.translatable("message.simukraft.manifest.no_task"));
             return;
         }
-
-        BuildingTaskData task = SimuSqliteStorage.loadBuildingTask(level, buildTaskOwner);
-        if (task == null) {
-            InfoToastService.warning(player, Component.translatable("message.simukraft.manifest.no_task"));
-            return;
-        }
-
-        Optional<BuildingStructure> structureOptional = BuildingStructureService.loadStructure(task);
-        if (structureOptional.isEmpty()) {
+        if (status == FillStatus.NO_BUILDING) {
             InfoToastService.warning(player, Component.translatable("message.simukraft.manifest.no_building"));
             return;
         }
+        InfoToastService.success(player, Component.translatable("message.simukraft.manifest.filled"));
+    }
 
+    /**
+     * refreshFromLinkedBuildBox: 静默按建筑盒当前位置刷新清单剩余材料。
+     */
+    public static boolean refreshFromLinkedBuildBox(@Nonnull ItemStack stack, @Nonnull ServerLevel level) {
+        return "build".equals(getSourceType(stack)) && refreshFromLinkedSource(stack, level);
+    }
+
+    /**
+     * refreshFromLinkedSource: 打开时按绑定来源惰性刷新材料，保留原勾选。
+     */
+    public static boolean refreshFromLinkedSource(@Nonnull ItemStack stack, @Nonnull ServerLevel level) {
+        String sourceType = getSourceType(stack);
+        BlockPos sourcePos = getBuildBoxPos(stack);
+        if (sourceType.isBlank() || sourcePos == null || !level.isLoaded(sourcePos)) {
+            return false;
+        }
+        Map<String, Boolean> previousChecked = checkedByItem(stack);
+        boolean updated = switch (sourceType) {
+            case "build" -> applyBuildBoxSnapshot(stack, level, sourcePos) == FillStatus.OK;
+            case "commercial" -> applyControlBoxSnapshot(stack, ManifestControlBoxSnapshotService.commercial(level, sourcePos));
+            case "industrial" -> applyControlBoxSnapshot(stack, ManifestControlBoxSnapshotService.industrial(level, sourcePos));
+            default -> false;
+        };
+        if (updated) {
+            restoreChecked(stack, previousChecked);
+        }
+        return updated;
+    }
+
+    /**
+     * getBuildBoxPos: 读取清单绑定的建筑盒坐标。
+     */
+    public static BlockPos getBuildBoxPos(@Nonnull ItemStack stack) {
+        CompoundTag tag = customTag(stack);
+        return tag.contains(TAG_BUILD_BOX_POS) ? BlockPos.of(tag.getLongOr(TAG_BUILD_BOX_POS, 0L)) : null;
+    }
+
+    /**
+     * applyBuildBoxSnapshot: 把建筑盒当前材料写入清单，失败时不改原数据。
+     */
+    private static FillStatus applyBuildBoxSnapshot(ItemStack stack, ServerLevel level, BlockPos buildBoxPos) {
+        UUID buildTaskOwner = findBuildTaskOwner(level, buildBoxPos);
+        if (buildTaskOwner == null) {
+            return FillStatus.NO_TASK;
+        }
+        BuildingTaskData task = SimuSqliteStorage.loadBuildingTask(level, buildTaskOwner);
+        if (task == null) {
+            return FillStatus.NO_TASK;
+        }
+        Optional<BuildingStructure> structureOptional = BuildingStructureService.loadStructure(task);
+        if (structureOptional.isEmpty()) {
+            return FillStatus.NO_BUILDING;
+        }
         BuildingStructure structure = structureOptional.get();
         List<BuildingBlockData> placedBlocks = sortedPlacedBlocks(structure, task);
         int currentIndex = clamp(task.currentBlockIndex(), 0, placedBlocks.size());
         Map<String, Integer> chestMaterials = countAdjacentContainerItems(level, buildBoxPos);
         ManifestMaterialAvailability.Snapshot materialSnapshot = ManifestMaterialAvailability.calculate(placedBlocks, currentIndex, chestMaterials);
         if (materialSnapshot.required().isEmpty()) {
-            InfoToastService.warning(player, Component.translatable("message.simukraft.manifest.no_building"));
-            return;
+            return FillStatus.NO_BUILDING;
         }
-
         CompoundTag tag = customTag(stack);
         tag.putString(TAG_BUILDING_NAME, displayName(task.displayName(), structure.displayName(), task.buildingFileName()));
         tag.putString(TAG_SOURCE_TYPE, "build");
@@ -160,7 +216,7 @@ public final class ManifestItem extends Item {
         writeMaterials(tag, materialSnapshot.required(), materialSnapshot.available());
         tag.remove(TAG_PRODUCT_GROUPS);
         applyCustomTag(stack, tag);
-        InfoToastService.success(player, Component.translatable("message.simukraft.manifest.filled"));
+        return FillStatus.OK;
     }
 
     /**
@@ -181,11 +237,20 @@ public final class ManifestItem extends Item {
      * fillFromControlBoxSnapshot: 将控制箱材料快照写入清单 NBT。
      */
     private static void fillFromControlBoxSnapshot(ItemStack stack, ServerPlayer player, ManifestControlBoxSnapshotService.FillResult result) {
-        if (!result.success()) {
+        if (!applyControlBoxSnapshot(stack, result)) {
             InfoToastService.warning(player, result.warning());
             return;
         }
+        InfoToastService.success(player, Component.translatable("message.simukraft.manifest.filled"));
+    }
 
+    /**
+     * applyControlBoxSnapshot: 把控制箱快照写入清单，失败时不改原数据。
+     */
+    private static boolean applyControlBoxSnapshot(ItemStack stack, ManifestControlBoxSnapshotService.FillResult result) {
+        if (result == null || !result.success()) {
+            return false;
+        }
         ManifestControlBoxSnapshotService.Snapshot snapshot = result.snapshot();
         CompoundTag tag = customTag(stack);
         tag.putString(TAG_BUILDING_NAME, snapshot.buildingName());
@@ -196,7 +261,41 @@ public final class ManifestItem extends Item {
         writeMaterials(tag, snapshot.materials(), snapshot.availableMaterials());
         writeProductGroups(tag, snapshot.productGroups());
         applyCustomTag(stack, tag);
-        InfoToastService.success(player, Component.translatable("message.simukraft.manifest.filled"));
+        return true;
+    }
+
+    /**
+     * checkedByItem: 读取当前勾选，供刷新后还原。
+     */
+    private static Map<String, Boolean> checkedByItem(ItemStack stack) {
+        Map<String, Boolean> checked = new LinkedHashMap<>();
+        for (MaterialEntry entry : getMaterials(stack)) {
+            checked.put(entry.itemId(), entry.checked());
+        }
+        return checked;
+    }
+
+    /**
+     * restoreChecked: 按物品 ID 还原勾选，新增条目保留自动勾选。
+     */
+    private static void restoreChecked(ItemStack stack, Map<String, Boolean> previousChecked) {
+        if (previousChecked == null || previousChecked.isEmpty()) {
+            return;
+        }
+        CompoundTag tag = customTag(stack);
+        if (!tag.contains(TAG_MATERIALS)) {
+            return;
+        }
+        ListTag materialsList = tag.getList(TAG_MATERIALS).orElse(new ListTag());
+        ListTag checkedList = tag.getList(TAG_CHECKED).orElse(new ListTag());
+        ListTag restored = new ListTag();
+        for (int i = 0; i < materialsList.size(); i++) {
+            String itemId = materialsList.getCompound(i).orElse(new CompoundTag()).getString("Item").orElse("");
+            boolean fallback = i < checkedList.size() && Boolean.parseBoolean(checkedList.getString(i).orElse(""));
+            restored.add(StringTag.valueOf(Boolean.toString(previousChecked.getOrDefault(itemId, fallback))));
+        }
+        tag.put(TAG_CHECKED, restored);
+        applyCustomTag(stack, tag);
     }
 
     private static List<BuildingBlockData> sortedPlacedBlocks(BuildingStructure structure, BuildingTaskData task) {
@@ -465,6 +564,12 @@ public final class ManifestItem extends Item {
 
     private static int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    private enum FillStatus {
+        OK,
+        NO_TASK,
+        NO_BUILDING
     }
 
     public record MaterialEntry(@Nonnull String itemId, int count, int available, boolean checked, int index) {

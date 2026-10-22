@@ -59,6 +59,15 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> MEDICAL_CONTROL_BOX = registerBlock("medical_control_box", MedicalControlBoxBlock::new, metalBox(1.0F));
     public static final DeferredBlock<Block> BANK_CONTROL_BOX = registerBlock("bank_control_box", BankControlBoxBlock::new, metalBox(1.0F));
     public static final DeferredBlock<Block> EXCHANGE_CONTROL_BOX = registerBlock("exchange_control_box", ExchangeControlBoxBlock::new, metalBox(1.0F));
+    public static final DeferredBlock<Block> GLOBAL_MARKET_CONTROL_BOX = registerBlock("global_market_control_box", GlobalMarketControlBoxBlock::new, metalBox(1.0F));
+    /**
+     * MANIFEST: 可贴地/挂墙的清单方块，物品仍由 ManifestItem 注册。
+     */
+    public static final DeferredBlock<Block> MANIFEST = BLOCKS.registerBlock("manifest", ManifestBlock::new,
+            p -> p.mapColor(MapColor.WOOD).instabreak().sound(SoundType.WOOD).noOcclusion()
+                    .pushReaction(PushReaction.POPPED)
+                    .isViewBlocking((s, b, pos, aabb) -> false)
+                    .isSuffocating((s, b, pos) -> false));
     public static final DeferredBlock<LiquidBlock> MILK_BLOCK = BLOCKS.registerBlock("milk_fluid",
             props -> new MilkLiquidBlock(ModFluids.SOURCE_MILK.get(), props), ModBlocks::milkProperties);
     public static final DeferredBlock<Block> NSUK_FARMLAND_BOX = registerBlock("nsuk_farmland_box", FarmlandBoxBlock::new, woodBox());

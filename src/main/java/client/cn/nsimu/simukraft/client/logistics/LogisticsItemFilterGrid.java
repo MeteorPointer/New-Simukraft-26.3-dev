@@ -13,7 +13,7 @@ import java.util.Set;
 
 final class LogisticsItemFilterGrid {
     private static final int COLS = 9;
-    private static final int ROWS = 4;
+    private static final int ROWS = 3;
     private static final int SLOT = 18;
     private static final float COUNT_SCALE = 0.65F;
 
@@ -36,7 +36,7 @@ final class LogisticsItemFilterGrid {
      * height: 返回过滤网格的固定高度。
      */
     int height() {
-        return ROWS * SLOT + 14;
+        return ROWS * SLOT;
     }
 
     /**
@@ -84,6 +84,12 @@ final class LogisticsItemFilterGrid {
         }
         graphics.text(font, Component.translatable("gui.simukraft.logistics.channel.selected_count", selectedItemIds.size()),
                 x, y + ROWS * SLOT + 4, LogisticsNativeStyle.TEXT, true);
+    }
+
+    /**
+     * renderHoverTooltip: 在文字层之后绘制悬浮提示。
+     */
+    void renderHoverTooltip(GuiGraphicsExtractor graphics, Font font, int x, int y, int mouseX, int mouseY) {
         renderTooltip(graphics, font, x, y, mouseX, mouseY);
     }
 

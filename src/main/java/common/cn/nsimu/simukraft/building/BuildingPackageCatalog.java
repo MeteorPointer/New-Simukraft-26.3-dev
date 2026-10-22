@@ -352,11 +352,16 @@ public final class BuildingPackageCatalog {
             if (configuredFile != null && !configuredFile.isBlank()) {
                 declaredKey = "exchange";
             } else {
-                configuredFile = findDeclaredValue(metaText, "medical");
+                configuredFile = findDeclaredValue(metaText, "global_market");
                 if (configuredFile != null && !configuredFile.isBlank()) {
-                    declaredKey = "medical";
+                    declaredKey = "global_market";
                 } else {
-                    configuredFile = baseName + ".json";
+                    configuredFile = findDeclaredValue(metaText, "medical");
+                    if (configuredFile != null && !configuredFile.isBlank()) {
+                        declaredKey = "medical";
+                    } else {
+                        configuredFile = baseName + ".json";
+                    }
                 }
             }
         }
@@ -381,7 +386,7 @@ public final class BuildingPackageCatalog {
     }
 
     /**
-     * fallbackPublicType: .sk 显式写了 medical/bank/exchange 时，JSON 缺 type 仍按该类别。
+     * fallbackPublicType: .sk 显式写了 medical/bank/exchange/global_market 时，JSON 缺 type 仍按该类别。
      */
     private static BuildingCatalog.BuildingType fallbackPublicType(String declaredKey) {
         if ("bank".equals(declaredKey)) {
@@ -389,6 +394,9 @@ public final class BuildingPackageCatalog {
         }
         if ("exchange".equals(declaredKey)) {
             return BuildingCatalog.BuildingType.EXCHANGE;
+        }
+        if ("global_market".equals(declaredKey)) {
+            return BuildingCatalog.BuildingType.GLOBAL_MARKET;
         }
         if ("medical".equals(declaredKey)) {
             return BuildingCatalog.BuildingType.MEDICAL;
@@ -411,6 +419,9 @@ public final class BuildingPackageCatalog {
             }
             if (equalsAnyIgnoreCase(type, "exchange", "stock", "simukraft:exchange")) {
                 return BuildingCatalog.BuildingType.EXCHANGE;
+            }
+            if (equalsAnyIgnoreCase(type, "global_market", "global-market", "simukraft:global_market")) {
+                return BuildingCatalog.BuildingType.GLOBAL_MARKET;
             }
             if (equalsAnyIgnoreCase(type, "hospital", "medical", "simukraft:hospital", "simukraft:medical")) {
                 return BuildingCatalog.BuildingType.MEDICAL;
@@ -632,16 +643,6 @@ public final class BuildingPackageCatalog {
             SimuKraft.LOGGER.warn("Simukraft: Failed to read building package entry {}", entryPath, exception);
             return Optional.empty();
         }
-    }
-
-    /**
-     * displayAmount: 英文界面去掉造价里的“元”。
-     */
-    private static String displayAmount(String amount) {
-        if (amount == null || amount.isBlank() || !BuildingLocale.preferEnglish()) {
-            return amount;
-        }
-        return amount.replace("元", "").trim();
     }
 
     private static String findValue(String text, String key, String fallback) {

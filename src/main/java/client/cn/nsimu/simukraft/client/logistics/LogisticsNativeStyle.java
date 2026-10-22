@@ -17,8 +17,8 @@ final class LogisticsNativeStyle {
     static final int PANEL = 0xE0111122;
     static final int PANEL_DARK = 0xCC0D0D1A;
     static final int PANEL_LINE = 0xFF333355;
-    static final int STATUS_ON = 0xCC1F8F3A;
-    static final int STATUS_OFF = 0xCC9B2C2C;
+    static final int STATUS_ON = 0x661F8F3A;
+    static final int STATUS_OFF = 0x669B2C2C;
     static final int STATUS_ON_LINE = 0xFF55FF77;
     static final int STATUS_OFF_LINE = 0xFFFF7777;
 
@@ -30,6 +30,13 @@ final class LogisticsNativeStyle {
      */
     static void drawBackdrop(GuiGraphicsExtractor graphics, int width, int height) {
         graphics.fill(0, 0, width, height, 0x660D0D1A);
+    }
+
+    /**
+     * drawDenseBackdrop: 创建线路等需要更不透明遮罩的界面背景。
+     */
+    static void drawDenseBackdrop(GuiGraphicsExtractor graphics, int width, int height) {
+        graphics.fill(0, 0, width, height, 0xCC0D0D1A);
     }
 
     /**
@@ -70,6 +77,15 @@ final class LogisticsNativeStyle {
     static void drawStatusBadge(GuiGraphicsExtractor graphics, Font font, boolean enabled, int x, int y) {
         String text = enabled ? "ON" : "OFF";
         int width = 25;
+        drawStatusBadgeBackground(graphics, enabled, x, y);
+        graphics.centeredText(font, text, x + width / 2, y + 1, TEXT);
+    }
+
+    /**
+     * drawStatusBadgeBackground: 只画启停色块，供背景后、文字前的分层绘制。
+     */
+    static void drawStatusBadgeBackground(GuiGraphicsExtractor graphics, boolean enabled, int x, int y) {
+        int width = 25;
         int height = 11;
         int fill = enabled ? STATUS_ON : STATUS_OFF;
         int line = enabled ? STATUS_ON_LINE : STATUS_OFF_LINE;
@@ -78,7 +94,6 @@ final class LogisticsNativeStyle {
         graphics.fill(x, y + height - 1, x + width, y + height, line);
         graphics.fill(x, y, x + 1, y + height, line);
         graphics.fill(x + width - 1, y, x + width, y + height, line);
-        graphics.centeredText(font, text, x + width / 2, y + 1, TEXT);
     }
 
     /**

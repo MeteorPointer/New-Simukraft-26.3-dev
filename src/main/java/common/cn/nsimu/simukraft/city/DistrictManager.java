@@ -129,8 +129,7 @@ public final class DistrictManager extends SavedData {
         name = normalizeDistrictName(name);
         if (cityId == null || !CityService.isValidCityName(name) || chunks == null || chunks.isEmpty() || nameExists(cityId, name))
             return null;
-        // A chunk can only belong to one district. Core chunks remain protected even
-        // though they are still part of the parent city's claimed area.
+        // 一块地只能属于一个分区。没划区的城市土地，包括城市核心，不是分区。
         if (chunks.stream().anyMatch(chunk -> chunkIndex.containsKey(chunk) || isProtectedCoreChunk(chunk)))
             return null;
         if (!ownedByCity(cityId, chunks)) return null;
@@ -350,10 +349,10 @@ public final class DistrictManager extends SavedData {
         return true;
     }
 
+    /**
+     * isProtectedCoreChunk: 只保住已经绑定的分区核心，避免把区核从原分区拆走。城市核心区块默认可划入分区。
+     */
     private boolean isProtectedCoreChunk(long chunk) {
-        if (level != null && CityService.allCities(level).stream().anyMatch(city -> ChunkPos.containing(city.cityCorePos()).pack() == chunk)) {
-            return true;
-        }
         return districts.values().stream().flatMap(district -> district.cores().stream())
                 .anyMatch(core -> ChunkPos.containing(BlockPos.of(core)).pack() == chunk);
     }

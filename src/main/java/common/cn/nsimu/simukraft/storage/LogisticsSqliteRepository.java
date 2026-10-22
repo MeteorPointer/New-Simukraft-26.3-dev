@@ -305,8 +305,8 @@ public final class LogisticsSqliteRepository {
 
     private void saveChannel(Connection connection, CompoundTag tag) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
-                "INSERT INTO logistics_channels(channel_id, warehouse_id, client_id, direction, name, enabled, filters, updated_at, keep_quantity, keep_source) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
-                        + "ON CONFLICT(channel_id) DO UPDATE SET warehouse_id = excluded.warehouse_id, client_id = excluded.client_id, direction = excluded.direction, name = excluded.name, enabled = excluded.enabled, filters = excluded.filters, updated_at = excluded.updated_at, keep_quantity = excluded.keep_quantity, keep_source = excluded.keep_source")) {
+                "INSERT INTO logistics_channels(channel_id, warehouse_id, client_id, direction, name, enabled, filters, updated_at, keep_quantity, keep_source, filter_mode) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                        + "ON CONFLICT(channel_id) DO UPDATE SET warehouse_id = excluded.warehouse_id, client_id = excluded.client_id, direction = excluded.direction, name = excluded.name, enabled = excluded.enabled, filters = excluded.filters, updated_at = excluded.updated_at, keep_quantity = excluded.keep_quantity, keep_source = excluded.keep_source, filter_mode = excluded.filter_mode")) {
             statement.setString(1, NbtUuid.read(tag, "ChannelId").toString());
             statement.setString(2, NbtUuid.toStringOrEmpty(tag, "WarehouseId"));
             statement.setString(3, NbtUuid.toStringOrEmpty(tag, "ClientId"));
@@ -317,6 +317,7 @@ public final class LogisticsSqliteRepository {
             statement.setLong(8, tag.getLongOr("UpdatedAt", 0L));
             statement.setInt(9, tag.contains("KeepQuantity") ? tag.getIntOr("KeepQuantity", 0) : 0);
             statement.setInt(10, tag.contains("KeepSourceQuantity") ? tag.getIntOr("KeepSourceQuantity", 0) : 0);
+            statement.setString(11, tag.getStringOr("FilterMode", "ITEM"));
             statement.executeUpdate();
         }
     }
@@ -436,6 +437,10 @@ public final class LogisticsSqliteRepository {
                     tag.putLong("UpdatedAt", resultSet.getLong("updated_at"));
                     tag.putInt("KeepQuantity", resultSet.getInt("keep_quantity"));
                     tag.putInt("KeepSourceQuantity", resultSet.getInt("keep_source"));
+                    String filterMode = resultSet.getString("filter_mode");
+                    if (filterMode != null && !filterMode.isBlank()) {
+                        tag.putString("FilterMode", filterMode);
+                    }
                     try {
                         tag.put("Filters", net.minecraft.nbt.TagParser.parseCompoundFully("{Filters:" + resultSet.getString("filters") + "}").getListOrEmpty("Filters"));
                     } catch (Exception exception) {

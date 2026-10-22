@@ -1,5 +1,6 @@
 package common.cn.nsimu.simukraft.citizen;
 
+import common.cn.nsimu.simukraft.building.BuilderConstructionService;
 import common.cn.nsimu.simukraft.entity.CitizenEntity;
 import common.cn.nsimu.simukraft.registry.ModItems;
 import common.cn.nsimu.simukraft.registry.ModSoundEvents;
@@ -8,12 +9,15 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
 import javax.annotation.Nullable;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
@@ -90,6 +94,37 @@ public final class CitizenVoiceService {
             return;
         }
         level.playSound(null, entity.blockPosition(), sound, SoundSource.NEUTRAL, 1.0F, 1.0F);
+    }
+
+    /**
+     * tryBuilderApproach: 玩家走进施工中的建筑师附近时，有几率只播一次施工语音。
+     */
+    public static void tryBuilderApproach(ServerLevel level, CitizenEntity entity, @Nullable CitizenData data) {
+        if (level == null || entity == null || !BuilderConstructionService.hasActiveBuildTask(level, entity.getUUID())) {
+            BUILD_NEARBY.remove(entity == null ? null : entity.getUUID());
+            return;
+        }
+        AABB around = entity.getBoundingBox().inflate(8.0D, 3.0D, 8.0D);
+        Set<UUID> nearby = new HashSet<>();
+        for (Player player : level.getEntitiesOfClass(Player.class, around, player -> player.isAlive() && !player.isSpectator())) {
+            nearby.add(player.getUUID());
+        }
+        Set<UUID> previous = BUILD_NEARBY.getOrDefault(entity.getUUID(), Set.of());
+        boolean arrived = false;
+        for (UUID playerId : nearby) {
+            if (!previous.contains(playerId)) {
+                arrived = true;
+                break;
+            }
+        }
+        if (nearby.isEmpty()) {
+            BUILD_NEARBY.remove(entity.getUUID());
+        } else {
+            BUILD_NEARBY.put(entity.getUUID(), nearby);
+        }
+        if (arrived && entity.getRandom().nextFloat() < BUILD_APPROACH_CHANCE) {
+            play(level, entity, data, Cue.BUILD);
+        }
     }
 
     /**

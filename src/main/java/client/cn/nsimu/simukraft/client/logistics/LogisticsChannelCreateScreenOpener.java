@@ -1,6 +1,7 @@
 package client.cn.nsimu.simukraft.client.logistics;
 
 import client.cn.nsimu.simukraft.client.toast.ClientInfoToast;
+import common.cn.nsimu.simukraft.logistics.LogisticsChannelFilterMode;
 import common.cn.nsimu.simukraft.logistics.LogisticsControlBoxService;
 import common.cn.nsimu.simukraft.logistics.LogisticsDirection;
 import common.cn.nsimu.simukraft.logistics.LogisticsInventoryEntry;
@@ -44,13 +45,19 @@ public final class LogisticsChannelCreateScreenOpener {
         private final LogisticsItemFilterGrid itemGrid;
         private UUID selectedClientId;
         private LogisticsDirection direction;
+        private LogisticsChannelFilterMode filterMode = LogisticsChannelFilterMode.ITEM;
         private EditBox nameField;
+        private EditBox keepSourceField;
+        private EditBox keepTargetField;
         private String lastAutoName = "";
+        private String keepSourceText = "0";
+        private String keepTargetText = "0";
         private int clientScrollOffset = 0;
-        private static final int CLIENT_LIST_TOP = 52;
-        private static final int CLIENT_LIST_BOTTOM = 196;
+        private static final int HOTBAR_RESERVE = 58;
+        private static final int PANEL_MARGIN = 10;
+        private static final int CLIENT_LIST_TOP = 48;
         private static final int CLIENT_ITEM_HEIGHT = 22;
-        private static final int CLIENT_LIST_VISIBLE = (CLIENT_LIST_BOTTOM - CLIENT_LIST_TOP) / CLIENT_ITEM_HEIGHT;
+        private static final int RIGHT_COLUMN = 186;
 
         private LogisticsChannelCreateScreen(LogisticsServerBoxOpenResponsePacket packet, UUID preselectedClientId, LogisticsDirection direction) {
             super(Component.translatable("gui.simukraft.logistics.channel.create_title"));
@@ -73,7 +80,7 @@ public final class LogisticsChannelCreateScreenOpener {
          */
         @Override
         public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-            LogisticsNativeStyle.drawBackdrop(graphics, this.width, this.height);
+            LogisticsNativeStyle.drawDenseBackdrop(graphics, this.width, this.height);
         }
 
         /**
@@ -83,19 +90,32 @@ public final class LogisticsChannelCreateScreenOpener {
         public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
             Layout layout = layout();
             LogisticsNativeStyle.drawPanel(graphics, layout.x(), layout.y(), layout.width(), layout.height());
-            graphics.centeredText(this.font, this.title, layout.x() + layout.width() / 2, layout.y() + 10, LogisticsNativeStyle.TEXT);
-            graphics.text(this.font, Component.translatable("gui.simukraft.logistics.channel.client"), layout.x() + 10, layout.y() + 34, LogisticsNativeStyle.TEXT_WARN);
-            graphics.text(this.font, Component.translatable("gui.simukraft.logistics.channel.name"), layout.x() + 176, layout.y() + 34, LogisticsNativeStyle.TEXT_WARN);
-            graphics.text(this.font, Component.translatable("gui.simukraft.logistics.channel.direction"), layout.x() + 176, layout.y() + 76, LogisticsNativeStyle.TEXT_WARN);
-            graphics.text(this.font, Component.translatable("gui.simukraft.logistics.channel.items"), layout.x() + 176, layout.y() + 116, LogisticsNativeStyle.TEXT_WARN);
-            renderSelectedClientHint(graphics, layout.x() + 10, layout.y() + 206);
             renderClientScrollbar(graphics, layout);
-            itemGrid.render(graphics, this.font, layout.gridX(), layout.gridY(), mouseX, mouseY);
+            if (filterMode == LogisticsChannelFilterMode.ITEM) {
+                itemGrid.render(graphics, this.font, layout.gridX(), layout.gridY(), mouseX, mouseY);
+            } else {
+                renderManifestHintPanel(graphics, layout);
+            }
             super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+            graphics.centeredText(this.font, this.title, layout.x() + layout.width() / 2, layout.titleY(), LogisticsNativeStyle.TEXT);
+            graphics.text(this.font, Component.translatable("gui.simukraft.logistics.channel.client"), layout.x() + 12, layout.nameLabelY(), LogisticsNativeStyle.TEXT_WARN);
+            graphics.text(this.font, Component.translatable("gui.simukraft.logistics.channel.name"), layout.rightX(), layout.nameLabelY(), LogisticsNativeStyle.TEXT_WARN);
+            graphics.text(this.font, Component.translatable("gui.simukraft.logistics.channel.direction"), layout.rightX(), layout.directionLabelY(), LogisticsNativeStyle.TEXT_WARN);
+            graphics.text(this.font, Component.translatable("gui.simukraft.logistics.channel.keep_source"), layout.rightX(), layout.keepLabelY(), LogisticsNativeStyle.TEXT_WARN);
+            graphics.text(this.font, Component.translatable("gui.simukraft.logistics.channel.keep_target"), layout.keepTargetX(), layout.keepLabelY(), LogisticsNativeStyle.TEXT_WARN);
+            renderSelectedClientHint(graphics, layout.x() + 12, layout.y() + layout.height() - 18);
+            if (filterMode == LogisticsChannelFilterMode.ITEM) {
+                graphics.text(this.font, Component.translatable(
+                        "gui.simukraft.logistics.channel.selected_count", itemGrid.selectedItemIds().size()),
+                        layout.actionX(), layout.selectedY(), LogisticsNativeStyle.TEXT, false);
+                itemGrid.renderHoverTooltip(graphics, this.font, layout.gridX(), layout.gridY(), mouseX, mouseY);
+            } else {
+                renderManifestHintText(graphics, layout);
+            }
         }
 
         /**
-         * mouseClicked: 优先处理过滤网格点击。
+         * mouseClicked: 先交给按钮，避免确认/返回被物品格抢走点击。
          */
         @Override
         public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
@@ -103,7 +123,8 @@ public final class LogisticsChannelCreateScreenOpener {
             double mouseY = event.y();
             int button = event.button();
             Layout layout = layout();
-            if (itemGrid.mouseClicked(mouseX, mouseY, button, layout.gridX(), layout.gridY())) {
+            if (filterMode == LogisticsChannelFilterMode.ITEM
+                    && itemGrid.mouseClicked(mouseX, mouseY, button, layout.gridX(), layout.gridY())) {
                 autoFillNameIfUntouched();
                 return true;
             }
@@ -116,14 +137,15 @@ public final class LogisticsChannelCreateScreenOpener {
         @Override
         public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
             Layout layout = layout();
-            if (mouseX >= layout.x() && mouseX <= layout.x() + 166
-                    && mouseY >= layout.y() + CLIENT_LIST_TOP && mouseY <= layout.y() + CLIENT_LIST_BOTTOM) {
-                int maxOffset = Math.max(0, packet.clients().size() - CLIENT_LIST_VISIBLE);
+            if (mouseX >= layout.x() && mouseX <= layout.x() + RIGHT_COLUMN - 8
+                    && mouseY >= layout.y() + CLIENT_LIST_TOP && mouseY <= layout.y() + layout.height() - 26) {
+                int maxOffset = Math.max(0, packet.clients().size() - clientListVisible(layout));
                 clientScrollOffset = Math.clamp((int) (clientScrollOffset - verticalAmount), 0, maxOffset);
                 rebuildWidgets(nameField != null ? nameField.getValue() : "");
                 return true;
             }
-            if (itemGrid.mouseScrolled(mouseX, mouseY, verticalAmount, layout.gridX(), layout.gridY())) {
+            if (filterMode == LogisticsChannelFilterMode.ITEM
+                    && itemGrid.mouseScrolled(mouseX, mouseY, verticalAmount, layout.gridX(), layout.gridY())) {
                 return true;
             }
             return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
@@ -138,24 +160,29 @@ public final class LogisticsChannelCreateScreenOpener {
          * rebuildWidgets: 重建按钮并保留名称输入内容。
          */
         private void rebuildWidgets(String previousName) {
+            rememberKeepValues();
             clearWidgets();
             Layout layout = layout();
             boolean autoName = canAutoReplaceName(previousName);
             String name = autoName ? suggestedChannelName() : previousName;
-            nameField = new EditBox(this.font, layout.x() + 176, layout.y() + 50, 190, 20, Component.empty());
+            nameField = new EditBox(this.font, layout.rightX(), layout.nameFieldY(), layout.fieldWidth(), 20, Component.empty());
             nameField.setMaxLength(64);
             nameField.setValue(name);
             if (autoName) {
                 lastAutoName = name;
             }
             addRenderableWidget(nameField);
+            keepSourceField = keepBox(layout.rightX(), layout.keepFieldY(), keepSourceText, layout.keepFieldWidth());
+            keepTargetField = keepBox(layout.keepTargetX(), layout.keepFieldY(), keepTargetText, layout.keepFieldWidth());
+            addRenderableWidget(keepSourceField);
+            addRenderableWidget(keepTargetField);
             addClientButtons(layout);
             addDirectionButtons(layout);
-            int buttonY = layout.y() + layout.height() - 24;
+            addFilterTabButtons(layout);
             addRenderableWidget(LogisticsNativeStyle.button(Component.translatable("gui.simukraft.logistics.channel.confirm"),
-                    layout.x() + layout.width() - 174, buttonY, 78, 20, this::confirm));
+                    layout.actionX(), layout.confirmY(), layout.actionWidth(), 20, this::confirm));
             addRenderableWidget(LogisticsNativeStyle.button(Component.translatable("gui.simukraft.logistics.channel.cancel"),
-                    layout.x() + layout.width() - 90, buttonY, 78, 20,
+                    layout.actionX(), layout.cancelY(), layout.actionWidth(), 20,
                     () -> LogisticsServerBoxScreenOpener.open(packet)));
         }
 
@@ -164,16 +191,17 @@ public final class LogisticsChannelCreateScreenOpener {
          */
         private void addClientButtons(Layout layout) {
             List<LogisticsControlBoxService.ClientEntry> clients = packet.clients();
-            int maxOffset = Math.max(0, clients.size() - CLIENT_LIST_VISIBLE);
+            int maxOffset = Math.max(0, clients.size() - clientListVisible(layout));
             clientScrollOffset = Math.clamp(clientScrollOffset, 0, maxOffset);
-            int x = layout.x() + 10;
+            int x = layout.x() + 12;
             int y = layout.y() + CLIENT_LIST_TOP;
-            for (int i = clientScrollOffset; i < clients.size() && y <= layout.y() + CLIENT_LIST_BOTTOM - CLIENT_ITEM_HEIGHT; i++) {
+            int listBottom = layout.y() + layout.height() - 26;
+            for (int i = clientScrollOffset; i < clients.size() && y <= listBottom - CLIENT_ITEM_HEIGHT; i++) {
                 LogisticsControlBoxService.ClientEntry client = clients.get(i);
                 UUID clientId = client.clientId();
                 String prefix = clientId.equals(selectedClientId) ? "> " : "";
                 addRenderableWidget(LogisticsNativeStyle.button(Component.literal(prefix + client.name() + " [" + client.portCount() + "]"),
-                        x, y, 150, 20, () -> {
+                        x, y, RIGHT_COLUMN - 26, 20, () -> {
                             selectedClientId = clientId;
                             refreshFilterItems();
                             rebuildWidgets(nameField != null ? nameField.getValue() : "");
@@ -189,19 +217,59 @@ public final class LogisticsChannelCreateScreenOpener {
             addRenderableWidget(LogisticsNativeStyle.button(direction == LogisticsDirection.WAREHOUSE_TO_CLIENT
                             ? Component.literal("> ").append(Component.translatable("gui.simukraft.logistics.channel.direction.send"))
                             : Component.translatable("gui.simukraft.logistics.channel.direction.send"),
-                    layout.x() + 176, layout.y() + 92, 88, 20, () -> setDirection(LogisticsDirection.WAREHOUSE_TO_CLIENT)));
-            addRenderableWidget(LogisticsNativeStyle.button(direction == LogisticsDirection.CLIENT_TO_WAREHOUSE
+                    layout.rightX(), layout.directionButtonY(), layout.keepFieldWidth(), 20,
+                    () -> setDirection(LogisticsDirection.WAREHOUSE_TO_CLIENT)));
+            var receive = addRenderableWidget(LogisticsNativeStyle.button(direction == LogisticsDirection.CLIENT_TO_WAREHOUSE
                             ? Component.literal("> ").append(Component.translatable("gui.simukraft.logistics.channel.direction.receive"))
                             : Component.translatable("gui.simukraft.logistics.channel.direction.receive"),
-                    layout.x() + 270, layout.y() + 92, 88, 20, () -> setDirection(LogisticsDirection.CLIENT_TO_WAREHOUSE)));
+                    layout.keepTargetX(), layout.directionButtonY(), layout.keepFieldWidth(), 20,
+                    () -> setDirection(LogisticsDirection.CLIENT_TO_WAREHOUSE)));
+            receive.active = filterMode != LogisticsChannelFilterMode.MANIFEST;
+        }
+
+        /**
+         * addFilterTabButtons: 切换物品过滤和清单过滤页。
+         */
+        private void addFilterTabButtons(Layout layout) {
+            addRenderableWidget(LogisticsNativeStyle.button(tabLabel(LogisticsChannelFilterMode.ITEM,
+                            "gui.simukraft.logistics.channel.items"),
+                    layout.rightX(), layout.tabY(), layout.keepFieldWidth(), 20,
+                    () -> setFilterMode(LogisticsChannelFilterMode.ITEM)));
+            addRenderableWidget(LogisticsNativeStyle.button(tabLabel(LogisticsChannelFilterMode.MANIFEST,
+                            "gui.simukraft.logistics.channel.manifest"),
+                    layout.keepTargetX(), layout.tabY(), layout.keepFieldWidth(), 20,
+                    () -> setFilterMode(LogisticsChannelFilterMode.MANIFEST)));
+        }
+
+        /**
+         * tabLabel: 当前页签加上选中前缀。
+         */
+        private Component tabLabel(LogisticsChannelFilterMode mode, String key) {
+            Component label = Component.translatable(key);
+            return filterMode == mode ? Component.literal("> ").append(label) : label;
         }
 
         /**
          * setDirection: 切换线路传输方向。
          */
         private void setDirection(LogisticsDirection direction) {
-            this.direction = direction;
+            if (filterMode == LogisticsChannelFilterMode.MANIFEST) {
+                this.direction = LogisticsDirection.WAREHOUSE_TO_CLIENT;
+            } else {
+                this.direction = direction;
+            }
             refreshFilterItems();
+            rebuildWidgets(nameField != null ? nameField.getValue() : "");
+        }
+
+        /**
+         * setFilterMode: 切换过滤页签，清单模式强制只发送。
+         */
+        private void setFilterMode(LogisticsChannelFilterMode mode) {
+            this.filterMode = mode != null ? mode : LogisticsChannelFilterMode.ITEM;
+            if (this.filterMode == LogisticsChannelFilterMode.MANIFEST) {
+                this.direction = LogisticsDirection.WAREHOUSE_TO_CLIENT;
+            }
             rebuildWidgets(nameField != null ? nameField.getValue() : "");
         }
 
@@ -221,12 +289,13 @@ public final class LogisticsChannelCreateScreenOpener {
          */
         private void renderClientScrollbar(GuiGraphicsExtractor graphics, Layout layout) {
             int total = packet.clients().size();
-            if (total <= CLIENT_LIST_VISIBLE) return;
-            int sbX = layout.x() + 163;
+            int visible = clientListVisible(layout);
+            if (total <= visible) return;
+            int sbX = layout.x() + RIGHT_COLUMN - 10;
             int sbTop = layout.y() + CLIENT_LIST_TOP;
-            int sbHeight = CLIENT_LIST_BOTTOM - CLIENT_LIST_TOP;
-            int thumbH = Math.max(10, sbHeight * CLIENT_LIST_VISIBLE / total);
-            int maxOffset = total - CLIENT_LIST_VISIBLE;
+            int sbHeight = layout.y() + layout.height() - 26 - sbTop;
+            int thumbH = Math.max(10, sbHeight * visible / total);
+            int maxOffset = total - visible;
             int thumbY = sbTop + (sbHeight - thumbH) * clientScrollOffset / maxOffset;
             graphics.fill(sbX, sbTop, sbX + 3, sbTop + sbHeight, 0xFF444444);
             graphics.fill(sbX, thumbY, sbX + 3, thumbY + thumbH, 0xFFAAAAAA);
@@ -240,8 +309,8 @@ public final class LogisticsChannelCreateScreenOpener {
                 ClientInfoToast.show(Component.translatable("toast.simukraft.title"), Component.translatable("gui.simukraft.logistics.channel.need_client"), "warning");
                 return;
             }
-            List<String> filters = itemGrid.selectedItemIds();
-            if (filters.isEmpty()) {
+            List<String> filters = filterMode == LogisticsChannelFilterMode.MANIFEST ? List.of() : itemGrid.selectedItemIds();
+            if (filterMode == LogisticsChannelFilterMode.ITEM && filters.isEmpty()) {
                 ClientInfoToast.show(Component.translatable("toast.simukraft.title"), Component.translatable("gui.simukraft.logistics.channel.need_items"), "warning");
                 return;
             }
@@ -249,6 +318,7 @@ public final class LogisticsChannelCreateScreenOpener {
             if (canAutoReplaceName(name)) {
                 name = suggestedChannelName();
             }
+            rememberKeepValues();
             ClientPacketDistributor.sendToServer(new LogisticsBoxActionPacket(packet.boxPos(),
                     LogisticsBoxActionPacket.Action.ADD_CHANNEL,
                     selectedClientId,
@@ -258,7 +328,10 @@ public final class LogisticsChannelCreateScreenOpener {
                     direction,
                     BlockPos.ZERO,
                     BlockPos.ZERO,
-                    filters));
+                    filters,
+                    filterMode,
+                    parseKeep(keepSourceText),
+                    parseKeep(keepTargetText)));
             Minecraft.getInstance().gui.setScreen(null);
         }
 
@@ -307,6 +380,9 @@ public final class LogisticsChannelCreateScreenOpener {
          * suggestedChannelName: 根据已选过滤物品生成默认线路名。
          */
         private String suggestedChannelName() {
+            if (filterMode == LogisticsChannelFilterMode.MANIFEST) {
+                return Component.translatable("gui.simukraft.logistics.channel.manifest_name").getString();
+            }
             List<String> filters = itemGrid.selectedItemIds();
             if (filters.isEmpty()) {
                 return Component.translatable("gui.simukraft.logistics.channel.default_name").getString();
@@ -319,7 +395,8 @@ public final class LogisticsChannelCreateScreenOpener {
          */
         private boolean canAutoReplaceName(String name) {
             String defaultName = Component.translatable("gui.simukraft.logistics.channel.default_name").getString();
-            return name == null || name.isBlank() || name.equals(defaultName)
+            String manifestName = Component.translatable("gui.simukraft.logistics.channel.manifest_name").getString();
+            return name == null || name.isBlank() || name.equals(defaultName) || name.equals(manifestName)
                     || name.equals("物流线路") || name.equals("Logistics Route") || name.equals(lastAutoName);
         }
 
@@ -337,17 +414,121 @@ public final class LogisticsChannelCreateScreenOpener {
         }
 
         /**
-         * layout: 计算表单位置和尺寸。
+         * renderManifestHintPanel: 清单说明底，叠在背景后、文字前。
          */
-        private Layout layout() {
-            int width = Math.min(410, this.width - 20);
-            int height = Math.min(270, this.height - 20);
-            int x = (this.width - width) / 2;
-            int y = (this.height - height) / 2;
-            return new Layout(x, y, width, height, x + 176, y + 132);
+        private void renderManifestHintPanel(GuiGraphicsExtractor graphics, Layout layout) {
+            int x = layout.gridX();
+            int y = layout.gridY();
+            graphics.fill(x - 2, y - 2, x + itemGrid.width(), y + itemGrid.height() + 2, 0xFF10101C);
         }
 
-        private record Layout(int x, int y, int width, int height, int gridX, int gridY) {
+        /**
+         * renderManifestHintText: 清单说明文字，叠在按钮之后。
+         */
+        private void renderManifestHintText(GuiGraphicsExtractor graphics, Layout layout) {
+            int x = layout.gridX();
+            int y = layout.gridY();
+            graphics.text(this.font, Component.translatable("gui.simukraft.logistics.channel.manifest_hint"),
+                    x, y + 6, LogisticsNativeStyle.TEXT, false);
+            graphics.text(this.font, Component.translatable("gui.simukraft.logistics.channel.manifest_hint_build"),
+                    x, y + 20, LogisticsNativeStyle.TEXT_DIM, false);
+            graphics.text(this.font, Component.translatable("gui.simukraft.logistics.channel.manifest_hint_build_2"),
+                    x, y + 32, LogisticsNativeStyle.TEXT_DIM, false);
+        }
+
+        /**
+         * keepBox: 创建保有量数字输入框。
+         */
+        private EditBox keepBox(int x, int y, String value, int width) {
+            EditBox box = new EditBox(this.font, x, y, width, 20, Component.empty());
+            box.setMaxLength(7);
+            box.setValue(value == null || value.isBlank() ? "0" : value);
+            box.setResponder(text -> {
+                String digits = text == null ? "" : text.replaceAll("\\D", "");
+                if (!digits.equals(text)) {
+                    box.setValue(digits);
+                }
+            });
+            return box;
+        }
+
+        /**
+         * rememberKeepValues: 重建控件前记下保有量输入。
+         */
+        private void rememberKeepValues() {
+            if (keepSourceField != null) {
+                keepSourceText = keepSourceField.getValue();
+            }
+            if (keepTargetField != null) {
+                keepTargetText = keepTargetField.getValue();
+            }
+        }
+
+        /**
+         * parseKeep: 把保有量文本解析成非负整数。
+         */
+        private static int parseKeep(String value) {
+            if (value == null || value.isBlank()) {
+                return 0;
+            }
+            try {
+                return Math.max(0, Integer.parseInt(value.trim()));
+            } catch (NumberFormatException ignored) {
+                return 0;
+            }
+        }
+
+        /**
+         * clientListVisible: 当前高度下能显示的客户端行数。
+         */
+        private static int clientListVisible(Layout layout) {
+            int listHeight = layout.y() + layout.height() - 26 - (layout.y() + CLIENT_LIST_TOP);
+            return Math.max(1, listHeight / CLIENT_ITEM_HEIGHT);
+        }
+
+        /**
+         * layout: 右侧一列按 标签→控件 成对排列，全部使用屏幕绝对坐标。
+         */
+        private Layout layout() {
+            int x = PANEL_MARGIN;
+            int y = PANEL_MARGIN;
+            int width = Math.max(420, this.width - PANEL_MARGIN * 2);
+            int rightX = x + RIGHT_COLUMN;
+            int fieldWidth = Math.max(196, width - RIGHT_COLUMN - 16);
+            int keepFieldWidth = (fieldWidth - 8) / 2;
+            int keepTargetX = rightX + keepFieldWidth + 8;
+            int titleY = y + 8;
+            int nameLabelY = y + 28;
+            int nameFieldY = y + 42;
+            int directionLabelY = nameFieldY + 26;
+            int directionButtonY = directionLabelY + 14;
+            int keepLabelY = directionButtonY + 26;
+            int keepFieldY = keepLabelY + 14;
+            int tabY = keepFieldY + 26;
+            int gridY = tabY + 26;
+            int actionX = rightX + itemGrid.width() + 8;
+            int actionWidth = 78;
+            int panelRight = x + width - 12;
+            if (actionX + actionWidth > panelRight) {
+                actionWidth = Math.max(48, panelRight - actionX);
+            }
+            int confirmY = gridY;
+            int cancelY = gridY + 24;
+            int selectedY = cancelY + 24;
+            int contentBottom = Math.max(gridY + itemGrid.height(), selectedY + 12);
+            int height = Math.max(contentBottom + 12 - y, this.height - y - HOTBAR_RESERVE);
+            return new Layout(x, y, width, height, rightX, fieldWidth, keepFieldWidth, keepTargetX,
+                    titleY, nameLabelY, nameFieldY, directionLabelY, directionButtonY, keepLabelY, keepFieldY, tabY, gridY,
+                    actionX, actionWidth, confirmY, cancelY, selectedY);
+        }
+
+        private record Layout(int x, int y, int width, int height, int rightX, int fieldWidth, int keepFieldWidth,
+                              int keepTargetX, int titleY, int nameLabelY, int nameFieldY, int directionLabelY,
+                              int directionButtonY, int keepLabelY, int keepFieldY, int tabY, int gridY,
+                              int actionX, int actionWidth, int confirmY, int cancelY, int selectedY) {
+            int gridX() {
+                return rightX;
+            }
         }
     }
 }

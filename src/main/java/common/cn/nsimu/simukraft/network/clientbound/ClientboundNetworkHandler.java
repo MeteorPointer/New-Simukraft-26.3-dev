@@ -14,6 +14,7 @@ import common.cn.nsimu.simukraft.network.city.member.CityCoreMembersResponsePack
 import common.cn.nsimu.simukraft.network.commercial.CommercialControlBoxOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.commercial.CommercialTradeOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.exchange.ExchangeControlBoxOpenResponsePacket;
+import common.cn.nsimu.simukraft.network.globalmarket.GlobalMarketControlBoxOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.farmland.FarmlandBoxBoundsResponsePacket;
 import common.cn.nsimu.simukraft.network.farmland.FarmlandBoxOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.geology.GeologicalSurveyHintPacket;
@@ -21,6 +22,8 @@ import common.cn.nsimu.simukraft.network.guidebook.ReloadGuideBookPacket;
 import common.cn.nsimu.simukraft.network.hud.HudSyncPacket;
 import common.cn.nsimu.simukraft.network.industrial.IndustrialControlBoxOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.industrial.IndustrialControlBoxViewUpdatePacket;
+import common.cn.nsimu.simukraft.network.manifest.ManifestHeldOpenResponsePacket;
+import common.cn.nsimu.simukraft.network.manifest.ManifestOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.logistics.LogisticsClientBoxOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.logistics.LogisticsServerBoxOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.logistics.LogisticsWarehouseGridResponsePacket;
@@ -154,6 +157,12 @@ public interface ClientboundNetworkHandler {
     }
 
     /**
+     * handleGlobalMarketControlBoxOpenResponse: 打开全球市场控制箱界面。
+     */
+    default void handleGlobalMarketControlBoxOpenResponse(GlobalMarketControlBoxOpenResponsePacket packet) {
+    }
+
+    /**
      * handleCommercialTradeOpenResponse: 处理 NPC 商业交易界面响应。
      */
     default void handleCommercialTradeOpenResponse(CommercialTradeOpenResponsePacket packet) {
@@ -223,5 +232,17 @@ public interface ClientboundNetworkHandler {
      * handleRtsBuildingBoundsSync: 更新 RTS 客户端建筑边界快照。
      */
     default void handleRtsBuildingBoundsSync(RtsBuildingBoundsSyncPacket packet) {
+    }
+
+    /**
+     * handleManifestOpenResponse: 打开贴墙清单界面。
+     */
+    default void handleManifestOpenResponse(ManifestOpenResponsePacket packet) {
+    }
+
+    /**
+     * handleManifestHeldOpenResponse: 打开刷新后的手持清单界面。
+     */
+    default void handleManifestHeldOpenResponse(ManifestHeldOpenResponsePacket packet) {
     }
 }

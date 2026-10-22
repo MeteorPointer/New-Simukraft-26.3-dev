@@ -13,6 +13,7 @@ import client.cn.nsimu.simukraft.client.commercial.CommercialControlBoxScreenOpe
 import client.cn.nsimu.simukraft.client.compat.ClientCompatHooks;
 import client.cn.nsimu.simukraft.client.controlbox.ResidentialControlBoxScreenOpener;
 import client.cn.nsimu.simukraft.client.exchange.ExchangeControlBoxScreenOpener;
+import client.cn.nsimu.simukraft.client.globalmarket.GlobalMarketControlBoxScreenOpener;
 import client.cn.nsimu.simukraft.client.farmland.FarmlandBoxScreenOpener;
 import client.cn.nsimu.simukraft.client.farmland.FarmlandHoverPreview;
 import client.cn.nsimu.simukraft.client.geology.GeologicalSurveyHintOverlay;
@@ -22,6 +23,7 @@ import client.cn.nsimu.simukraft.client.hire.NpcHireScreen;
 import client.cn.nsimu.simukraft.client.industrial.IndustrialControlBoxScreenOpener;
 import client.cn.nsimu.simukraft.client.logistics.LogisticsClientBoxScreenOpener;
 import client.cn.nsimu.simukraft.client.logistics.LogisticsServerBoxScreenOpener;
+import client.cn.nsimu.simukraft.client.manifest.ManifestScreen;
 import client.cn.nsimu.simukraft.client.medical.MedicalControlBoxScreenOpener;
 import client.cn.nsimu.simukraft.client.path.NpcPathDebugRenderer;
 import client.cn.nsimu.simukraft.client.toast.ClientInfoToast;
@@ -41,13 +43,16 @@ import common.cn.nsimu.simukraft.network.clientbound.ClientboundNetworkHandler;
 import common.cn.nsimu.simukraft.network.commercial.CommercialControlBoxOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.commercial.CommercialTradeOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.exchange.ExchangeControlBoxOpenResponsePacket;
+import common.cn.nsimu.simukraft.network.globalmarket.GlobalMarketControlBoxOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.farmland.FarmlandBoxBoundsResponsePacket;
 import common.cn.nsimu.simukraft.network.farmland.FarmlandBoxOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.geology.GeologicalSurveyHintPacket;
 import common.cn.nsimu.simukraft.network.guidebook.ReloadGuideBookPacket;
 import common.cn.nsimu.simukraft.network.hud.HudSyncPacket;
 import common.cn.nsimu.simukraft.network.industrial.IndustrialControlBoxOpenResponsePacket;
+import common.cn.nsimu.simukraft.network.manifest.ManifestHeldOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.industrial.IndustrialControlBoxViewUpdatePacket;
+import common.cn.nsimu.simukraft.network.manifest.ManifestOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.logistics.LogisticsClientBoxOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.logistics.LogisticsServerBoxOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.logistics.LogisticsWarehouseGridResponsePacket;
@@ -121,6 +126,7 @@ public final class ClientboundNetworkHandlerImpl implements ClientboundNetworkHa
         packet.cityCores().forEach((cityId, core) -> cores.put(cityId, new ClientCityChunkCache.CityCoreEntry(core.pos(), core.cityName())));
         cache.updateAllCityChunks(packet.currentCityId(), packet.cityChunks());
         cache.updateAllCityCores(cores);
+        cache.updateDistricts(packet.districts());
         ClientCompatHooks.refreshXaeroCityHighlights();
     }
 
@@ -201,6 +207,11 @@ public final class ClientboundNetworkHandlerImpl implements ClientboundNetworkHa
     }
 
     @Override
+    public void handleGlobalMarketControlBoxOpenResponse(GlobalMarketControlBoxOpenResponsePacket packet) {
+        GlobalMarketControlBoxScreenOpener.open(packet);
+    }
+
+    @Override
     public void handleCommercialTradeOpenResponse(CommercialTradeOpenResponsePacket packet) {
         CommercialTradeUiRoot.refreshActive(packet);
     }
@@ -269,5 +280,21 @@ public final class ClientboundNetworkHandlerImpl implements ClientboundNetworkHa
         }
         GuideBookLang.reload(minecraft.getResourceManager());
         GuideBookLoader.reload(minecraft.getResourceManager());
+    }
+
+    /**
+     * handleManifestOpenResponse: 打开贴墙清单界面。
+     */
+    @Override
+    public void handleManifestOpenResponse(ManifestOpenResponsePacket packet) {
+        ManifestScreen.openFromBlock(packet.stack(), packet.pos());
+    }
+
+    /**
+     * handleManifestHeldOpenResponse: 打开刷新后的手持清单。
+     */
+    @Override
+    public void handleManifestHeldOpenResponse(ManifestHeldOpenResponsePacket packet) {
+        ManifestScreen.open(packet.stack(), packet.hand());
     }
 }

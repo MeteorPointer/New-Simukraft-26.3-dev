@@ -14,6 +14,8 @@ import common.cn.nsimu.simukraft.economy.ResidentialRentService;
 import common.cn.nsimu.simukraft.event.CityPlacementRestrictionHandler;
 import common.cn.nsimu.simukraft.event.PlayerWelcomeService;
 import common.cn.nsimu.simukraft.exchange.ExchangeMarketService;
+import common.cn.nsimu.simukraft.globalmarket.GlobalMarketService;
+import common.cn.nsimu.simukraft.globalmarket.GlobalMarketWarehouseService;
 import common.cn.nsimu.simukraft.farmland.FarmlandBoxManager;
 import common.cn.nsimu.simukraft.farmland.FarmlandFarmingService;
 import common.cn.nsimu.simukraft.guard.NtIntegrityGuard;
@@ -46,6 +48,8 @@ import common.cn.nsimu.simukraft.storage.SimuSqliteStorage;
 import common.cn.nsimu.simukraft.util.NpcWorkChunkLoadService;
 import common.cn.nsimu.simukraft.virtualvein.VirtualVeinService;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.piston.PistonStructureResolver;
@@ -82,8 +86,9 @@ public final class SimuKraft {
         common.cn.nsimu.simukraft.block.CautionTapeZones.registerPathCost();
         ModFluidTypes.register(modEventBus);
         ModFluids.register(modEventBus);
-        ModItems.register(modEventBus);
         ModBlocks.register(modEventBus);
+        ModBlockEntities.register(modEventBus);
+        ModItems.register(modEventBus);
         ModMenuTypes.register(modEventBus);
         ModRecipeSerializers.register(modEventBus);
         ModCreativeModeTabs.register(modEventBus);
@@ -221,15 +226,29 @@ public final class SimuKraft {
     }
 
     private void onPistonPost(PistonEvent.Post event) {
-        if (event.getLevel() instanceof net.minecraft.server.level.ServerLevel level) {
-            CitizenNavigationService.invalidate(level, event.getPos());
+        if (!(event.getLevel() instanceof net.minecraft.server.level.ServerLevel level)) {
+            return;
         }
+        BlockPos origin = event.getPos();
+        Direction direction = event.getDirection();
+        java.util.List<BlockPos> positions = new java.util.ArrayList<>();
+        positions.add(origin);
+        if (direction != null) {
+            for (int step = 1; step <= 12; step++) {
+                positions.add(origin.relative(direction, step));
+            }
+        }
+        CitizenNavigationService.invalidateAll(level, positions);
     }
 
     private void onExplosionDetonate(ExplosionEvent.Detonate event) {
-        if (event.getLevel() instanceof net.minecraft.server.level.ServerLevel level) {
-            CitizenNavigationService.invalidate(level, BlockPos.ZERO);
+        if (!(event.getLevel() instanceof net.minecraft.server.level.ServerLevel level)) {
+            return;
         }
+        java.util.List<BlockPos> positions = new java.util.ArrayList<>(event.getAffectedBlocks());
+        Vec3 center = event.getExplosion().center();
+        positions.add(BlockPos.containing(center.x, center.y, center.z));
+        CitizenNavigationService.invalidateAll(level, positions);
     }
 
     private void onFarmlandTrample(BlockEvent.FarmlandTrampleEvent event) {
@@ -346,6 +365,8 @@ public final class SimuKraft {
         MedicalBedPoiService.clearServerCaches(event.getServer());
         MedicalDefinitionLoader.clearCache();
         ExchangeMarketService.clearServerCaches(event.getServer());
+        GlobalMarketService.clearCache();
+        GlobalMarketWarehouseService.clearCache();
         MedicalMealService.clearServerCaches(event.getServer());
         CitizenHomeRestService.clearServerCaches(event.getServer());
         CitizenDroppedFoodService.clearServerCaches(event.getServer());

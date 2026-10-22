@@ -14,6 +14,7 @@ import common.cn.nsimu.simukraft.network.city.member.CityCoreMembersResponsePack
 import common.cn.nsimu.simukraft.network.commercial.CommercialControlBoxOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.commercial.CommercialTradeOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.exchange.ExchangeControlBoxOpenResponsePacket;
+import common.cn.nsimu.simukraft.network.globalmarket.GlobalMarketControlBoxOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.farmland.FarmlandBoxBoundsResponsePacket;
 import common.cn.nsimu.simukraft.network.farmland.FarmlandBoxOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.geology.GeologicalSurveyHintPacket;
@@ -21,6 +22,8 @@ import common.cn.nsimu.simukraft.network.guidebook.ReloadGuideBookPacket;
 import common.cn.nsimu.simukraft.network.hud.HudSyncPacket;
 import common.cn.nsimu.simukraft.network.industrial.IndustrialControlBoxOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.industrial.IndustrialControlBoxViewUpdatePacket;
+import common.cn.nsimu.simukraft.network.manifest.ManifestHeldOpenResponsePacket;
+import common.cn.nsimu.simukraft.network.manifest.ManifestOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.logistics.LogisticsClientBoxOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.logistics.LogisticsServerBoxOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.logistics.LogisticsWarehouseGridResponsePacket;
@@ -192,6 +195,13 @@ public final class ClientboundNetworkBridge {
     }
 
     /**
+     * handleGlobalMarketControlBoxOpenResponse: 分发全球市场控制箱打开响应。
+     */
+    public static void handleGlobalMarketControlBoxOpenResponse(GlobalMarketControlBoxOpenResponsePacket packet) {
+        HANDLER.get().handleGlobalMarketControlBoxOpenResponse(packet);
+    }
+
+    /**
      * handleCommercialTradeOpenResponse: 分发 NPC 商业交易界面响应。
      */
     public static void handleCommercialTradeOpenResponse(CommercialTradeOpenResponsePacket packet) {
@@ -273,5 +283,19 @@ public final class ClientboundNetworkBridge {
      */
     public static void handleRtsBuildingBoundsSync(RtsBuildingBoundsSyncPacket packet) {
         HANDLER.get().handleRtsBuildingBoundsSync(packet);
+    }
+
+    /**
+     * handleManifestOpenResponse: 分发贴墙清单打开响应。
+     */
+    public static void handleManifestOpenResponse(ManifestOpenResponsePacket packet) {
+        HANDLER.get().handleManifestOpenResponse(packet);
+    }
+
+    /**
+     * handleManifestHeldOpenResponse: 分发手持清单打开响应。
+     */
+    public static void handleManifestHeldOpenResponse(ManifestHeldOpenResponsePacket packet) {
+        HANDLER.get().handleManifestHeldOpenResponse(packet);
     }
 }

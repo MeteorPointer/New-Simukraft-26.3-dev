@@ -504,13 +504,6 @@ public final class CityCoreScreenOpener {
         return Component.translatable("screen.simukraft.city_core.finance.type." + entry.type().name().toLowerCase(Locale.ROOT)).getString();
     }
 
-    /**
-     * financeAmountText：收入显示正数，支出显示负数，避免流水里两种符号同时出现。
-     */
-    private static String financeAmountText(CityCoreOpenResponsePacket.FinanceEntry entry) {
-        return financeAmountText(entry.type(), entry.amount());
-    }
-
     private static String financeAmountText(FinanceTransactionData.Type type, double amount) {
         if (type == FinanceTransactionData.Type.EXPENSE) {
             amount = -Math.abs(amount);
@@ -1035,19 +1028,6 @@ public final class CityCoreScreenOpener {
         Button button = baseButton(key, action);
         button.layout(layout -> {
             layout.width(100);
-            layout.height(20);
-            layout.flexDirection(FlexDirection.ROW);
-            layout.justifyContent(AlignContent.CENTER);
-        });
-        return button;
-    }
-
-    private static Button contentButton(Component text, Runnable action) {
-        Button button = new Button();
-        button.setText(text);
-        button.setOnClick(event -> action.run());
-        button.layout(layout -> {
-            layout.width(170);
             layout.height(20);
             layout.flexDirection(FlexDirection.ROW);
             layout.justifyContent(AlignContent.CENTER);
@@ -1746,7 +1726,6 @@ public final class CityCoreScreenOpener {
                     if (!batchClaimChunks.isEmpty()) {
                         List<Long> districtChunks = batchClaimChunks.stream()
                                 .filter(this::isDistrictChunk)
-                                .filter(c -> c != coreChunkLong)
                                 .toList();
                         if (!districtChunks.isEmpty()) {
                             ClientPacketDistributor.sendToServer(new common.cn.nsimu.simukraft.network.city.DistrictActionPacket(
@@ -2100,7 +2079,8 @@ public final class CityCoreScreenOpener {
         private void onDragUpdate(com.lowdragmc.lowdraglib2.gui.ui.event.UIEvent event) {
             contextMenuVisible = false;
             if (THREE_D_DRAG.equals(event.dragHandler.getDraggingObject())) {
-                threeYaw = threeYawDragStart + (float) (event.x - event.dragStartX) * 0.012F;
+                // 相机用 -yaw 绕 Y 轴，向右拖要减小偏航，地形才跟着光标转。
+                threeYaw = threeYawDragStart - (float) (event.x - event.dragStartX) * 0.012F;
                 event.stopPropagation();
                 return;
             }

@@ -69,6 +69,29 @@ public final class WorkMaterialPolicy {
         }
     }
 
+    /**
+     * categoryItemIds: 通类匹配开启时返回同组全部材料 ID，否则仅自身。
+     */
+    public static Set<String> categoryItemIds(String materialId) {
+        String id = materialId == null ? "" : materialId.toLowerCase(Locale.ROOT);
+        if (id.isBlank()) {
+            return Set.of();
+        }
+        LinkedHashSet<String> ids = new LinkedHashSet<>();
+        ids.add(id);
+        boolean categoryMatching;
+        try {
+            categoryMatching = ServerConfig.materialCategoryMatchingEnabled();
+        } catch (IllegalStateException ignored) {
+            return Set.copyOf(ids);
+        }
+        if (!categoryMatching) {
+            return Set.copyOf(ids);
+        }
+        ids.addAll(rules().acceptedIds(blockKey(id)));
+        return Set.copyOf(ids);
+    }
+
     private static WorkMaterialRequest buildRequest(BlockState state, String blockId, ConfigSnapshot snapshot) {
         ParsedRules rules = rules(snapshot);
         LinkedHashSet<Item> acceptedItems = new LinkedHashSet<>();

@@ -7,6 +7,8 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 
+import common.cn.nsimu.simukraft.network.city.chunk.CityChunkSyncPacket;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -43,6 +45,25 @@ public final class ClientCityChunkCache {
         cache.allCityCores.putAll(cores);
     }
 
+    /**
+     * updateDistricts: 用服务端分区区块重建当前维度的分区索引。
+     */
+    public synchronized void updateDistricts(List<CityChunkSyncPacket.DistrictEntry> districts) {
+        ScopeCache cache = currentScopeCache();
+        cache.chunkDistricts.clear();
+        if (districts == null) {
+            return;
+        }
+        for (CityChunkSyncPacket.DistrictEntry district : districts) {
+            if (district == null || district.districtId() == null || district.chunks() == null) {
+                continue;
+            }
+            DistrictLabel label = new DistrictLabel(district.districtId(), district.cityId(),
+                    district.name() == null ? "" : district.name());
+            district.chunks().forEach(chunk -> cache.chunkDistricts.put(chunk, label));
+        }
+    }
+
     public Set<Long> getCurrentCityChunks() {
         ScopeCache cache = currentScopeCache();
         UUID cityId = cache.currentCityId;
@@ -76,6 +97,13 @@ public final class ClientCityChunkCache {
 
     public UUID getChunkOwner(long chunkLong) {
         return currentScopeCache().chunkOwnerIndex.get(chunkLong);
+    }
+
+    /**
+     * getChunkDistrict: 返回区块所属分区，没有分区时为空。
+     */
+    public DistrictLabel getChunkDistrict(long chunkLong) {
+        return currentScopeCache().chunkDistricts.get(chunkLong);
     }
 
     /**
@@ -131,6 +159,7 @@ public final class ClientCityChunkCache {
         private final Map<UUID, Set<Long>> allCityChunks = new ConcurrentHashMap<>();
         private final Map<Long, UUID> chunkOwnerIndex = new ConcurrentHashMap<>();
         private final Map<UUID, CityCoreEntry> allCityCores = new ConcurrentHashMap<>();
+        private final Map<Long, DistrictLabel> chunkDistricts = new ConcurrentHashMap<>();
         private volatile UUID currentCityId;
         private volatile int dataVersion;
         private volatile Set<Long> regionWithChunks = Set.of();
@@ -147,5 +176,11 @@ public final class ClientCityChunkCache {
     }
 
     public record CityCoreEntry(BlockPos pos, String cityName) {
+    }
+
+    /**
+     * DistrictLabel: 客户端区块上的分区名称。
+     */
+    public record DistrictLabel(UUID districtId, UUID cityId, String name) {
     }
 }
