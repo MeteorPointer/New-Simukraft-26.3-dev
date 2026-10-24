@@ -91,6 +91,14 @@ public final class ClientModBusSetup {
     }
 
     /**
+     * onRegisterFluidModels: 注册牛奶流体的静止/流动贴图。
+     */
+    @SubscribeEvent
+    public static void onRegisterFluidModels(RegisterFluidModelsEvent event) {
+        ClientFluidExtensions.registerModels(event);
+    }
+
+    /**
      * onRegisterClientExtensions: 注册客户端流体扩展。
      */
     @SubscribeEvent

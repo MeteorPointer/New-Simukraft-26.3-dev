@@ -10,11 +10,11 @@ import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
-import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
+import mezz.jei.api.recipe.types.IRecipeType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.util.FormattedCharSequence;
@@ -26,7 +26,8 @@ import java.util.List;
  * IndustrialJeiCategory: JEI 工业配方分类。输入格和输出格会被 JEI 用来查询物品。
  */
 public final class IndustrialJeiCategory implements IRecipeCategory<IndustrialJeiRecipe> {
-    public static final RecipeType<IndustrialJeiRecipe> TYPE = RecipeType.create("simukraft", "industrial", IndustrialJeiRecipe.class);
+    public static final IRecipeType<IndustrialJeiRecipe> TYPE = IRecipeType.create("simukraft", "industrial", IndustrialJeiRecipe.class);
+    private static final int PAD = 1;
     private static final int COLUMNS = 3;
     private static final int SLOT = 18;
     private static final int TEXT_HEIGHT = 24;
@@ -53,7 +54,7 @@ public final class IndustrialJeiCategory implements IRecipeCategory<IndustrialJe
     }
 
     @Override
-    public RecipeType<IndustrialJeiRecipe> getRecipeType() {
+    public IRecipeType<IndustrialJeiRecipe> getRecipeType() {
         return TYPE;
     }
 
@@ -67,7 +68,7 @@ public final class IndustrialJeiCategory implements IRecipeCategory<IndustrialJe
      */
     @Override
     public int getWidth() {
-        return outputOrigin() + COLUMNS * SLOT + 1;
+        return outputOrigin() + COLUMNS * SLOT + PAD;
     }
 
     /**
@@ -75,7 +76,7 @@ public final class IndustrialJeiCategory implements IRecipeCategory<IndustrialJe
      */
     @Override
     public int getHeight() {
-        return TEXT_HEIGHT + rows * SLOT + 1;
+        return TEXT_HEIGHT + rows * SLOT + PAD;
     }
 
     @Override
@@ -93,7 +94,7 @@ public final class IndustrialJeiCategory implements IRecipeCategory<IndustrialJe
             if (slot.stacks().isEmpty()) {
                 continue;
             }
-            IRecipeSlotBuilder input = builder.addSlot(RecipeIngredientRole.INPUT, slotX(0, i), slotY(i));
+            IRecipeSlotBuilder input = builder.addSlot(RecipeIngredientRole.INPUT, slotX(PAD, i), slotY(i));
             input.setStandardSlotBackground();
             input.addItemStacks(slot.stacks());
             if (!slot.consume() || slot.alternative() || !slot.tagId().isBlank()) {
@@ -106,8 +107,8 @@ public final class IndustrialJeiCategory implements IRecipeCategory<IndustrialJe
                 continue;
             }
             IRecipeSlotBuilder output = builder.addSlot(RecipeIngredientRole.OUTPUT, slotX(outputOrigin(), i), slotY(i));
-            output.setOutputSlotBackground();
-            output.addItemStack(slot.stack());
+            output.setStandardSlotBackground();
+            output.add(slot.stack());
             if (slot.probability() < 0.999D || slot.randomRange() > 1 || slot.ignoreMultiplier()) {
                 output.addRichTooltipCallback((view, tooltip) -> appendOutputTooltip(slot, tooltip));
             }
@@ -118,22 +119,22 @@ public final class IndustrialJeiCategory implements IRecipeCategory<IndustrialJe
      * draw: 画出配方名、建筑名和箭头。
      */
     @Override
-    public void draw(IndustrialJeiRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphics graphics, double mouseX, double mouseY) {
+    public void draw(IndustrialJeiRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphicsExtractor graphics, double mouseX, double mouseY) {
         Font font = Minecraft.getInstance().font;
         drawLine(graphics, font, recipe.title(), 2, 0xFF404040);
         drawLine(graphics, font, recipe.buildingLine(), 12, 0xFF606060);
         int used = Math.max(rowCount(recipe.inputs().size()), rowCount(recipe.outputs().size()));
         int arrowY = TEXT_HEIGHT + (Math.min(Math.max(used, 1), rows) * SLOT - arrow.getHeight()) / 2;
-        arrow.draw(graphics, 1 + COLUMNS * SLOT + GAP, arrowY);
+        arrow.draw(graphics, PAD + COLUMNS * SLOT + GAP, arrowY);
     }
 
-    private void drawLine(GuiGraphics graphics, Font font, Component text, int y, int color) {
+    private void drawLine(GuiGraphicsExtractor graphics, Font font, Component text, int y, int color) {
         if (text == null || text.getString().isBlank()) {
             return;
         }
         List<FormattedCharSequence> lines = font.split(FormattedText.of(text.getString()), Math.max(1, getWidth() - 4));
         if (!lines.isEmpty()) {
-            graphics.drawString(font, lines.getFirst(), 2, y, color, false);
+            graphics.text(font, lines.getFirst(), 2, y, color, false);
         }
     }
 
@@ -162,7 +163,7 @@ public final class IndustrialJeiCategory implements IRecipeCategory<IndustrialJe
     }
 
     private static int outputOrigin() {
-        return 1 + COLUMNS * SLOT + GAP + ARROW_WIDTH + GAP;
+        return PAD + COLUMNS * SLOT + GAP + ARROW_WIDTH + GAP;
     }
 
     private static int slotX(int origin, int index) {

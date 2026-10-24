@@ -7,8 +7,7 @@ import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
@@ -27,8 +26,8 @@ public class SimukraftJeiPlugin implements IModPlugin {
      * getPluginUid: JEI 用来区分插件的唯一标识。
      */
     @Override
-    public ResourceLocation getPluginUid() {
-        return ResourceLocation.fromNamespaceAndPath(SimuKraft.MOD_ID, "jei");
+    public Identifier getPluginUid() {
+        return Identifier.fromNamespaceAndPath(SimuKraft.MOD_ID, "jei");
     }
 
     /**
@@ -75,10 +74,10 @@ public class SimukraftJeiPlugin implements IModPlugin {
             commercialRecipes = CommercialJeiRecipes.collect();
         }
         if (!industrialRecipes.isEmpty()) {
-            registration.addRecipeCatalyst(new ItemStack(ModBlocks.INDUSTRIAL_CONTROL_BOX.get()), IndustrialJeiCategory.TYPE);
+            registration.addCraftingStation(IndustrialJeiCategory.TYPE, ModBlocks.INDUSTRIAL_CONTROL_BOX.get());
         }
         if (!commercialRecipes.isEmpty()) {
-            registration.addRecipeCatalyst(new ItemStack(ModBlocks.COMMERCIAL_CONTROL_BOX.get()), CommercialJeiCategory.TYPE);
+            registration.addCraftingStation(CommercialJeiCategory.TYPE, ModBlocks.COMMERCIAL_CONTROL_BOX.get());
         }
     }
 }

@@ -7,9 +7,8 @@ import common.cn.nsimu.simukraft.industrial.IndustrialDefinitionLoader;
 import common.cn.nsimu.simukraft.industrial.IndustrialItemStackSpec;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -124,7 +123,7 @@ public final class IndustrialJeiRecipes {
             return List.of();
         }
         if (spec.itemId().isBlank() && spec.itemStackText().isBlank() && !spec.itemTag().isBlank()) {
-            return tagStacks(spec.itemTag(), count);
+            return tagStacks(spec.itemTag(), count, registries);
         }
         ItemStack stack = stackOf(spec, count, registries);
         return stack.isEmpty() ? List.of() : List.of(stack);
@@ -145,12 +144,17 @@ public final class IndustrialJeiRecipes {
         return stack;
     }
 
-    private static List<ItemStack> tagStacks(String tagId, int count) {
+    private static List<ItemStack> tagStacks(String tagId, int count, HolderLookup.Provider registries) {
+        if (registries == null) {
+            return List.of();
+        }
         try {
-            TagKey<Item> tag = TagKey.create(Registries.ITEM, ResourceLocation.parse(tagId));
+            TagKey<Item> tag = TagKey.create(Registries.ITEM, Identifier.parse(tagId));
             int safeCount = Math.max(1, count);
             List<ItemStack> stacks = new ArrayList<>();
-            BuiltInRegistries.ITEM.getTagOrEmpty(tag).forEach(holder -> stacks.add(new ItemStack(holder, safeCount)));
+            registries.lookupOrThrow(Registries.ITEM)
+                    .get(tag)
+                    .ifPresent(set -> set.forEach(holder -> stacks.add(new ItemStack(holder, safeCount))));
             return List.copyOf(stacks);
         } catch (Exception exception) {
             return List.of();

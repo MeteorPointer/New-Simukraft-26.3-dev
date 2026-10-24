@@ -11,11 +11,11 @@ import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
-import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
+import mezz.jei.api.recipe.types.IRecipeType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.util.FormattedCharSequence;
@@ -27,7 +27,8 @@ import java.util.List;
  * CommercialJeiCategory: JEI 商业交易分类。花费和所得会被 JEI 用来查询物品。
  */
 public final class CommercialJeiCategory implements IRecipeCategory<CommercialJeiRecipe> {
-    public static final RecipeType<CommercialJeiRecipe> TYPE = RecipeType.create("simukraft", "commercial", CommercialJeiRecipe.class);
+    public static final IRecipeType<CommercialJeiRecipe> TYPE = IRecipeType.create("simukraft", "commercial", CommercialJeiRecipe.class);
+    private static final int PAD = 1;
     private static final int COLUMNS = 3;
     private static final int SLOT = 18;
     private static final int TEXT_HEIGHT = 24;
@@ -37,24 +38,29 @@ public final class CommercialJeiCategory implements IRecipeCategory<CommercialJe
 
     private final IDrawable icon;
     private final IDrawable arrow;
+    private final int inputColumns;
+    private final int outputColumns;
     private final int rows;
 
     /**
-     * CommercialJeiCategory: 按报价两侧的格子行数确定界面高度。
+     * CommercialJeiCategory: 按全部报价里实际用到的输入列和输出列确定界面大小。
      */
     public CommercialJeiCategory(IGuiHelper guiHelper, List<CommercialJeiRecipe> recipes) {
-        int usedRows = 1;
+        int maxInputs = 1;
+        int maxOutputs = 1;
         for (CommercialJeiRecipe recipe : recipes) {
-            usedRows = Math.max(usedRows, rowCount(recipe.inputs().size()));
-            usedRows = Math.max(usedRows, rowCount(recipe.outputs().size()));
+            maxInputs = Math.max(maxInputs, recipe.inputs().size());
+            maxOutputs = Math.max(maxOutputs, recipe.outputs().size());
         }
-        this.rows = Math.min(usedRows, MAX_ROWS);
+        this.inputColumns = Math.min(COLUMNS, Math.max(1, maxInputs));
+        this.outputColumns = Math.min(COLUMNS, Math.max(1, maxOutputs));
+        this.rows = Math.min(MAX_ROWS, Math.max(rowCount(maxInputs, inputColumns), rowCount(maxOutputs, outputColumns)));
         this.icon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(ModBlocks.COMMERCIAL_CONTROL_BOX.get()));
         this.arrow = guiHelper.getRecipeArrow();
     }
 
     @Override
-    public RecipeType<CommercialJeiRecipe> getRecipeType() {
+    public IRecipeType<CommercialJeiRecipe> getRecipeType() {
         return TYPE;
     }
 
@@ -64,11 +70,11 @@ public final class CommercialJeiCategory implements IRecipeCategory<CommercialJe
     }
 
     /**
-     * getWidth: 新版 JEI 用宽高代替背景贴图。
+     * getWidth: 输入列紧挨箭头，不再为空白输入格留三列宽。
      */
     @Override
     public int getWidth() {
-        return outputOrigin() + COLUMNS * SLOT + 1;
+        return outputOrigin() + outputColumns * SLOT + PAD;
     }
 
     /**
@@ -76,7 +82,7 @@ public final class CommercialJeiCategory implements IRecipeCategory<CommercialJe
      */
     @Override
     public int getHeight() {
-        return TEXT_HEIGHT + rows * SLOT + 1;
+        return TEXT_HEIGHT + rows * SLOT + PAD;
     }
 
     @Override
@@ -89,21 +95,21 @@ public final class CommercialJeiCategory implements IRecipeCategory<CommercialJe
      */
     @Override
     public void setRecipe(IRecipeLayoutBuilder builder, CommercialJeiRecipe recipe, IFocusGroup focuses) {
-        addSlots(builder, RecipeIngredientRole.INPUT, 0, recipe.inputs(), recipe);
-        addSlots(builder, RecipeIngredientRole.OUTPUT, outputOrigin(), recipe.outputs(), recipe);
+        addSlots(builder, RecipeIngredientRole.INPUT, PAD, inputColumns, recipe.inputs(), recipe);
+        addSlots(builder, RecipeIngredientRole.OUTPUT, outputOrigin(), outputColumns, recipe.outputs(), recipe);
     }
 
     /**
      * draw: 画出店名、建筑名和箭头。
      */
     @Override
-    public void draw(CommercialJeiRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphics graphics, double mouseX, double mouseY) {
+    public void draw(CommercialJeiRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphicsExtractor graphics, double mouseX, double mouseY) {
         Font font = Minecraft.getInstance().font;
         drawLine(graphics, font, recipe.title(), 2, 0xFF404040);
         drawLine(graphics, font, recipe.buildingLine(), 12, 0xFF606060);
-        int used = Math.max(rowCount(recipe.inputs().size()), rowCount(recipe.outputs().size()));
+        int used = Math.max(rowCount(recipe.inputs().size(), inputColumns), rowCount(recipe.outputs().size(), outputColumns));
         int arrowY = TEXT_HEIGHT + (Math.min(Math.max(used, 1), rows) * SLOT - arrow.getHeight()) / 2;
-        arrow.draw(graphics, 1 + COLUMNS * SLOT + GAP, arrowY);
+        arrow.draw(graphics, PAD + inputColumns * SLOT + GAP, arrowY);
     }
 
     /**
@@ -114,19 +120,15 @@ public final class CommercialJeiCategory implements IRecipeCategory<CommercialJe
         appendInfo(recipe, tooltip);
     }
 
-    private void addSlots(IRecipeLayoutBuilder builder, RecipeIngredientRole role, int origin, List<ItemStack> stacks, CommercialJeiRecipe recipe) {
+    private void addSlots(IRecipeLayoutBuilder builder, RecipeIngredientRole role, int origin, int columns, List<ItemStack> stacks, CommercialJeiRecipe recipe) {
         for (int i = 0; i < stacks.size(); i++) {
             ItemStack stack = stacks.get(i);
             if (stack.isEmpty()) {
                 continue;
             }
-            IRecipeSlotBuilder slot = builder.addSlot(role, origin + (i % COLUMNS) * SLOT, TEXT_HEIGHT + (i / COLUMNS) * SLOT);
-            if (role == RecipeIngredientRole.OUTPUT) {
-                slot.setOutputSlotBackground();
-            } else {
-                slot.setStandardSlotBackground();
-            }
-            slot.addItemStack(stack);
+            IRecipeSlotBuilder slot = builder.addSlot(role, origin + (i % columns) * SLOT, TEXT_HEIGHT + (i / columns) * SLOT);
+            slot.setStandardSlotBackground();
+            slot.add(stack);
             slot.addRichTooltipCallback((view, tooltip) -> appendInfo(recipe, tooltip));
         }
     }
@@ -146,24 +148,24 @@ public final class CommercialJeiCategory implements IRecipeCategory<CommercialJe
         }
     }
 
-    private void drawLine(GuiGraphics graphics, Font font, Component text, int y, int color) {
+    private void drawLine(GuiGraphicsExtractor graphics, Font font, Component text, int y, int color) {
         if (text == null || text.getString().isBlank()) {
             return;
         }
         List<FormattedCharSequence> lines = font.split(FormattedText.of(text.getString()), Math.max(1, getWidth() - 4));
         if (!lines.isEmpty()) {
-            graphics.drawString(font, lines.getFirst(), 2, y, color, false);
+            graphics.text(font, lines.getFirst(), 2, y, color, false);
         }
     }
 
-    private static int outputOrigin() {
-        return 1 + COLUMNS * SLOT + GAP + ARROW_WIDTH + GAP;
+    private int outputOrigin() {
+        return PAD + inputColumns * SLOT + GAP + ARROW_WIDTH + GAP;
     }
 
-    private static int rowCount(int slots) {
+    private static int rowCount(int slots, int columns) {
         if (slots <= 0) {
             return 1;
         }
-        return (slots + COLUMNS - 1) / COLUMNS;
+        return (slots + columns - 1) / columns;
     }
 }
