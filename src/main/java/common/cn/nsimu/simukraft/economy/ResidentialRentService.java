@@ -47,6 +47,7 @@ public final class ResidentialRentService {
 
     /**
      * markLevelRentDay: 按 MC 日号推进结算游标，并处理 /time set 导致的日号回退。
+     * 开服后第一次只记下当天，不结算；否则每次进世界都会把内存空游标当成新的一天。
      */
     private static boolean markLevelRentDay(ServerLevel level, long rentDay) {
         String levelKey = SaveScopedCacheKey.levelKey(level) + "|residential_rent_day";
@@ -54,7 +55,7 @@ public final class ResidentialRentService {
             Long previous = LAST_PROCESSED_LEVEL_RENT_DAY.get(levelKey);
             if (previous == null) {
                 if (LAST_PROCESSED_LEVEL_RENT_DAY.putIfAbsent(levelKey, rentDay) == null) {
-                    return true;
+                    return false;
                 }
                 continue;
             }
@@ -200,6 +201,9 @@ public final class ResidentialRentService {
                     .orElse(null);
             double rentAmount = cityId != null ? rentByCity.getOrDefault(cityId, 0.0D) : 0.0D;
             double taxAmount = cityId != null ? taxByCity.getOrDefault(cityId, 0.0D) : 0.0D;
+            if (rentAmount <= 0.0D && taxAmount <= 0.0D) {
+                continue;
+            }
             level.playSound(null, player.blockPosition(), ModSoundEvents.MONEY_COLLECT.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
             InfoToastService.money(player, incomeSummary(rentAmount, taxAmount));
             HudSyncService.syncToPlayer(player, true);
