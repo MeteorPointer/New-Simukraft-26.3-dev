@@ -5,9 +5,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.ScheduledTickAccess;
+import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.RenderShape;
@@ -77,6 +75,19 @@ public final class CautionTapeBlock extends Block {
     }
 
     @Override
+    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+        super.onPlace(state, level, pos, oldState, movedByPiston);
+        if (level.isClientSide() || movedByPiston || oldState.is(this)) {
+            return;
+        }
+        BlockState connected = applyConnections(state, level, pos);
+        if (connected != state) {
+            // UPDATE_ALL：onPlace 里改状态会让外层 setBlock 跳过邻居通知，必须自己补上。
+            level.setBlock(pos, connected, Block.UPDATE_ALL);
+        }
+    }
+
+    @Override
     protected BlockState updateShape(
             BlockState state,
             LevelReader level,
@@ -129,24 +140,43 @@ public final class CautionTapeBlock extends Block {
         return state.getBlock() instanceof CautionTapeBlock;
     }
 
-    private static BlockState applyConnections(BlockState state, BlockGetter level, BlockPos pos) {
+    /**
+     * 依据四周的警戒线重算本格自身的连接状态。只改传入的 BlockState，不写世界、不递归邻居。
+     */
+    public static BlockState applyConnections(BlockState state, BlockGetter level, BlockPos pos) {
         boolean north = connectsTo(level.getBlockState(pos.north()));
         boolean east = connectsTo(level.getBlockState(pos.east()));
         boolean south = connectsTo(level.getBlockState(pos.south()));
         boolean west = connectsTo(level.getBlockState(pos.west()));
-        int count = (north ? 1 : 0) + (east ? 1 : 0) + (south ? 1 : 0) + (west ? 1 : 0);
-        if (count == 1) {
-            if (north) {
-                south = true;
-            } else if (south) {
-                north = true;
-            } else if (east) {
-                west = true;
-            } else {
-                east = true;
-            }
-        }
+
+        boolean xr = north || south;
+        boolean zr = east || west;
+        boolean x = north && south || (xr && !zr);
+        boolean z = east && west || (zr && !xr);
+
+        north = x || north;
+        south = x || south;
+        east = z || east;
+        west = z || west;
         return state.setValue(NORTH, north).setValue(EAST, east).setValue(SOUTH, south).setValue(WEST, west);
+    }
+
+    /**
+     * 整段警戒线都进世界后再调用：补上放置时还看不到后续格子的那一格。
+     * 只写本格、只通知客户端，邻居已经在 setBlock(UPDATE_ALL) 时刷新过。
+     */
+    public static void refreshSelf(LevelAccessor level, BlockPos pos) {
+        if (level == null || pos == null) {
+            return;
+        }
+        BlockState state = level.getBlockState(pos);
+        if (!(state.getBlock() instanceof CautionTapeBlock)) {
+            return;
+        }
+        BlockState connected = applyConnections(state, level, pos);
+        if (connected != state) {
+            level.setBlock(pos, connected, Block.UPDATE_CLIENTS);
+        }
     }
 
     private static int index(BlockState state) {
