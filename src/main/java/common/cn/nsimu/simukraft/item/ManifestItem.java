@@ -23,11 +23,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.*;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -165,8 +161,10 @@ public final class ManifestItem extends BlockItem {
         Map<String, Boolean> previousChecked = checkedByItem(stack);
         boolean updated = switch (sourceType) {
             case "build" -> applyBuildBoxSnapshot(stack, level, sourcePos) == FillStatus.OK;
-            case "commercial" -> applyControlBoxSnapshot(stack, ManifestControlBoxSnapshotService.commercial(level, sourcePos));
-            case "industrial" -> applyControlBoxSnapshot(stack, ManifestControlBoxSnapshotService.industrial(level, sourcePos));
+            case "commercial" ->
+                    applyControlBoxSnapshot(stack, ManifestControlBoxSnapshotService.commercial(level, sourcePos));
+            case "industrial" ->
+                    applyControlBoxSnapshot(stack, ManifestControlBoxSnapshotService.industrial(level, sourcePos));
             default -> false;
         };
         if (updated) {

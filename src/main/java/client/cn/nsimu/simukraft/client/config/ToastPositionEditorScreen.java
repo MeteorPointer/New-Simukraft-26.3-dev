@@ -91,7 +91,7 @@ public final class ToastPositionEditorScreen extends Screen {
         int controlsX = centerX - controlsWidth / 2;
         addRenderableWidget(new MinTextScaleSlider(controlsX, sliderY, sliderWidth, BUTTON_HEIGHT, minTextScale));
         addRenderableWidget(CycleButton.builder((ClientToastConfig.FitMode mode) ->
-                        Component.translatable("gui.toast_editor.fit." + mode.name().toLowerCase(Locale.ROOT)),
+                                Component.translatable("gui.toast_editor.fit." + mode.name().toLowerCase(Locale.ROOT)),
                         fitMode)
                 .withValues(ClientToastConfig.FitMode.WIDTH, ClientToastConfig.FitMode.HEIGHT)
                 .create(controlsX + sliderWidth + controlGap, sliderY, modeWidth, BUTTON_HEIGHT,

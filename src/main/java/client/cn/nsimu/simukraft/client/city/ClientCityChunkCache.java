@@ -1,13 +1,12 @@
 package client.cn.nsimu.simukraft.client.city;
 
 import client.cn.nsimu.simukraft.client.city.map.SimuMapStorage;
+import common.cn.nsimu.simukraft.network.city.chunk.CityChunkSyncPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-
-import common.cn.nsimu.simukraft.network.city.chunk.CityChunkSyncPacket;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
