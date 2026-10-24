@@ -148,7 +148,7 @@ public class CitizenEntity extends PathfinderMob {
                 if (wasSleeping) {
                     CitizenBedSleepService.wakeUp(level, this, position());
                 }
-                CitizenPanicService.onPlayerAttack(level, this, source);
+                CitizenPanicService.onHurt(level, this, source);
                 CitizenData data = CitizenManager.get(level).getCitizen(getUUID()).orElse(null);
                 if (data != null) {
                     data.setHealth(getHealth());
@@ -504,7 +504,7 @@ public class CitizenEntity extends PathfinderMob {
     }
 
     /**
-     * getPanicThreatId：返回当前逃跑要远离的玩家 UUID。
+     * getPanicThreatId：返回当前逃跑要远离的攻击者 UUID。
      */
     public UUID getPanicThreatId() {
         return panicThreatId;

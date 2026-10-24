@@ -22,12 +22,18 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.BedPart;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 public final class BuildingPreviewScreen extends Screen implements FreeCameraScreen {
+    private static final double ORIGIN_RAY_DISTANCE = 256.0D;
+
     private final Screen parent;
     private final BuildingCacheService.BuildingMeta building;
     private final BlockPos buildBoxPos;
@@ -167,6 +173,8 @@ public final class BuildingPreviewScreen extends Screen implements FreeCameraScr
         g.centeredText(font, Component.translatable("gui.building_preview.label.rotate"),
                 rotateCX, curY + step * 2 + 2, SimuKraftUiTheme.TEXT_MUTED_COLOR);
         curY += step * 2 + font.lineHeight + 5;
+        curY = panel.drawMouseAction(g, SlidingInfoPanel.MOUSE_LEFT, iX, curY,
+                Component.translatable("gui.building_preview.action.snap_origin"), SimuKraftUiTheme.TEXT_INFO_COLOR);
         panel.drawSeparator(g, curY);
         curY += 8;
         // ── 摄像机移动 ──
@@ -291,14 +299,16 @@ public final class BuildingPreviewScreen extends Screen implements FreeCameraScr
     }
 
     /**
-     * mouseClicked: RTS 预览中左键确认建造，右键取消当前抓取预览。
+     * mouseClicked: 普通预览里左键把原点挪到准星射线命中的方块。RTS 预览中左键确认建造，右键取消。
      */
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        double mouseX = event.x();
-        double mouseY = event.y();
         int button = event.button();
         if (!rtsPreviewMode) {
+            if (button == InputConstants.MOUSE_BUTTON_LEFT) {
+                snapOriginToCrosshair();
+                return true;
+            }
             return super.mouseClicked(event, doubleClick);
         }
         if (button == InputConstants.MOUSE_BUTTON_LEFT) {
@@ -324,6 +334,34 @@ public final class BuildingPreviewScreen extends Screen implements FreeCameraScr
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+    }
+
+    /**
+     * snapOriginToCrosshair: 沿自由相机视线取方块，并把预览原点移到该方块上方一格。
+     */
+    private void snapOriginToCrosshair() {
+        BlockPos hit = raycastOrigin();
+        if (hit == null) {
+            ClientInfoToast.show(Component.translatable("toast.simukraft.title"),
+                    Component.translatable("gui.building_preview.no_target"), "warning");
+            return;
+        }
+        BuildingPreviewManager.movePreviewTo(hit.above());
+    }
+
+    private BlockPos raycastOrigin() {
+        if (this.minecraft == null || this.minecraft.level == null || this.minecraft.player == null) {
+            return null;
+        }
+        Vec3 cameraPos = FreeCameraManager.getPosition();
+        double yawRad = Math.toRadians(FreeCameraManager.getYaw());
+        double pitchRad = Math.toRadians(FreeCameraManager.getPitch());
+        Vec3 look = new Vec3(-Math.sin(yawRad) * Math.cos(pitchRad), -Math.sin(pitchRad),
+                Math.cos(yawRad) * Math.cos(pitchRad)).normalize();
+        BlockHitResult result = this.minecraft.level.clip(new ClipContext(
+                cameraPos, cameraPos.add(look.scale(ORIGIN_RAY_DISTANCE)),
+                ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, this.minecraft.player));
+        return result.getType() == HitResult.Type.BLOCK ? result.getBlockPos() : null;
     }
 
     /**

@@ -3,6 +3,7 @@ package client.cn.nsimu.simukraft.client.buildbox;
 import client.cn.nsimu.simukraft.client.city.ClientCityChunkCache;
 import client.cn.nsimu.simukraft.client.rts.RtsMovePreviewManager;
 import client.cn.nsimu.simukraft.client.rts.RtsSelectionManager;
+import client.cn.nsimu.simukraft.client.selection.TwoPointSelectionManager;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import common.cn.nsimu.simukraft.building.BuildingTerritoryValidator;
@@ -205,16 +206,19 @@ public final class BuildingBoundsRenderer {
         try {
             boolean rtsPreview = BuildingPreviewManager.isPreviewActive() && RtsSelectionManager.isActive();
             boolean rtsMovePreview = RtsMovePreviewManager.isActive();
-            // RTS 建筑预览只保留城市边界；普通预览仍显示侵入提示。
-            if (BuildingPreviewManager.isPreviewActive() && (previewPlayerId == null || previewPlayerId.equals(minecraft.player.getUUID()))) {
+            boolean previewCityBoundary = BuildingPreviewManager.isPreviewActive()
+                    && (previewPlayerId == null || previewPlayerId.equals(minecraft.player.getUUID()));
+            boolean planningCityBoundary = TwoPointSelectionManager.isActive()
+                    && TwoPointSelectionManager.state().mode() == TwoPointSelectionManager.SelectionMode.PLANNING;
+            // RTS 建筑预览只保留城市边界；普通预览仍显示侵入提示。规划选区同样画出当前城市边界。
+            if (previewCityBoundary || planningCityBoundary || (rtsMovePreview && ServerConfig.claimProtectionEnabled())) {
                 renderCityBoundary(poseStack, cameraPos, minecraft);
+            }
+            if (previewCityBoundary) {
                 renderPreviewFrame(poseStack, cameraPos);
                 if (!rtsPreview) {
                     renderIntrusions(poseStack, cameraPos, minecraft);
                 }
-            }
-            if (rtsMovePreview && ServerConfig.claimProtectionEnabled()) {
-                renderCityBoundary(poseStack, cameraPos, minecraft);
             }
             if (!rtsPreview) {
                 renderSelectedBuildingBounds(poseStack, cameraPos);
