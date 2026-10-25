@@ -13,17 +13,21 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
  * GlobalMarketControlBoxBlock: 全球市场控制箱，打开雇佣管理界面。
  */
 public final class GlobalMarketControlBoxBlock extends Block {
-    public GlobalMarketControlBoxBlock(Properties properties) {
-        super(properties);
+    public GlobalMarketControlBoxBlock() {
+        super(BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(1.0F).sound(SoundType.METAL).pushReaction(PushReaction.BLOCK));
         registerDefaultState(stateDefinition.any().setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH));
     }
 
@@ -66,12 +70,18 @@ public final class GlobalMarketControlBoxBlock extends Block {
         if (level instanceof ServerLevel serverLevel && player instanceof ServerPlayer serverPlayer) {
             GlobalMarketControlBoxOpenRequestPacket.openFor(serverLevel, serverPlayer, pos);
         }
-        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
+        return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
+    /**
+     * onRemove: 拆除时解雇职员并注销建筑。
+     */
     @Override
-    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
-        GlobalMarketControlBoxService.onRemoved(level, pos);
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        if (!level.isClientSide() && !state.is(newState.getBlock()) && level instanceof ServerLevel serverLevel) {
+            GlobalMarketControlBoxService.onRemoved(serverLevel, pos);
+        }
+        super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
     /**
