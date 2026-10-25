@@ -28,10 +28,10 @@ class SimuMap3DCameraTest {
 
         assertTrue(south.y > north.y, "south (+Z) should sit lower on the screen than north");
         assertTrue(east.x > ground.x, "east (+X) should sit to the right");
-        assertTrue(south.z < north.z, "south should sit closer than north when looking from above the south edge");
-        assertTrue(roof.z < ground.z, "roofs must sit closer to the camera than the ground below them, roof.z="
+        assertTrue(south.z > north.z, "south should sit closer than north when looking from above the south edge");
+        assertTrue(roof.z > ground.z, "roofs must sit closer to the camera than the ground below them, roof.z="
                 + roof.z + " ground.z=" + ground.z);
-        assertTrue(roof.z < south.z, "a roof must sit closer than the near ground, roof.z="
+        assertTrue(roof.z > south.z, "a roof must sit closer than the near ground, roof.z="
                 + roof.z + " south.z=" + south.z);
     }
 

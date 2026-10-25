@@ -74,12 +74,17 @@ public final class SimuBlockTextureColors {
             model.collectParts(random, parts);
             List<BakedQuad> topQuads = new java.util.ArrayList<>();
             for (BlockStateModelPart part : parts) {
-                topQuads.addAll(part.getQuads(Direction.UP));
+                List<BakedQuad> up = part.getQuads(Direction.UP);
+                if (up != null) {
+                    topQuads.addAll(up);
+                }
             }
             TextureAtlasSprite sprite = firstSprite(topQuads);
             int tintIndex = firstTintIndex(topQuads);
             if (sprite == null) {
                 sprite = model.particleMaterial().sprite();
+            }
+            if (tintIndex < 0) {
                 tintIndex = inferTintIndex(state);
             }
             if (sprite == null || isMissing(sprite)) {
@@ -114,7 +119,7 @@ public final class SimuBlockTextureColors {
             return -1;
         }
         for (BakedQuad quad : quads) {
-            if (quad != null && quad.materialInfo() != null && quad.materialInfo().tintIndex() >= 0) {
+            if (quad != null && quad.materialInfo() != null && quad.materialInfo().isTinted()) {
                 return quad.materialInfo().tintIndex();
             }
         }

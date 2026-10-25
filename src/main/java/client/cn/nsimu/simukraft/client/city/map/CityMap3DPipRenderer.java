@@ -18,6 +18,7 @@ public final class CityMap3DPipRenderer extends PictureInPictureRenderer<CityMap
         if (state.mesh().isEmpty()) {
             return;
         }
+        poseStack.scale(1.0F, 1.0F, -1.0F);
         collector.submitCustomGeometry(poseStack, SimuMap3DPipelines.TYPE, (pose, buffer) ->
                 state.mesh().emitWorld(buffer, pose, state.yaw(), state.mapScale(),
                         state.liveCenterX(), state.liveCenterZ()));

@@ -5,7 +5,7 @@ import org.joml.Matrix4f;
 
 /**
  * 城市核心 3D 地图相机。
- * 水平方向留在屏幕 X，高度向上，+Z 朝屏幕下方。屋顶要比同格地面更靠近相机。
+ * 水平方向留在屏幕 X，高度向上，+Z 朝屏幕下方。屋顶写进更大的视图 Z。
  */
 public final class SimuMap3DCamera {
     /**
@@ -18,13 +18,11 @@ public final class SimuMap3DCamera {
 
     /**
      * modelMatrix: 方块坐标到界面像素。Y 轴朝上，+Z 朝屏幕下方。
-     * 物体空间翻转 Y 适配 GUI。视图 Z 再取反，屋顶才比地面更靠近相机；
-     * 不取反的话高度会写进远处，墙把顶面盖住。
+     * GUI 的 Y 朝下，所以缩放时翻转 Y。高度进 +Z；反转深度里更大的 Z 更近。
      */
     public static Matrix4f modelMatrix(float centerX, float centerY, float yaw, float scale, float baseHeight) {
         Matrix4f matrix = new Matrix4f();
         matrix.translate(centerX, centerY, 0.0F);
-        matrix.scale(1.0F, 1.0F, -1.0F);
         matrix.rotateX(-PITCH);
         matrix.rotateY(-yaw);
         matrix.scale(scale, -scale, scale);

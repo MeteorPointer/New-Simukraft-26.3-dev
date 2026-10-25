@@ -124,10 +124,7 @@ public class SimuBlockColors {
             return 0;
         }
         int color = sampled.argb();
-        if (!sampled.tinted()) {
-            return 0xFF000000 | color;
-        }
-        int tint = readBlockTint(state, level, pos, sampled.tintIndex());
+        int tint = sampled.tinted() ? readBlockTint(state, level, pos, sampled.tintIndex()) : -1;
         if (tint == -1) {
             tint = inferBiomeTint(state, level, pos);
         }

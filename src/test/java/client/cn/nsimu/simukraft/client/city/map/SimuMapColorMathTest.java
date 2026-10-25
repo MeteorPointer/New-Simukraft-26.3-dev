@@ -21,6 +21,17 @@ class SimuMapColorMathTest {
     }
 
     @Test
+    void multiplyTint_turnsGrayscaleLeafTextureIntoFoliageGreen() {
+        int leafTexture = 0xFF9A9A9A;
+        int oakTint = 0x48B518;
+        int color = SimuBlockColors.multiplyTint(leafTexture, oakTint);
+
+        assertTrue(((color >> 8) & 0xFF) > ((color >> 16) & 0xFF));
+        assertTrue(((color >> 8) & 0xFF) > (color & 0xFF));
+        assertTrue((color & 0xFF) < 0x20);
+    }
+
+    @Test
     void multiplyTint_ignoresWhiteTint() {
         assertEquals(0xFF336699, SimuBlockColors.multiplyTint(0xFF336699, 0xFFFFFF));
     }

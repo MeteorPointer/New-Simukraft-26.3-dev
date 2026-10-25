@@ -1977,22 +1977,14 @@ public final class CityCoreScreenOpener {
         }
 
         private int sampleMapColor(int worldX, int worldZ) {
-            int regionX = Math.floorDiv(worldX, SimuMapRegionData.SIZE);
-            int regionZ = Math.floorDiv(worldZ, SimuMapRegionData.SIZE);
-            int localX = worldX - regionX * SimuMapRegionData.SIZE;
-            int localZ = worldZ - regionZ * SimuMapRegionData.SIZE;
-            SimuMapRegion region = mapManager.getRegion(regionX, regionZ);
-            if (region != null) {
-                int baked = region.sampleRenderedArgb(localX, localZ);
-                if (baked != 0) {
-                    return baked;
-                }
-            }
-            SimuMapRegionData data = region == null ? null : region.getData();
+            // 立体沙盘用扫描列颜色。2D 烘好的像素已经带坡度和噪点，再给树冠打一次光会发灰。
+            SimuMapRegionData data = mapColumnData(worldX, worldZ);
             if (data == null) {
                 return 0xFF6E8B5A;
             }
-            int color = data.getColor(localX, localZ);
+            int regionX = Math.floorDiv(worldX, SimuMapRegionData.SIZE);
+            int regionZ = Math.floorDiv(worldZ, SimuMapRegionData.SIZE);
+            int color = data.getColor(worldX - regionX * SimuMapRegionData.SIZE, worldZ - regionZ * SimuMapRegionData.SIZE);
             return color == 0 ? 0xFF6E8B5A : color;
         }
 
