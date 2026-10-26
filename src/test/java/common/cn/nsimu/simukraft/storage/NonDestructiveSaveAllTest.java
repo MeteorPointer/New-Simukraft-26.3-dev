@@ -79,10 +79,14 @@ class NonDestructiveSaveAllTest {
 
             CompoundTag loadedOverworld = repository.loadAll("minecraft:overworld");
             CompoundTag loadedNether = repository.loadAll("minecraft:the_nether");
-            assertEquals("pumpkin", loadedOverworld.getList("Boxes", CompoundTag.TAG_COMPOUND).getCompound(0).getString("Crop"));
-            assertEquals(true, loadedOverworld.getList("Boxes", CompoundTag.TAG_COMPOUND).getCompound(0).getBoolean("Running"));
-            assertEquals("potatoes", loadedNether.getList("Boxes", CompoundTag.TAG_COMPOUND).getCompound(0).getString("Crop"));
-            assertEquals(false, loadedNether.getList("Boxes", CompoundTag.TAG_COMPOUND).getCompound(0).getBoolean("Running"));
+            CompoundTag loadedOverworldBox = loadedOverworld.getList("Boxes").orElseThrow()
+                    .getCompound(0).orElseThrow();
+            CompoundTag loadedNetherBox = loadedNether.getList("Boxes").orElseThrow()
+                    .getCompound(0).orElseThrow();
+            assertEquals("pumpkin", loadedOverworldBox.getString("Crop").orElseThrow());
+            assertEquals(true, loadedOverworldBox.getBoolean("Running").orElseThrow());
+            assertEquals("potatoes", loadedNetherBox.getString("Crop").orElseThrow());
+            assertEquals(false, loadedNetherBox.getBoolean("Running").orElseThrow());
         }
     }
 

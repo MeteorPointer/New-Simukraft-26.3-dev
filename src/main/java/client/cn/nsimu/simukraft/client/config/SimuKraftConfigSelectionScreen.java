@@ -4,6 +4,8 @@ import com.lowdragmc.lowdraglib2.gui.holder.ModularUIScreen;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.mojang.blaze3d.Blaze3D;
 import common.cn.nsimu.simukraft.SimuKraft;
+import client.cn.nsimu.simukraft.client.auth.SponsorAuthScreen;
+import client.cn.nsimu.simukraft.client.auth.SponsorEdition;
 import dev.vfyjxf.taffy.style.AlignContent;
 import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.FlexDirection;
@@ -53,6 +55,9 @@ public final class SimuKraftConfigSelectionScreen {
 
         body.addChild(menuButton("gui.simukraft.config.client", () -> open(SimuKraftClientConfigScreen.create(parent)), true, buttonWidth));
         body.addChild(menuButton("gui.simukraft.config.server", () -> open(SimuKraftServerConfigScreen.create(parent)), canEditServerConfig(), buttonWidth));
+        if (SponsorEdition.isEnabled()) {
+            body.addChild(menuButton("gui.simukraft.auth.title", () -> open(new SponsorAuthScreen(parent)), true, buttonWidth));
+        }
         body.addChild(linkRow(buttonWidth));
         body.addChild(spacer(10));
         body.addChild(menuButton("gui.button.back", () -> open(parent), true, buttonWidth));
