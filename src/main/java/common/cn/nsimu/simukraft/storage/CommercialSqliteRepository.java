@@ -138,6 +138,7 @@ public final class CommercialSqliteRepository {
                     entry.putInt("CurrentStock", resultSet.getInt("current_stock"));
                     entry.putInt("MaxStock", resultSet.getInt("max_stock"));
                     entry.putLong("LastRestockGameTime", resultSet.getLong("last_restock_game_time"));
+                    entry.putLong("LastReleaseDay", resultSet.getLong("last_release_day"));
                     entry.putLong("UpdatedAt", resultSet.getLong("updated_at"));
                     stock.add(entry);
                 }
@@ -262,16 +263,17 @@ public final class CommercialSqliteRepository {
 
     private void saveStockEntry(Connection connection, CompoundTag stock, String dimensionId) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
-                "INSERT INTO commercial_stock(dimension_id, box_pos_long, item_id, current_stock, max_stock, last_restock_game_time, updated_at) "
-                        + "VALUES(?, ?, ?, ?, ?, ?, ?) "
-                        + "ON CONFLICT(dimension_id, box_pos_long, item_id) DO UPDATE SET current_stock = excluded.current_stock, max_stock = excluded.max_stock, last_restock_game_time = excluded.last_restock_game_time, updated_at = excluded.updated_at")) {
+                "INSERT INTO commercial_stock(dimension_id, box_pos_long, item_id, current_stock, max_stock, last_restock_game_time, last_release_day, updated_at) "
+                        + "VALUES(?, ?, ?, ?, ?, ?, ?, ?) "
+                        + "ON CONFLICT(dimension_id, box_pos_long, item_id) DO UPDATE SET current_stock = excluded.current_stock, max_stock = excluded.max_stock, last_restock_game_time = excluded.last_restock_game_time, last_release_day = excluded.last_release_day, updated_at = excluded.updated_at")) {
             statement.setString(1, dimensionId);
             statement.setLong(2, stock.getLongOr("BoxPos", 0L));
             statement.setString(3, stock.getStringOr("ItemId", ""));
             statement.setInt(4, stock.getIntOr("CurrentStock", 0));
             statement.setInt(5, stock.getIntOr("MaxStock", 0));
             statement.setLong(6, stock.getLongOr("LastRestockGameTime", 0L));
-            statement.setLong(7, stock.getLongOr("UpdatedAt", 0L));
+            statement.setLong(7, stock.getLongOr("LastReleaseDay", -1L));
+            statement.setLong(8, stock.getLongOr("UpdatedAt", 0L));
             statement.executeUpdate();
         }
     }
