@@ -11,6 +11,7 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.ProgressBar;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.ScrollerView;
+import com.mojang.blaze3d.platform.InputConstants;
 import common.cn.nsimu.simukraft.economy.CoinDenominations;
 import common.cn.nsimu.simukraft.exchange.ExchangeCompanyLoader;
 import common.cn.nsimu.simukraft.exchange.ExchangeControlBoxService;
@@ -312,12 +313,30 @@ public final class ExchangeControlBoxScreenOpener {
             layout.justifyContent(AlignContent.SPACE_BETWEEN);
             layout.flexShrink(0);
         });
-        Label shares = label(sharesText(selected), Horizontal.LEFT, 0xFFFFC14A, metrics.infoLineHeight());
-        shares.setId(SHARES_ID);
-        shares.layout(layout -> {
+        UIElement sharesGroup = new UIElement().layout(layout -> {
             layout.flex(1);
             layout.height(metrics.infoLineHeight());
+            layout.flexDirection(FlexDirection.ROW);
+            layout.alignItems(AlignItems.CENTER);
         });
+        Component sharesComponent = sharesText(selected);
+        Label shares = fittedLabel(sharesComponent, Horizontal.LEFT, 0xFFFFC14A, metrics.infoLineHeight());
+        shares.setId(SHARES_ID);
+        int sharesWidth = textWidth(sharesComponent);
+        shares.layout(layout -> {
+            layout.width(sharesWidth);
+            layout.flexShrink(0);
+            layout.height(metrics.infoLineHeight());
+        });
+        Label shiftHint = fittedLabel(Component.translatable("gui.simukraft.exchange.shift_trade"),
+                Horizontal.LEFT, 0xFF555555, metrics.infoLineHeight());
+        shiftHint.layout(layout -> {
+            layout.flex(1);
+            layout.height(metrics.infoLineHeight());
+            layout.marginLeft(6);
+        });
+        sharesGroup.addChild(shares);
+        sharesGroup.addChild(shiftHint);
         Label holdingValue = label(holdingValueText(selected), Horizontal.CENTER, 0xFFFFC14A, metrics.infoLineHeight());
         holdingValue.setId(HOLDING_VALUE_ID);
         holdingValue.layout(layout -> {
@@ -330,7 +349,7 @@ public final class ExchangeControlBoxScreenOpener {
             layout.flex(1);
             layout.height(metrics.infoLineHeight());
         });
-        row.addChild(shares);
+        row.addChild(sharesGroup);
         row.addChild(holdingValue);
         row.addChild(todayChange);
         return row;
@@ -376,6 +395,19 @@ public final class ExchangeControlBoxScreenOpener {
             layout.flexShrink(0);
         });
         return button;
+    }
+
+    /**
+     * fittedLabel: 不拉满父级宽度，方便和旁边的提示并排。
+     */
+    private static Label fittedLabel(Component text, Horizontal horizontal, int color, int height) {
+        Label label = new Label();
+        label.setText(text);
+        label.setOverflowVisible(false);
+        label.layout(layout -> layout.height(height));
+        label.textStyle(style -> style.textColor(color).textShadow(true).textWrap(TextWrap.HOVER_ROLL)
+                .textAlignHorizontal(horizontal).textAlignVertical(Vertical.CENTER));
+        return label;
     }
 
     private static Label label(Component text, Horizontal horizontal, int color, int height) {
@@ -448,7 +480,12 @@ public final class ExchangeControlBoxScreenOpener {
             volume.setQuote(selected);
         }
         writeLabel(ui, PRICE_LINE_ID, priceLineText(selected), changeColor(selected));
-        writeLabel(ui, SHARES_ID, sharesText(selected), 0xFFFFC14A);
+        Component sharesComponent = sharesText(selected);
+        writeLabel(ui, SHARES_ID, sharesComponent, 0xFFFFC14A);
+        if (ui.getElementById(SHARES_ID) instanceof Label sharesLabel) {
+            int sharesWidth = textWidth(sharesComponent);
+            sharesLabel.layout(layout -> layout.width(sharesWidth));
+        }
         writeLabel(ui, HOLDING_VALUE_ID, holdingValueText(selected), 0xFFFFC14A);
         writeLabel(ui, TODAY_CHANGE_ID, todayChangeText(selected), changeColor(selected));
         for (ExchangeQuote quote : currentPacket.quotes()) {
@@ -483,6 +520,9 @@ public final class ExchangeControlBoxScreenOpener {
         ClientPacketDistributor.sendToServer(new ExchangeControlBoxRepairPacket(currentPacket.boxPos()));
     }
 
+    /**
+     * trade: 单击成交 1 股，按住 Shift 成交 10 股。
+     */
     private static void trade(boolean buy) {
         if (currentPacket == null) {
             return;
@@ -491,7 +531,9 @@ public final class ExchangeControlBoxScreenOpener {
         if (selected == null) {
             return;
         }
-        ClientPacketDistributor.sendToServer(new ExchangeControlBoxActionPacket(currentPacket.boxPos(), buy, selected.id(), 1));
+        int shares = InputConstants.isKeyDown(InputConstants.KEY_LSHIFT)
+                || InputConstants.isKeyDown(InputConstants.KEY_RSHIFT) ? 10 : 1;
+        ClientPacketDistributor.sendToServer(new ExchangeControlBoxActionPacket(currentPacket.boxPos(), buy, selected.id(), shares));
     }
 
     private static void fire(ExchangeControlBoxOpenResponsePacket packet) {
@@ -576,6 +618,10 @@ public final class ExchangeControlBoxScreenOpener {
         return Component.translatable("gui.simukraft.exchange.price_line", CoinDenominations.formatYuan(selected.price()))
                 .append(Component.literal("  "))
                 .append(Component.translatable("gui.simukraft.exchange.viewing", companyName(selected)));
+    }
+
+    private static int textWidth(Component text) {
+        return Minecraft.getInstance().font.width(text) + 2;
     }
 
     private static Component sharesText(ExchangeQuote selected) {

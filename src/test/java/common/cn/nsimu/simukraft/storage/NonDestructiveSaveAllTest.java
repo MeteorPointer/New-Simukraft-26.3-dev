@@ -77,16 +77,12 @@ class NonDestructiveSaveAllTest {
                 repository.saveAll(connection, nether, "minecraft:the_nether");
             }
 
-            CompoundTag loadedOverworld = repository.loadAll("minecraft:overworld");
-            CompoundTag loadedNether = repository.loadAll("minecraft:the_nether");
-            CompoundTag loadedOverworldBox = loadedOverworld.getList("Boxes").orElseThrow()
-                    .getCompound(0).orElseThrow();
-            CompoundTag loadedNetherBox = loadedNether.getList("Boxes").orElseThrow()
-                    .getCompound(0).orElseThrow();
-            assertEquals("pumpkin", loadedOverworldBox.getString("Crop").orElseThrow());
-            assertEquals(true, loadedOverworldBox.getBoolean("Running").orElseThrow());
-            assertEquals("potatoes", loadedNetherBox.getString("Crop").orElseThrow());
-            assertEquals(false, loadedNetherBox.getBoolean("Running").orElseThrow());
+            CompoundTag loadedOverworld = firstBox(repository.loadAll("minecraft:overworld"));
+            CompoundTag loadedNether = firstBox(repository.loadAll("minecraft:the_nether"));
+            assertEquals("pumpkin", loadedOverworld.getStringOr("Crop", ""));
+            assertEquals(true, loadedOverworld.getBooleanOr("Running", false));
+            assertEquals("potatoes", loadedNether.getStringOr("Crop", ""));
+            assertEquals(false, loadedNether.getBooleanOr("Running", false));
         }
     }
 
@@ -147,6 +143,10 @@ class NonDestructiveSaveAllTest {
 
     private static int listSize(CompoundTag tag, String key) {
         return tag == null ? 0 : tag.getListOrEmpty(key).size();
+    }
+
+    private static CompoundTag firstBox(CompoundTag tag) {
+        return tag.getListOrEmpty("Boxes").getCompoundOrEmpty(0);
     }
 
     private static CompoundTag citizensTag(UUID... citizenIds) {
