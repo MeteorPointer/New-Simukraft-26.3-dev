@@ -155,9 +155,8 @@ public final class CityCoreScreenOpener {
             CityChunkMapElement mapElement = activeMapElement;
             if (mapElement != null && mapElement.matches(packet.pos())) {
                 mapElement.updatePacket(packet);
-                return;
             }
-            show(minecraft, createUi(packet));
+            window.showMapTab(packet);
         });
     }
 
@@ -1190,6 +1189,19 @@ public final class CityCoreScreenOpener {
             }
         }
 
+        /**
+         * showMapTab：在现有窗口里打开或切到地图，避免整窗重建。
+         */
+        private void showMapTab(CityCoreMapResponsePacket mapPacket) {
+            View existing = openedTabs.get("map");
+            if (existing != null && rightTabs.hasView(existing)) {
+                currentTabId = "map";
+                rightTabs.selectView(existing);
+                return;
+            }
+            openTab("map", "screen.simukraft.city_core.map_title", cityMapPanel(mapPacket));
+        }
+
         private void openDefaultTabs() {
             if ("upgrade".equals(initialTabId) && packet.hasCity() && packet.canManageCity()) {
                 openTab("info", "screen.simukraft.city_core.menu.info", scrollable(contentPanel(packet)));
@@ -1210,7 +1222,6 @@ public final class CityCoreScreenOpener {
                 openTab("members", "screen.simukraft.city_core.members.title", membersPanel(membersPacket));
             } else if (packet.hasCity()) {
                 openTab("info", "screen.simukraft.city_core.menu.info", scrollable(contentPanel(packet)));
-                requestMap(packet);
             } else {
                 openTab("create", "screen.simukraft.city_core.create", createPanel(packet));
             }
@@ -1325,7 +1336,6 @@ public final class CityCoreScreenOpener {
             // 地图控件打开时才激活地图系统，避免常驻扫描占用客户端性能。
             mapManager.init();
             mapManager.acquireConsumer();
-            forceInitialMapScan();
             centerMapOnCityCore();
             layout(layout -> {
                 layout.widthPercent(100);
@@ -1439,17 +1449,6 @@ public final class CityCoreScreenOpener {
             int x1 = (int) Math.round(screenX + regionSize);
             int y1 = (int) Math.round(screenY + regionSize);
             guiContext.graphics.blit(textureLocation, x0, y0, x1, y1, 0.0F, 1.0F, 0.0F, 1.0F);
-        }
-
-        private void forceInitialMapScan() {
-            Minecraft minecraft = Minecraft.getInstance();
-            if (minecraft.player == null) {
-                return;
-            }
-            int chunkX = minecraft.player.chunkPosition().x();
-            int chunkZ = minecraft.player.chunkPosition().z();
-            mapManager.forceScanArea(chunkX, chunkZ, Math.min(12, mapManager.getEffectiveScanRadius()));
-            mapManager.forceRenderAll();
         }
 
         private void releaseMapConsumer() {
