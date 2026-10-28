@@ -3,23 +3,9 @@ package client.cn.nsimu.simukraft.client.auth;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.Files;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.AclEntry;
-import java.nio.file.attribute.AclEntryPermission;
-import java.nio.file.attribute.AclEntryType;
-import java.nio.file.attribute.AclFileAttributeView;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.UserPrincipal;
-import java.nio.file.attribute.UserPrincipalNotFoundException;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
+import java.nio.file.*;
+import java.nio.file.attribute.*;
+import java.util.*;
 
 final class SponsorAuthStorage {
     private static final int STORAGE_VERSION = 2;

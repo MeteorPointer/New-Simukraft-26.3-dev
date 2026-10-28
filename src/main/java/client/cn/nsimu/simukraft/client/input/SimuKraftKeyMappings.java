@@ -1,7 +1,7 @@
 package client.cn.nsimu.simukraft.client.input;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import client.cn.nsimu.simukraft.client.auth.SponsorEdition;
+import com.mojang.blaze3d.platform.InputConstants;
 import common.cn.nsimu.simukraft.SimuKraft;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.input.KeyEvent;

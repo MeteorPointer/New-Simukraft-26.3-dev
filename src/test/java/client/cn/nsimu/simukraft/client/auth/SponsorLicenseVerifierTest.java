@@ -11,10 +11,7 @@ import java.security.Signature;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Base64;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class SponsorLicenseVerifierTest {
     private static final Base64.Encoder URL = Base64.getUrlEncoder().withoutPadding();

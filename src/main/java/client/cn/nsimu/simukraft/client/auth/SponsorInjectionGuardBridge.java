@@ -3,7 +3,9 @@ package client.cn.nsimu.simukraft.client.auth;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 
-/** 保持公开源码不依赖私有 JiJ；赞助构建在运行时反射加载并强制要求它存在。 */
+/**
+ * 保持公开源码不依赖私有 JiJ；赞助构建在运行时反射加载并强制要求它存在。
+ */
 final class SponsorInjectionGuardBridge {
     private static final String DETECTOR = "cn.nsimu.security.guard.InjectionDetector";
 

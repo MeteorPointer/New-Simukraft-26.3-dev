@@ -10,6 +10,8 @@ import common.cn.nsimu.simukraft.commercial.*;
 import common.cn.nsimu.simukraft.config.ClientConfig;
 import common.cn.nsimu.simukraft.config.ServerConfig;
 import common.cn.nsimu.simukraft.config.material.MaterialConfig;
+import common.cn.nsimu.simukraft.debugcity.DebugCityBootstrapService;
+import common.cn.nsimu.simukraft.debugcity.DebugCityChunkGenerator;
 import common.cn.nsimu.simukraft.economy.ResidentialRentService;
 import common.cn.nsimu.simukraft.event.CityPlacementRestrictionHandler;
 import common.cn.nsimu.simukraft.event.PlayerWelcomeService;
@@ -97,6 +99,7 @@ public final class SimuKraft {
         ModSoundEvents.register(modEventBus);
         ModStructures.register(modEventBus);
         ModTicketTypes.register(modEventBus);
+        modEventBus.addListener(DebugCityChunkGenerator::register);
         modEventBus.addListener(BuildingStructureDataPack::onAddPackFinders);
         modContainer.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
         modContainer.registerConfig(ModConfig.Type.LOCAL, ServerConfig.SPEC);
@@ -297,6 +300,7 @@ public final class SimuKraft {
     }
 
     private void onServerTick(ServerTickEvent.Post event) {
+        DebugCityBootstrapService.tick(event.getServer());
         // 先刷新城市运行状态，保证本 tick 的居民和医疗调度使用最新的激活结果。
         event.getServer().getAllLevels().forEach(CityRuntimeService::tick);
         event.getServer().getAllLevels().forEach(CityUpgradeService::tick);

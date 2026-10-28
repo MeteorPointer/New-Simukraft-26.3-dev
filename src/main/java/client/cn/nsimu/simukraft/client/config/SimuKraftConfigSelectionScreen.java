@@ -1,11 +1,11 @@
 package client.cn.nsimu.simukraft.client.config;
 
+import client.cn.nsimu.simukraft.client.auth.SponsorAuthScreen;
+import client.cn.nsimu.simukraft.client.auth.SponsorEdition;
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIScreen;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.mojang.blaze3d.Blaze3D;
 import common.cn.nsimu.simukraft.SimuKraft;
-import client.cn.nsimu.simukraft.client.auth.SponsorAuthScreen;
-import client.cn.nsimu.simukraft.client.auth.SponsorEdition;
 import dev.vfyjxf.taffy.style.AlignContent;
 import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.FlexDirection;
