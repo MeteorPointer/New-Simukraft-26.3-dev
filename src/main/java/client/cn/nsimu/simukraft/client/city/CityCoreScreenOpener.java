@@ -179,14 +179,6 @@ public final class CityCoreScreenOpener {
         minecraft.gui.setScreen(screen);
     }
 
-    private static ModularUI createUi(CityCoreMapResponsePacket packet) {
-        CityCoreWindow window = new CityCoreWindow(packet);
-        UIElement root = createWindowRoot(window);
-        return new ModularUI(SimuKraftUiTheme.createUi(root))
-                .shouldCloseOnEsc(true)
-                .shouldCloseOnKeyInventory(false);
-    }
-
     private static ModularUI createUi(CityCoreMembersResponsePacket packet) {
         CityCoreWindow window = new CityCoreWindow(packet);
         UIElement root = createWindowRoot(window);

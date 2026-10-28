@@ -10,10 +10,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CityNetworkViewFactoryTest {
     @Test
-    void buildOpenResponse_skipsUnusedOpenStats() {
+    void buildOpenResponseSkipsUnusedOpenStats() {
         UUID cityId = UUID.randomUUID();
         UUID mayorId = UUID.randomUUID();
         BlockPos pos = new BlockPos(8, 64, 8);
@@ -33,7 +36,7 @@ class CityNetworkViewFactoryTest {
     }
 
     @Test
-    void buildOpenResponse_emptyCity_skipsCityLookups() {
+    void buildOpenResponseEmptyCitySkipsCityLookups() {
         BlockPos pos = new BlockPos(0, 64, 0);
         CityCoreOpenResponsePacket packet = CityNetworkViewFactory.buildOpenResponse(
                 null, pos, Optional.empty(), CityPermissionLevel.CITIZEN, true, false);
