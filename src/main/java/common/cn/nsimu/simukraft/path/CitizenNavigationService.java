@@ -658,7 +658,7 @@ public final class CitizenNavigationService {
                                         PathSnapshotCache.Acquisition acquired, int padding, long partitionKey) {
         UUID cityId = cityOf(level, request.citizenId());
         PathDistanceField existingField = runtime.distanceFields.get(new PathDistanceFieldCache.PathFieldKey(
-                                    request.dimensionId(), cityId, request.targetBlockPos(), request.intent()), runtime.snapshotCache.epochs());
+                request.dimensionId(), cityId, request.targetBlockPos(), request.intent()), runtime.snapshotCache.epochs());
         CompletableFuture<PathJob> future;
         try {
             future = CompletableFuture.supplyAsync(

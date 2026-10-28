@@ -1,7 +1,7 @@
 package common.cn.nsimu.simukraft.path;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -18,7 +18,7 @@ final class PathResultCache {
     /**
      * findNear：起点和终点都差不过 2 格时复用折线。
      */
-    synchronized PathResult findNear(ResourceLocation dimensionId, BlockPos start, BlockPos target, MovementIntent intent,
+    synchronized PathResult findNear(Identifier dimensionId, BlockPos start, BlockPos target, MovementIntent intent,
                                      long gameTime, PathSectionEpochs epochs) {
         if (dimensionId == null || start == null || target == null || intent == null) {
             return null;

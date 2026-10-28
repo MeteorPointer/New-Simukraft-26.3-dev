@@ -257,8 +257,8 @@ final class PathSnapshotBuilder {
         int maxX = Math.max(start.getX(), target.getX()) + pad;
         int minZ = Math.min(start.getZ(), target.getZ()) - pad;
         int maxZ = Math.max(start.getZ(), target.getZ()) + pad;
-        int minY = Math.max(level.getMinBuildHeight(), Math.min(start.getY(), target.getY()) - VERTICAL_PADDING);
-        int maxY = Math.min(level.getMaxBuildHeight() - 2, Math.max(start.getY(), target.getY()) + VERTICAL_PADDING);
+        int minY = Math.max(level.getMinY(), Math.min(start.getY(), target.getY()) - VERTICAL_PADDING);
+        int maxY = Math.min(level.getMaxY() - 2, Math.max(start.getY(), target.getY()) + VERTICAL_PADDING);
         return new SnapshotBounds(minX, maxX, minZ, maxZ, minY, maxY);
     }
 
