@@ -25,6 +25,8 @@ public final class CitizenNavigationService {
     private static final ConcurrentMap<String, LevelRuntime> RUNTIMES = new ConcurrentHashMap<>();
     private static final AtomicInteger THREAD_ID = new AtomicInteger();
     private static final int STALLED_TELEPORT_TICKS = 300;
+    private static final int MAX_FIELD_DEMAND_KEYS = 32;
+    private static final int MAX_QUEUE_PRIORITY_REFRESH_PER_TICK = 64;
     // 同小区上班、逃跑这类开阔短距不进全局队列，避免几百人把采样名额耗光。
     private static final double DIRECT_MOVE_DISTANCE = 8.0D;
     private static final double DIRECT_MOVE_DISTANCE_SQR = DIRECT_MOVE_DISTANCE * DIRECT_MOVE_DISTANCE;
@@ -104,6 +106,7 @@ public final class CitizenNavigationService {
         if (queued != null
                 && queued.intent() == normalizedIntent
                 && queued.target().distanceToSqr(target) <= 4.0D) {
+            runtime.queue.offer(citizenId, nearestPlayerDistanceSqr(level, citizen.position()));
             return true;
         }
         Long cooldownUntil = runtime.cooldowns.get(citizenId);
@@ -125,9 +128,7 @@ public final class CitizenNavigationService {
 
         PathRequest request = new PathRequest(citizenId, level.dimension().identifier(), citizen.blockPosition(), target, normalizedIntent, level.getGameTime());
         runtime.latestRequests.put(citizenId, request);
-        if (runtime.queuedCitizenIds.add(citizenId)) {
-            runtime.queue.offer(citizenId);
-        }
+        runtime.queue.offer(citizenId, nearestPlayerDistanceSqr(level, citizen.position()));
         return true;
     }
 
@@ -349,10 +350,23 @@ public final class CitizenNavigationService {
         runtime.cooldowns.entrySet().removeIf(entry -> entry.getValue() <= level.getGameTime());
         InfoToastService.send(player, Component.translatable(
                 "message.simukraft.path_status.summary",
-                runtime.queuedCitizenIds.size(),
+                runtime.queue.size(),
                 runtime.pending.size(),
                 runtime.active.size(),
                 runtime.cooldowns.size()));
+        double averageSearchMillis = runtime.completedSearches == 0L ? 0.0D
+                : runtime.searchNanos / (double) runtime.completedSearches / 1_000_000.0D;
+        InfoToastService.send(player, Component.translatable(
+                "message.simukraft.path_status.metrics",
+                runtime.pathResultCacheHits,
+                runtime.snapshotCacheHits,
+                runtime.snapshotAcquisitions,
+                runtime.freshSectionsCaptured,
+                String.format(Locale.ROOT, "%.1f", averageSearchMillis),
+                runtime.workerRejections,
+                runtime.distanceFieldHits,
+                runtime.distanceFieldBuilds,
+                runtime.completedSearches));
         CitizenPathDebugService.PathRuntimeIssue issue = CitizenPathDebugService.nearestIssue(level, runtime.active, player.position());
         if (issue != null) {
             InfoToastService.warning(player, Component.translatable(
@@ -412,10 +426,11 @@ public final class CitizenNavigationService {
         tickActivePaths(level, runtime);
         CitizenDoorService.processOpenedDoors(level, runtime.openedDoors, runtime.active.keySet());
         processQueuedRequests(level, runtime);
-        pumpFieldBuild(level, runtime);
+        pumpFieldBuild(runtime);
         if (level.getGameTime() % 200L == 0L) {
             runtime.pathCache.cleanup(level.getGameTime());
             runtime.snapshotCache.cleanup(level.getGameTime());
+            runtime.fieldDemands.entrySet().removeIf(entry -> entry.getValue().expired(level.getGameTime()));
             runtime.cooldowns.entrySet().removeIf(entry -> entry.getValue() <= level.getGameTime());
             PathCrowdCoordinator.cleanup(level);
         }
@@ -470,7 +485,9 @@ public final class CitizenNavigationService {
      */
     private static void processQueuedRequests(ServerLevel level, LevelRuntime runtime) {
         int budget = Math.max(0, ServerConfig.pathMaxNewRequestsPerTick());
-        int guard = runtime.queue.size() + (runtime.pinnedCitizenId == null ? 0 : 1);
+        refreshQueuedPriorities(level, runtime);
+        // 优先队列已覆盖全部待处理请求；每拍只取最近的 24 人，避免全量查询实体和缓存。
+        int guard = Math.min(runtime.queue.size(), 24);
         List<NearRequest> near = new ArrayList<>(Math.min(guard, 64));
         for (int examined = 0; examined < guard; examined++) {
             UUID citizenId = pollQueuedCitizen(runtime);
@@ -489,19 +506,21 @@ public final class CitizenNavigationService {
                 clearRuntimeNavigation(level, runtime, citizenId, citizen, true);
                 continue;
             }
+            double distanceSqr = nearestPlayerDistanceSqr(level, citizen.position());
             if (!level.isPositionEntityTicking(citizen.blockPosition())) {
-                requeue(runtime, citizenId, request);
+                requeue(runtime, citizenId, request, distanceSqr);
                 continue;
             }
-            near.add(new NearRequest(citizenId, request, citizen, nearestPlayerDistanceSqr(level, citizen.position())));
+            near.add(new NearRequest(citizenId, request, citizen, distanceSqr));
         }
+        near.sort(Comparator.comparingDouble(NearRequest::distanceSqr));
         long now = level.getGameTime();
         List<SampleCandidate> waiting = new ArrayList<>();
         int processed = 0;
         for (NearRequest item : near) {
             PathRequest currentRequest = refreshedRequest(item, now);
             if (item.distanceSqr() == Double.MAX_VALUE) {
-                requeue(runtime, item.citizenId(), currentRequest);
+                requeue(runtime, item.citizenId(), currentRequest, item.distanceSqr());
                 continue;
             }
             if (processed < budget && tryActivateCached(level, runtime, currentRequest)) {
@@ -533,10 +552,6 @@ public final class CitizenNavigationService {
                 requeueGroup(runtime, group);
                 continue;
             }
-            if (!allowFresh) {
-                requeueGroup(runtime, group);
-                continue;
-            }
             if (buildings == null) {
                 buildings = buildingSpans(level);
             }
@@ -544,37 +559,75 @@ public final class CitizenNavigationService {
             lead = representative(group);
             int padding = groupPadding(group);
             PathSnapshotCache.Acquisition acquired = runtime.snapshotCache.acquireCorridor(
-                    level, lead.request().startPos(), lead.request().targetBlockPos(), padding, runtime.sampleTier.ttlTicks, true);
+                    level, lead.request().startPos(), lead.request().targetBlockPos(), padding,
+                    runtime.sampleTier.ttlTicks, allowFresh);
             if (!acquired.ready()) {
+                recordSnapshotAcquisition(runtime, acquired);
                 requeueGroup(runtime, group);
                 allowFresh = false;
                 continue;
             }
             for (SampleCandidate member : group) {
                 if (processed >= budget || runtime.active.size() + runtime.pending.size() >= ServerConfig.pathMaxActiveCitizens()) {
-                    requeue(runtime, member.item().citizenId(), member.request());
+                    requeue(runtime, member.item().citizenId(), member.request(), member.item().distanceSqr());
                     continue;
                 }
                 PathSnapshotCache.Acquisition memberCapture = member == lead
                         ? acquired
                         : runtime.snapshotCache.acquireCorridor(level, member.request().startPos(), member.request().targetBlockPos(),
-                        padding, runtime.sampleTier.ttlTicks, false);
+                        padding, runtime.sampleTier.ttlTicks, allowFresh);
+                recordSnapshotAcquisition(runtime, memberCapture);
                 if (!memberCapture.ready()) {
-                    requeue(runtime, member.item().citizenId(), member.request());
+                    requeue(runtime, member.item().citizenId(), member.request(), member.item().distanceSqr());
                     continue;
                 }
                 if (submitSearch(level, runtime, member.request(), memberCapture, padding, member.partitionKey())) {
                     processed++;
                 } else {
-                    requeue(runtime, member.item().citizenId(), member.request());
+                    requeue(runtime, member.item().citizenId(), member.request(), member.item().distanceSqr());
                 }
             }
+        }
+    }
+
+    /** 每 tick 轮转刷新一小批排队距离，跟上玩家和居民移动，同时保持主线程开销有界。 */
+    private static void refreshQueuedPriorities(ServerLevel level, LevelRuntime runtime) {
+        int refreshCount = Math.min(runtime.queue.size(), MAX_QUEUE_PRIORITY_REFRESH_PER_TICK);
+        for (int refreshed = 0; refreshed < refreshCount; refreshed++) {
+            UUID citizenId = runtime.queue.nextForPriorityRefresh();
+            if (citizenId == null) {
+                return;
+            }
+            PathRequest request = runtime.latestRequests.get(citizenId);
+            if (request == null || runtime.pending.containsKey(citizenId)) {
+                runtime.queue.remove(citizenId);
+                continue;
+            }
+            CitizenEntity citizen = CitizenTeleportService.findCitizenEntity(level, citizenId);
+            if (citizen == null) {
+                runtime.latestRequests.remove(citizenId);
+                runtime.queue.remove(citizenId);
+                continue;
+            }
+            if (citizen.isSleeping()) {
+                clearRuntimeNavigation(level, runtime, citizenId, citizen, true);
+                continue;
+            }
+            runtime.queue.offer(citizenId, nearestPlayerDistanceSqr(level, citizen.position()));
         }
     }
 
     private static PathRequest refreshedRequest(NearRequest item, long now) {
         return new PathRequest(item.citizenId(), item.request().dimensionId(), item.citizen().blockPosition(),
                 item.request().target(), item.request().intent(), now);
+    }
+
+    private static void recordSnapshotAcquisition(LevelRuntime runtime, PathSnapshotCache.Acquisition acquisition) {
+        runtime.snapshotAcquisitions++;
+        runtime.freshSectionsCaptured += acquisition.freshSections();
+        if (acquisition.ready() && acquisition.freshSections() == 0) {
+            runtime.snapshotCacheHits++;
+        }
     }
 
     private static boolean tryActivateCached(ServerLevel level, LevelRuntime runtime, PathRequest request) {
@@ -584,12 +637,9 @@ public final class CitizenNavigationService {
         PathCacheKey cacheKey = new PathCacheKey(request.dimensionId(), request.startPos(), request.targetBlockPos(), request.intent());
         PathResult cached = runtime.pathCache.get(cacheKey, level.getGameTime(), runtime.snapshotCache.epochs());
         if (cached == null) {
-            cached = runtime.pathCache.findNear(request.dimensionId(), request.startPos(), request.targetBlockPos(),
-                    request.intent(), level.getGameTime(), runtime.snapshotCache.epochs());
-        }
-        if (cached == null) {
             return false;
         }
+        runtime.pathResultCacheHits++;
         activate(level, runtime, cached.forRequest(request));
         runtime.paddingFloor.remove(request.citizenId());
         return true;
@@ -650,26 +700,56 @@ public final class CitizenNavigationService {
 
     private static void requeueGroup(LevelRuntime runtime, List<SampleCandidate> group) {
         for (SampleCandidate candidate : group) {
-            requeue(runtime, candidate.item().citizenId(), candidate.request());
+            requeue(runtime, candidate.item().citizenId(), candidate.request(), candidate.item().distanceSqr());
         }
     }
 
     private static boolean submitSearch(ServerLevel level, LevelRuntime runtime, PathRequest request,
                                         PathSnapshotCache.Acquisition acquired, int padding, long partitionKey) {
         UUID cityId = cityOf(level, request.citizenId());
-        PathDistanceField existingField = runtime.distanceFields.get(new PathDistanceFieldCache.PathFieldKey(
-                request.dimensionId(), cityId, request.targetBlockPos(), request.intent()), runtime.snapshotCache.epochs());
+        PathDistanceFieldCache.PathFieldKey fieldKey = new PathDistanceFieldCache.PathFieldKey(
+                request.dimensionId(), cityId, request.targetBlockPos(), request.intent());
+        PathDistanceField existingField = runtime.distanceFields.get(fieldKey, runtime.snapshotCache.epochs());
         CompletableFuture<PathJob> future;
         try {
             future = CompletableFuture.supplyAsync(
                     () -> PathExtraCosts.callWithCity(cityId, () -> search(request, acquired, existingField)),
                     executor());
         } catch (RejectedExecutionException rejected) {
+            runtime.workerRejections++;
             return false;
+        }
+        if (existingField != null) {
+            runtime.distanceFieldHits++;
         }
         PathCacheKey cacheKey = new PathCacheKey(request.dimensionId(), request.startPos(), request.targetBlockPos(), request.intent());
         runtime.pending.put(request.citizenId(), new RunningRequest(future, cacheKey, acquired.stamp(), padding, partitionKey));
+        if (existingField == null && (runtime.fieldPump == null || !runtime.fieldPump.key.equals(fieldKey))) {
+            observeFieldDemand(runtime, fieldKey, request, cityId, acquired, level.getGameTime());
+        }
         return true;
+    }
+
+    /** 只有同目标请求确实重复时才启动共享距离场，并复用本次已采好的快照。 */
+    private static void observeFieldDemand(LevelRuntime runtime, PathDistanceFieldCache.PathFieldKey key,
+                                           PathRequest request, UUID cityId,
+                                           PathSnapshotCache.Acquisition acquired, long now) {
+        runtime.fieldDemands.entrySet().removeIf(entry -> entry.getValue().expired(now));
+        PathFieldDemand demand = runtime.fieldDemands.get(key);
+        if (demand == null) {
+            if (runtime.fieldDemands.size() >= MAX_FIELD_DEMAND_KEYS) {
+                PathDistanceFieldCache.PathFieldKey oldest = runtime.fieldDemands.keySet().iterator().next();
+                runtime.fieldDemands.remove(oldest);
+            }
+            demand = new PathFieldDemand();
+            runtime.fieldDemands.put(key, demand);
+        }
+        demand.observe(request.citizenId(), request.startPos(), now);
+        if (runtime.fieldPump == null && acquired.capture().complete()
+                && demand.canBuild(acquired.capture().bounds())) {
+            runtime.fieldDemands.remove(key);
+            runtime.fieldPump = new FieldPump(key, request, cityId, acquired);
+        }
     }
 
     private static void noteSampleFailure(LevelRuntime runtime, UUID citizenId, RunningRequest running) {
@@ -723,20 +803,21 @@ public final class CitizenNavigationService {
      * search: 能接上已有距离场就回溯，否则单人 A*。建场放到后台分步做。
      */
     private static PathJob search(PathRequest request, PathSnapshotCache.Acquisition acquired, PathDistanceField existingField) {
+        long startedAt = System.nanoTime();
         PathSnapshot snapshot = PathSnapshotBuilder.buildFromCapture(acquired.capture(), request.startPos(), request.targetBlockPos());
         if (existingField != null) {
             PathResult reconstructed = existingField.reconstruct(request, snapshot);
             if (reconstructed.success()) {
-                return new PathJob(reconstructed);
+                return new PathJob(reconstructed, System.nanoTime() - startedAt);
             }
         }
-        return new PathJob(HybridPathfinder.find(request, snapshot));
+        return new PathJob(HybridPathfinder.find(request, snapshot), System.nanoTime() - startedAt);
     }
 
     /**
      * pumpFieldBuild: 每 tick 最多推进一步距离场。采样没完成就只吃本 tick 剩余的区段预算。
      */
-    private static void pumpFieldBuild(ServerLevel level, LevelRuntime runtime) {
+    private static void pumpFieldBuild(LevelRuntime runtime) {
         FieldPump pump = runtime.fieldPump;
         if (pump == null) {
             return;
@@ -760,22 +841,17 @@ public final class CitizenNavigationService {
             }
             if (pump.build != null && pump.build.finished()) {
                 runtime.distanceFields.put(pump.key, pump.build.toField());
+                runtime.distanceFieldBuilds++;
                 runtime.fieldPump = null;
                 return;
             }
-        }
-        if (pump.acquired == null) {
-            PathSnapshotCache.Acquisition acquired = runtime.snapshotCache.acquire(level, pump.bounds);
-            if (!acquired.ready()) {
-                return;
-            }
-            pump.acquired = acquired;
         }
         try {
             pump.step = CompletableFuture.supplyAsync(
                     () -> PathExtraCosts.callWithCity(pump.cityId, () -> pump.advance()),
                     executor());
         } catch (RejectedExecutionException rejected) {
+            runtime.workerRejections++;
             pump.step = null;
         }
     }
@@ -784,27 +860,14 @@ public final class CitizenNavigationService {
      * pollQueuedCitizen：优先继续上拍没采完的那个人，避免新区段被撒到全城后过期。
      */
     private static UUID pollQueuedCitizen(LevelRuntime runtime) {
-        if (runtime.pinnedCitizenId != null) {
-            UUID pinned = runtime.pinnedCitizenId;
-            runtime.pinnedCitizenId = null;
-            runtime.queuedCitizenIds.remove(pinned);
-            return pinned;
-        }
-        UUID citizenId = runtime.queue.poll();
-        if (citizenId != null) {
-            runtime.queuedCitizenIds.remove(citizenId);
-        }
-        return citizenId;
+        return runtime.queue.poll();
     }
 
     /**
-     * forgetQueued：离开队列时同时放下采样钉，避免取消后还占着下拍的名额。
+     * forgetQueued：离开队列时同时清除堆索引和距离刷新索引。
      */
     private static void forgetQueued(LevelRuntime runtime, UUID citizenId) {
-        runtime.queuedCitizenIds.remove(citizenId);
-        if (citizenId != null && citizenId.equals(runtime.pinnedCitizenId)) {
-            runtime.pinnedCitizenId = null;
-        }
+        runtime.queue.remove(citizenId);
     }
 
     /**
@@ -864,14 +927,10 @@ public final class CitizenNavigationService {
         return state.getFluidState().isEmpty() && state.getCollisionShape(level, pos).isEmpty();
     }
 
-    /**
-     * requeue: 这一 tick 做不完就放回队尾，下个 tick 继续。
-     */
-    private static void requeue(LevelRuntime runtime, UUID citizenId, PathRequest request) {
+    /** 未完成的请求按最近玩家距离重新排队，避免大队列轮转时近处请求长期落在队尾。 */
+    private static void requeue(LevelRuntime runtime, UUID citizenId, PathRequest request, double distanceSqr) {
         runtime.latestRequests.put(citizenId, request);
-        if (runtime.queuedCitizenIds.add(citizenId)) {
-            runtime.queue.offer(citizenId);
-        }
+        runtime.queue.offer(citizenId, distanceSqr);
     }
 
     /**
@@ -896,6 +955,10 @@ public final class CitizenNavigationService {
                 job = null;
             }
             PathResult result = job == null ? null : job.result();
+            if (job != null) {
+                runtime.completedSearches++;
+                runtime.searchNanos += job.elapsedNanos();
+            }
             boolean fresh = runtime.snapshotCache.epochs().matches(running.stamp());
             if (result != null && result.success()) {
                 if (fresh) {
@@ -974,9 +1037,7 @@ public final class CitizenNavigationService {
                 runtime.cooldowns.put(entry.getKey(), level.getGameTime() + 20L);
                 PathRequest request = new PathRequest(entry.getKey(), level.dimension().identifier(), citizen.blockPosition(), active.target, active.intent, level.getGameTime());
                 runtime.latestRequests.put(entry.getKey(), request);
-                if (runtime.queuedCitizenIds.add(entry.getKey())) {
-                    runtime.queue.offer(entry.getKey());
-                }
+                runtime.queue.offer(entry.getKey(), nearestPlayerDistanceSqr(level, citizen.position()));
             } else {
                 runtime.blockedSince.remove(entry.getKey());
             }
@@ -1091,8 +1152,7 @@ public final class CitizenNavigationService {
     }
 
     private static final class LevelRuntime {
-        private final ConcurrentLinkedQueue<UUID> queue = new ConcurrentLinkedQueue<>();
-        private final java.util.Set<UUID> queuedCitizenIds = ConcurrentHashMap.newKeySet();
+        private final PathRequestPriorityQueue queue = new PathRequestPriorityQueue();
         private final Map<UUID, PathRequest> latestRequests = new java.util.HashMap<>();
         private final Map<UUID, RunningRequest> pending = new java.util.HashMap<>();
         private final Map<UUID, ActiveNavigation> active = new java.util.HashMap<>();
@@ -1102,12 +1162,22 @@ public final class CitizenNavigationService {
         private final PathResultCache pathCache = new PathResultCache();
         private final PathSnapshotCache snapshotCache = new PathSnapshotCache();
         private final PathDistanceFieldCache distanceFields = new PathDistanceFieldCache();
+        private final LinkedHashMap<PathDistanceFieldCache.PathFieldKey, PathFieldDemand> fieldDemands =
+                new LinkedHashMap<>(MAX_FIELD_DEMAND_KEYS, 0.75F, true);
         private FieldPump fieldPump;
-        private UUID pinnedCitizenId;
         private PathSampleModel.Tier sampleTier = PathSampleModel.Tier.STANDARD;
         private int upgradesThisTick;
         private final Map<UUID, Integer> paddingFloor = new java.util.HashMap<>();
         private final Map<Long, PathSectionStamp> impassableUntilChange = new java.util.HashMap<>();
+        private long pathResultCacheHits;
+        private long snapshotCacheHits;
+        private long snapshotAcquisitions;
+        private long freshSectionsCaptured;
+        private long completedSearches;
+        private long searchNanos;
+        private long workerRejections;
+        private long distanceFieldHits;
+        private long distanceFieldBuilds;
         private long loadedCitizenCountTick = Long.MIN_VALUE;
         private int loadedCitizenCount;
     }
@@ -1122,7 +1192,7 @@ public final class CitizenNavigationService {
     private record SampleCandidate(NearRequest item, PathRequest request, long partitionKey, int padding) {
     }
 
-    private record PathJob(PathResult result) {
+    private record PathJob(PathResult result, long elapsedNanos) {
     }
 
     /**
@@ -1133,17 +1203,16 @@ public final class CitizenNavigationService {
         private final PathDistanceFieldCache.PathFieldKey key;
         private final PathRequest request;
         private final UUID cityId;
-        private final PathSnapshotBuilder.SnapshotBounds bounds;
-        private PathSnapshotCache.Acquisition acquired;
+        private final PathSnapshotCache.Acquisition acquired;
         private PathDistanceField.Build build;
         private CompletableFuture<Boolean> step;
 
         private FieldPump(PathDistanceFieldCache.PathFieldKey key, PathRequest request, UUID cityId,
-                          PathSnapshotBuilder.SnapshotBounds bounds) {
+                          PathSnapshotCache.Acquisition acquired) {
             this.key = key;
             this.request = request;
             this.cityId = cityId;
-            this.bounds = bounds;
+            this.acquired = acquired;
         }
 
         /**
