@@ -159,10 +159,12 @@ final class PathSnapshotCache {
         for (long column : columns) {
             int sectionX = PathHierarchy.sectionX(column);
             int sectionZ = PathHierarchy.sectionZ(column);
-            minBlockX = Math.min(minBlockX, sectionX * 16);
-            maxBlockX = Math.max(maxBlockX, sectionX * 16 + 15);
-            minBlockZ = Math.min(minBlockZ, sectionZ * 16);
-            maxBlockZ = Math.max(maxBlockZ, sectionZ * 16 + 15);
+            int blockX = sectionX << 4;
+            int blockZ = sectionZ << 4;
+            minBlockX = Math.min(minBlockX, blockX);
+            maxBlockX = Math.max(maxBlockX, blockX + 15);
+            minBlockZ = Math.min(minBlockZ, blockZ);
+            maxBlockZ = Math.max(maxBlockZ, blockZ + 15);
             if (!level.hasChunk(sectionX, sectionZ)) {
                 complete = false;
                 continue;
@@ -176,7 +178,7 @@ final class PathSnapshotCache {
                 freshSections += captured;
             }
             if (ready) {
-                int surface = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, sectionX * 16 + 8, sectionZ * 16 + 8);
+                int surface = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, blockX + 8, blockZ + 8);
                 hierarchy.note(column, surface);
             }
         }
@@ -233,10 +235,13 @@ final class PathSnapshotCache {
         int sectionY = SectionPos.blockToSectionCoord(pos.getY());
         int sectionZ = SectionPos.blockToSectionCoord(pos.getZ());
         for (int dx = -1; dx <= 1; dx++) {
+            int x = sectionX + dx;
             for (int dz = -1; dz <= 1; dz++) {
-                hierarchy.forget(sectionX + dx, sectionZ + dz);
+                int z = sectionZ + dz;
+                hierarchy.forget(x, z);
                 for (int dy = -1; dy <= 1; dy++) {
-                    entries.remove(SectionPos.asLong(sectionX + dx, sectionY + dy, sectionZ + dz));
+                    int y = sectionY + dy;
+                    entries.remove(SectionPos.asLong(x, y, z));
                 }
             }
         }
