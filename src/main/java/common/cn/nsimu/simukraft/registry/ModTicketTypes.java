@@ -20,6 +20,10 @@ public final class ModTicketTypes {
             "npc_work_area",
             () -> new TicketType(0L, TicketType.FLAG_LOADING));
 
+    public static final DeferredHolder<TicketType, TicketType> NPC_FORCE_LOAD = TICKET_TYPES.register(
+            "npc_force_load",
+            () -> new TicketType(0L, TicketType.FLAG_LOADING | TicketType.FLAG_SIMULATION));
+
     public static final DeferredHolder<TicketType, TicketType> RTS_VIEW = TICKET_TYPES.register(
             "rts_view",
             () -> new TicketType(0L, TicketType.FLAG_LOADING));

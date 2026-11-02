@@ -5,12 +5,12 @@ import common.cn.nsimu.simukraft.citizen.CitizenManager;
 import common.cn.nsimu.simukraft.city.poi.CityPoiData;
 import common.cn.nsimu.simukraft.city.poi.CityPoiManager;
 import common.cn.nsimu.simukraft.config.ServerConfig;
+import common.cn.nsimu.simukraft.registry.ModTicketTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.world.level.ChunkPos;
 
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -22,8 +22,7 @@ import java.util.Set;
 public final class NpcForceLoadService {
     private static final int TICKET_DISTANCE = 2;
     private static final int CHANGES_PER_TICK = 32;
-    private static final TicketType<ChunkPos> TICKET = TicketType.create(
-            "simukraft_npc_force_load", Comparator.comparingLong(ChunkPos::toLong));
+    private static final TicketType TICKET = ModTicketTypes.NPC_FORCE_LOAD.get();
     private static final Map<String, Set<Long>> HELD = new HashMap<>();
 
     private NpcForceLoadService() {
@@ -52,8 +51,8 @@ public final class NpcForceLoadService {
                 break;
             }
             if (held.add(chunk)) {
-                ChunkPos chunkPos = new ChunkPos(chunk);
-                level.getChunkSource().addRegionTicket(TICKET, chunkPos, TICKET_DISTANCE, chunkPos);
+                ChunkPos chunkPos = ChunkPos.unpack(chunk);
+                level.getChunkSource().addTicketWithRadius(TICKET, chunkPos, TICKET_DISTANCE);
                 budget--;
             }
         }
@@ -64,8 +63,8 @@ public final class NpcForceLoadService {
                 continue;
             }
             iterator.remove();
-            ChunkPos chunkPos = new ChunkPos(chunk);
-            level.getChunkSource().removeRegionTicket(TICKET, chunkPos, TICKET_DISTANCE, chunkPos);
+            ChunkPos chunkPos = ChunkPos.unpack(chunk);
+            level.getChunkSource().removeTicketWithRadius(TICKET, chunkPos, TICKET_DISTANCE);
             budget--;
         }
     }
@@ -87,13 +86,13 @@ public final class NpcForceLoadService {
 
     private static Set<Long> desiredChunks(ServerLevel level) {
         Set<Long> chunks = new HashSet<>();
-        String dimension = level.dimension().location().toString();
+        String dimension = level.dimension().identifier().toString();
         for (CitizenData citizen : CitizenManager.get(level.getServer().overworld()).allCitizens()) {
             if (citizen == null || citizen.dead() || !dimension.equals(citizen.dimensionId())) {
                 continue;
             }
             if (citizen.lastKnownChunk().isPresent()) {
-                chunks.add(citizen.lastKnownChunk().get().toLong());
+                chunks.add(citizen.lastKnownChunk().get().pack());
                 continue;
             }
             if (citizen.homeId() == null) {
@@ -101,7 +100,7 @@ public final class NpcForceLoadService {
             }
             CityPoiData home = CityPoiManager.get(level).getPoi(citizen.homeId());
             if (home != null) {
-                chunks.add(new ChunkPos(home.pos()).toLong());
+                chunks.add(ChunkPos.containing(home.pos()).pack());
             }
         }
         return chunks;
@@ -113,8 +112,8 @@ public final class NpcForceLoadService {
         while (remaining > 0 && iterator.hasNext()) {
             long chunk = iterator.next();
             iterator.remove();
-            ChunkPos chunkPos = new ChunkPos(chunk);
-            level.getChunkSource().removeRegionTicket(TICKET, chunkPos, TICKET_DISTANCE, chunkPos);
+            ChunkPos chunkPos = ChunkPos.unpack(chunk);
+            level.getChunkSource().removeTicketWithRadius(TICKET, chunkPos, TICKET_DISTANCE);
             remaining--;
         }
     }
