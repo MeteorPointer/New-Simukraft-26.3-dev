@@ -33,7 +33,7 @@ import java.util.function.Consumer;
 public final class GeologicalHammerItem extends Item {
     private static final int MAX_DURABILITY = 800;
     private static final int DURABILITY_COST_PER_BLOCK = 2;
-    private static final int PROSPECTING_DEPTH = 60;
+    private static final int PROSPECTING_DEPTH = 256;
     private static final int COOLDOWN_TICKS = 20;
     /**
      * 以铁质工具属性为基准，仅将耐久提升至 MAX_DURABILITY 的自定义工具材质。
@@ -80,7 +80,7 @@ public final class GeologicalHammerItem extends Item {
     }
 
     /**
-     * useOn: 服务端探查右键位置向下 60 格范围内的矿脉。
+     * useOn: 服务端探查右键位置上下 256 格范围内的矿脉。
      */
     @Override
     public InteractionResult useOn(UseOnContext context) {
@@ -106,14 +106,18 @@ public final class GeologicalHammerItem extends Item {
             return InteractionResult.FAIL;
         }
         int clickedY = context.getClickedPos().getY();
-        showNearbyVeins(player, lookup.profile(), scanMinimumY(clickedY, serverLevel.getMinY()), clickedY);
+        showNearbyVeins(
+                player,
+                lookup.profile(),
+                scanMinimumY(clickedY, serverLevel.getMinY()),
+                scanMaximumY(clickedY, serverLevel.getMaxY()));
         context.getItemInHand().hurtAndBreak(1, player,
                 context.getHand() == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
         return InteractionResult.CONSUME;
     }
 
     /**
-     * showNearbyVeins: 提示右键位置向下探查范围内仍可开采的矿脉痕迹。
+     * showNearbyVeins: 提示右键位置上下探查范围内仍可开采的矿脉痕迹。
      */
     private static void showNearbyVeins(ServerPlayer player,
                                         VirtualVeinFieldProfile profile,
@@ -151,10 +155,17 @@ public final class GeologicalHammerItem extends Item {
     }
 
     /**
-     * scanMinimumY: 计算向下探查 60 格后的最低高度，并限制在世界可用高度内。
+     * scanMinimumY: 计算向下探查后的最低高度，并限制在世界可用高度内。
      */
     static int scanMinimumY(int clickedY, int minBuildHeight) {
         return Math.max(minBuildHeight, clickedY - PROSPECTING_DEPTH);
+    }
+
+    /**
+     * scanMaximumY: 计算向上探查后的最高高度，并限制在世界可用高度内。
+     */
+    static int scanMaximumY(int clickedY, int maxBuildHeight) {
+        return Math.min(maxBuildHeight, clickedY + PROSPECTING_DEPTH);
     }
 
     private static void sendLookupFailure(ServerPlayer player, VirtualVeinLookupStatus status) {

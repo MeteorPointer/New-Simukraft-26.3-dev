@@ -5,12 +5,20 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public final class PreviewMeshBuilder {
     private PreviewMeshBuilder() {
     }
 
     public static PreviewMesh build(List<PreviewBlockData> allBlocks) {
+        return build(allBlocks, Map.of());
+    }
+
+    /**
+     * build：26.3 把方块提交交给几何收集器，occluders 只在调用方做邻面剔除。
+     */
+    public static PreviewMesh build(List<PreviewBlockData> allBlocks, Map<Long, BlockState> occluders) {
         if (allBlocks == null || allBlocks.isEmpty()) {
             return PreviewMesh.EMPTY;
         }

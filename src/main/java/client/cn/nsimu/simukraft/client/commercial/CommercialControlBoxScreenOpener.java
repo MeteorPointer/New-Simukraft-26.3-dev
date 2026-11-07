@@ -28,6 +28,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
+import java.util.List;
+
 public final class CommercialControlBoxScreenOpener {
     private static final int PANEL_WIDTH = 320;
     private static final int PANEL_HEIGHT = 208;
@@ -199,20 +201,19 @@ public final class CommercialControlBoxScreenOpener {
     }
 
     private static Component boundsText(CommercialControlBoxOpenResponsePacket packet) {
-        return Component.translatable("gui.simukraft.commercial.show_building_bounds", onOffText(BuildingBoundsRenderer.isBuildingBoundsVisible(packet.boxPos())));
+        return Component.translatable("gui.simukraft.commercial.show_building_bounds", modeText(BuildingBoundsRenderer.mode(packet.boxPos())));
     }
 
-    private static Component onOffText(boolean enabled) {
-        return Component.translatable(enabled ? "gui.switch.on" : "gui.switch.off");
+    private static Component modeText(BuildingBoundsRenderer.BuildingBoundsMode mode) {
+        return switch (mode) {
+            case OFF -> Component.translatable("gui.switch.off");
+            case BOUNDS -> Component.translatable("gui.switch.on");
+            case PREVIEW -> Component.translatable("gui.simukraft.building_bounds.preview");
+        };
     }
 
     private static void toggleBounds(CommercialControlBoxOpenResponsePacket packet) {
-        boolean next = !BuildingBoundsRenderer.isBuildingBoundsVisible(packet.boxPos());
-        if (next) {
-            showBounds(packet);
-        } else {
-            BuildingBoundsRenderer.setBuildingBoundsVisible(packet.boxPos(), null, false);
-        }
+        BuildingBoundsRenderer.cycleDisplayedBounds(packet.boxPos(), boundsOf(packet), List.of());
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft != null) {
             minecraft.gui.setScreen(new CommercialControlBoxScreen(createUi(packet), Component.empty()));
@@ -230,17 +231,24 @@ public final class CommercialControlBoxScreenOpener {
         }
     }
 
-    private static void showBounds(CommercialControlBoxOpenResponsePacket packet) {
+    private static AABB boundsOf(CommercialControlBoxOpenResponsePacket packet) {
         if (!packet.hasBuildingBounds()) {
-            return;
+            return null;
         }
-        AABB bounds = new AABB(
+        return new AABB(
                 packet.boundsMin().getX(),
                 packet.boundsMin().getY(),
                 packet.boundsMin().getZ(),
                 packet.boundsMax().getX() + 1,
                 packet.boundsMax().getY() + 1,
                 packet.boundsMax().getZ() + 1);
+    }
+
+    private static void showBounds(CommercialControlBoxOpenResponsePacket packet) {
+        AABB bounds = boundsOf(packet);
+        if (bounds == null) {
+            return;
+        }
         BuildingBoundsRenderer.setBuildingBoundsVisible(packet.boxPos(), bounds, true);
     }
 

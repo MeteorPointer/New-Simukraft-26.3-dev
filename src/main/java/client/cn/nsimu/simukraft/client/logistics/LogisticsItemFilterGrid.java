@@ -1,5 +1,6 @@
 package client.cn.nsimu.simukraft.client.logistics;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import common.cn.nsimu.simukraft.logistics.LogisticsInventoryEntry;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -97,7 +98,7 @@ final class LogisticsItemFilterGrid {
      * mouseClicked: 点击物品格时切换过滤选中状态。
      */
     boolean mouseClicked(double mouseX, double mouseY, int button, int x, int y) {
-        if (button != 0 || !contains(mouseX, mouseY, x, y)) {
+        if (button != InputConstants.MOUSE_BUTTON_LEFT || !contains(mouseX, mouseY, x, y)) {
             return false;
         }
         int index = hoveredIndex(mouseX, mouseY, x, y);

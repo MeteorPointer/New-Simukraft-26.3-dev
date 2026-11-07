@@ -161,6 +161,7 @@ public final class RtsSelectionManager {
         clearMoveState();
         FreeCameraManager.activateRts();
         minecraft.mouseHandler.releaseMouse();
+        ClientPacketDistributor.sendToServer(new RtsConstructionPreviewRequestPacket());
     }
 
     /**
@@ -185,6 +186,8 @@ public final class RtsSelectionManager {
         BuildingBoundsRenderer.setRtsTarget(null);
         BuildingBoundsRenderer.setRtsSelection(null);
         BuildingBoundsRenderer.setRtsBuildingBounds(null);
+        RtsConstructionPreviewManager.clear();
+        RtsLogisticsRouteManager.clear();
         Minecraft minecraft = Minecraft.getInstance();
         // 排在 CameraMouseLock 的松开之后，避免退出后光标仍可自由移动。
         minecraft.execute(() -> {
@@ -211,6 +214,33 @@ public final class RtsSelectionManager {
         BuildingBoundsRenderer.setRtsTarget(null);
         BuildingBoundsRenderer.setRtsSelection(null);
         BuildingBoundsRenderer.setRtsBuildingBounds(null);
+        RtsConstructionPreviewManager.clear();
+        RtsLogisticsRouteManager.clear();
+    }
+
+    /**
+     * clearBlockSelection: 拆除确认后清掉同一位置的选中高亮。
+     */
+    public static void clearBlockSelection(BlockPos pos) {
+        if (pos == null || selectedPos == null || !selectedPos.equals(pos)) {
+            return;
+        }
+        selectedPos = null;
+        BuildingBoundsRenderer.setRtsSelection(null);
+    }
+
+    /**
+     * currentCursorRay: 返回当前系统光标对应的世界射线。
+     */
+    public static CursorRay currentCursorRay() {
+        return cursorRay(Minecraft.getInstance());
+    }
+
+    /**
+     * currentCursorBlockHit: 返回当前光标射线命中的方块。
+     */
+    public static BlockHitResult currentCursorBlockHit() {
+        return rayTraceCursor(Minecraft.getInstance());
     }
 
     /**
@@ -228,19 +258,22 @@ public final class RtsSelectionManager {
             deactivate();
             return;
         }
+        if (minecraft.player.tickCount % 20 == 0) {
+            ClientPacketDistributor.sendToServer(new RtsConstructionPreviewRequestPacket());
+        }
         if (minecraft.gui.screen() == null && SimuKraftKeyMappings.RTS_DELETE.consumeClick() && selectedPos != null) {
             clearMoveState();
-            ClientPacketDistributor.sendToServer(new RtsDemolishPacket(selectedPos));
-            selectedPos = null;
-            BuildingBoundsRenderer.setRtsSelection(null);
+            RtsDemolishConfirmScreen.open(selectedPos);
         }
         if (minecraft.gui.screen() != null) {
             setTarget(null);
             clearPlacementTarget();
             setTargetCitizen(null);
+            RtsLogisticsRouteManager.clear();
             return;
         }
         updateTarget(minecraft);
+        RtsLogisticsRouteManager.tick(minecraft);
         RtsMovePreviewManager.update(targetPlacementPos);
         updateMoveHold(minecraft);
         // Vanilla may try to grab the mouse after a click; RTS always needs a visible cursor.
@@ -879,6 +912,6 @@ public final class RtsSelectionManager {
     /**
      * CursorRay: 保存已按当前投影换算的光标世界射线端点。
      */
-    private record CursorRay(Vec3 from, Vec3 to) {
+    public record CursorRay(Vec3 from, Vec3 to) {
     }
 }

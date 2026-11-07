@@ -30,13 +30,7 @@ public final class BuildingPreviewRenderer {
         if (minecraft.level == null) {
             return;
         }
-        submitMesh(BuildingPreviewManager.getCachedMesh(), event);
-    }
-
-    /**
-     * submitMesh: 把预览方块提交进 26.3 的几何收集器。
-     */
-    public static void submitMesh(PreviewMesh mesh, SubmitCustomGeometryEvent event) {
+        PreviewMesh mesh = BuildingPreviewManager.getCachedMesh();
         if (mesh == null || mesh.isEmpty()) {
             if (!loggedOnce) {
                 SimuKraft.LOGGER.warn("SimuKraft: Preview mesh is empty during render");
@@ -45,6 +39,16 @@ public final class BuildingPreviewRenderer {
             return;
         }
         loggedOnce = false;
+        submitMesh(mesh, event);
+    }
+
+    /**
+     * submitMesh: 把预览方块提交进 26.3 的几何收集器。
+     */
+    public static void submitMesh(PreviewMesh mesh, SubmitCustomGeometryEvent event) {
+        if (mesh == null || mesh.isEmpty()) {
+            return;
+        }
         Minecraft minecraft = Minecraft.getInstance();
         if (!(minecraft.level instanceof ClientLevel level)) {
             return;
