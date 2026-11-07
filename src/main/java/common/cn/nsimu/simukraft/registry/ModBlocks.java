@@ -4,7 +4,6 @@ import common.cn.nsimu.simukraft.SimuKraft;
 import common.cn.nsimu.simukraft.block.*;
 import common.cn.nsimu.simukraft.block.LightBlock;
 import net.minecraft.core.BlockPos;
-
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.*;

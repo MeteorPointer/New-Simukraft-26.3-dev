@@ -5,7 +5,9 @@ import net.minecraft.core.BlockPos;
 import java.util.LinkedHashMap;
 import java.util.UUID;
 
-/** 按不同市民的同目标请求判断是否值得构建共享距离场。 */
+/**
+ * 按不同市民的同目标请求判断是否值得构建共享距离场。
+ */
 final class PathFieldDemand {
     static final int MIN_CITIZENS = 3;
     static final long WINDOW_TICKS = 100L;

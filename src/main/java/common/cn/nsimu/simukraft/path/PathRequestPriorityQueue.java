@@ -1,13 +1,10 @@
 package common.cn.nsimu.simukraft.path;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
-/** 按最近玩家距离维护待寻路市民的优先级，避免只从队首抽样而漏掉近处请求。 */
+/**
+ * 按最近玩家距离维护待寻路市民的优先级，避免只从队首抽样而漏掉近处请求。
+ */
 final class PathRequestPriorityQueue {
     private static final Comparator<Entry> ORDER = Comparator
             .comparingDouble(Entry::distanceSqr)
@@ -87,7 +84,9 @@ final class PathRequestPriorityQueue {
         return heap.size();
     }
 
-    /** 轮转读取待刷新距离的市民，调用方每 tick 只需处理固定数量。 */
+    /**
+     * 轮转读取待刷新距离的市民，调用方每 tick 只需处理固定数量。
+     */
     UUID nextForPriorityRefresh() {
         int slots = refreshOrder.size();
         while (slots-- > 0 && !refreshOrder.isEmpty()) {

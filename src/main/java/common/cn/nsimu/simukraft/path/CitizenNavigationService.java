@@ -632,7 +632,9 @@ public final class CitizenNavigationService {
         }
     }
 
-    /** 每 tick 轮转刷新一小批排队距离，跟上玩家和居民移动，同时保持主线程开销有界。 */
+    /**
+     * 每 tick 轮转刷新一小批排队距离，跟上玩家和居民移动，同时保持主线程开销有界。
+     */
     private static void refreshQueuedPriorities(ServerLevel level, LevelRuntime runtime) {
         int refreshCount = Math.min(runtime.queue.size(), MAX_QUEUE_PRIORITY_REFRESH_PER_TICK);
         for (int refreshed = 0; refreshed < refreshCount; refreshed++) {
@@ -786,7 +788,9 @@ public final class CitizenNavigationService {
         return true;
     }
 
-    /** 只有同目标请求确实重复时才启动共享距离场，并复用本次已采好的快照。 */
+    /**
+     * 只有同目标请求确实重复时才启动共享距离场，并复用本次已采好的快照。
+     */
     private static void observeFieldDemand(LevelRuntime runtime, PathDistanceFieldCache.PathFieldKey key,
                                            PathRequest request, UUID cityId,
                                            PathSnapshotCache.Acquisition acquired, long now) {
@@ -985,7 +989,9 @@ public final class CitizenNavigationService {
         return state.getFluidState().isEmpty() && state.getCollisionShape(level, pos).isEmpty();
     }
 
-    /** 未完成的请求按最近玩家距离重新排队，避免大队列轮转时近处请求长期落在队尾。 */
+    /**
+     * 未完成的请求按最近玩家距离重新排队，避免大队列轮转时近处请求长期落在队尾。
+     */
     private static void requeue(LevelRuntime runtime, UUID citizenId, PathRequest request, double distanceSqr) {
         runtime.latestRequests.put(citizenId, request);
         runtime.queue.offer(citizenId, distanceSqr);

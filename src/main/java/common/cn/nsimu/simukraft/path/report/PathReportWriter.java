@@ -4,13 +4,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.function.ToDoubleFunction;
 
 /**
@@ -841,7 +835,8 @@ public final class PathReportWriter {
     private record Range(String id, String zh, String en, long ms) {
     }
 
-    private record Series(String key, String zh, String en, String unit, String chart, String color, boolean shown, boolean tickShare,
+    private record Series(String key, String zh, String en, String unit, String chart, String color, boolean shown,
+                          boolean tickShare,
                           String noteZh, String noteEn, ToDoubleFunction<PathReportSession.Sample> value) {
         private double read(PathReportSession.Sample sample) {
             return value.applyAsDouble(sample);
@@ -879,8 +874,10 @@ public final class PathReportWriter {
     }
 
     private record Totals(int n, double tick, double capture, double sample, double queue, double search, double active,
-                          double doors, double field, double completed, double tickPeak, double freshPer, double startedPer,
-                          long fresh, long started, long budgetHold, long blocked, long failures, long sampleMiss, long rejected,
+                          double doors, double field, double completed, double tickPeak, double freshPer,
+                          double startedPer,
+                          long fresh, long started, long budgetHold, long blocked, long failures, long sampleMiss,
+                          long rejected,
                           long notTicking, long queueMax, long pendingMax, long examinedMax, long paddingMax) {
         private static Totals of(List<PathReportSession.Sample> samples) {
             double tick = 0, capture = 0, sampleMs = 0, queue = 0, search = 0, active = 0, doors = 0, field = 0, completed = 0;

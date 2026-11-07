@@ -2,11 +2,7 @@ package common.cn.nsimu.simukraft.path.report;
 
 import common.cn.nsimu.simukraft.path.PathReportSink;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 按路径累计寻路耗时、次数和瞬时量。只在服务端线程写入。
@@ -276,7 +272,8 @@ public final class PathReportSession implements PathReportSink.Listener {
     /**
      * 一拍的瓶颈读数，供折线图按时间段筛选。
      */
-    public record Sample(long offsetMs, double tickMs, double captureMs, double sampleMs, double queueMs, double searchMs,
+    public record Sample(long offsetMs, double tickMs, double captureMs, double sampleMs, double queueMs,
+                         double searchMs,
                          double activeMs, double doorsMs, double fieldMs, double completedMs,
                          long queueSize, long active, long pending, long padding,
                          long freshSections, long cacheHits, long examined, long waiting, long failures,

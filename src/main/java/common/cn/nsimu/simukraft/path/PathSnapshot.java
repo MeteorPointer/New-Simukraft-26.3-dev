@@ -5,7 +5,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.shapes.VoxelShape;
-
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;

@@ -620,7 +620,8 @@ public final class BuildingBoundsRenderer {
     /**
      * RtsBuildingBounds: 客户端 RTS 建筑边界与显示名称快照。
      */
-    public record RtsBuildingBounds(AABB bounds, String displayName, String category, String buildingFileName, String amount, int bedCount) {
+    public record RtsBuildingBounds(AABB bounds, String displayName, String category, String buildingFileName,
+                                    String amount, int bedCount) {
         public RtsBuildingBounds {
             displayName = displayName == null ? "" : displayName;
             category = category == null ? "" : category;

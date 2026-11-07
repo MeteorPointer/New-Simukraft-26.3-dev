@@ -78,7 +78,8 @@ public record RtsBuildingBoundsSyncPacket(List<Entry> entries) implements Custom
         context.enqueueWork(() -> ClientboundNetworkBridge.handleRtsBuildingBoundsSync(packet));
     }
 
-    public record Entry(BlockPos min, BlockPos max, String displayName, String category, String buildingFileName, String amount, int bedCount) {
+    public record Entry(BlockPos min, BlockPos max, String displayName, String category, String buildingFileName,
+                        String amount, int bedCount) {
         public Entry {
             displayName = trim(displayName);
             category = trim(category);

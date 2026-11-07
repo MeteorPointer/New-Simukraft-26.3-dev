@@ -17,12 +17,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * RTS 施工预览：按任务缓存放置预览同款 VBO，进度变化时不重建网格。
@@ -221,7 +216,8 @@ public final class RtsConstructionPreviewManager {
     /**
      * HoverLabel: 悬浮时显示的建筑名、建造者和进度。
      */
-    public record HoverLabel(String displayName, String builderName, int currentBlockIndex, int totalBlocks, AABB bounds) {
+    public record HoverLabel(String displayName, String builderName, int currentBlockIndex, int totalBlocks,
+                             AABB bounds) {
     }
 
     private static final class Site {
