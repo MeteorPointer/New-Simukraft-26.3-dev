@@ -1,5 +1,6 @@
 package client.cn.nsimu.simukraft.client.buildbox;
 
+import client.cn.nsimu.simukraft.client.freecamera.FreeCameraManager;
 import com.mojang.blaze3d.vertex.PoseStack;
 import common.cn.nsimu.simukraft.SimuKraft;
 import net.minecraft.client.Minecraft;
@@ -8,6 +9,8 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.MovingBlockRenderState;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -54,21 +57,54 @@ public final class BuildingPreviewRenderer {
             return;
         }
         Vec3 camera = event.getLevelRenderState().cameraRenderState.pos;
+        Vec3 rtsFocus = FreeCameraManager.isRtsActive() ? FreeCameraManager.rtsFocus() : null;
+        double cullRadiusSqr = cullRadiusSqr(rtsFocus);
         PoseStack poseStack = event.getPoseStack();
         SubmitNodeCollector collector = event.getSubmitNodeCollector();
+        Holder<Biome> biome = level.getBiome(mesh.origin());
+        BlockAndTintGetter tintGetter = level instanceof BlockAndTintGetter getter ? getter : null;
         for (PreviewBlockData block : mesh.blocks()) {
-            submitBlock(poseStack, collector, level, camera, block);
+            submitBlock(poseStack, collector, tintGetter, camera, biome, block, rtsFocus, cullRadiusSqr);
         }
     }
 
-    private static void submitBlock(PoseStack poseStack, SubmitNodeCollector collector, ClientLevel level, Vec3 camera, PreviewBlockData block) {
+    private static double cullRadiusSqr(Vec3 rtsFocus) {
+        if (rtsFocus != null) {
+            double half = Math.max(24.0D, FreeCameraManager.rtsZoom() * 0.7D);
+            return half * half;
+        }
+        return 96.0D * 96.0D;
+    }
+
+    private static void submitBlock(PoseStack poseStack,
+                                    SubmitNodeCollector collector,
+                                    BlockAndTintGetter tintGetter,
+                                    Vec3 camera,
+                                    Holder<Biome> biome,
+                                    PreviewBlockData block,
+                                    Vec3 rtsFocus,
+                                    double cullRadiusSqr) {
         BlockPos pos = block.pos();
+        if (rtsFocus != null) {
+            double dx = pos.getX() + 0.5D - rtsFocus.x;
+            double dz = pos.getZ() + 0.5D - rtsFocus.z;
+            if (dx * dx + dz * dz > cullRadiusSqr) {
+                return;
+            }
+        } else {
+            double dx = pos.getX() + 0.5D - camera.x;
+            double dy = pos.getY() + 0.5D - camera.y;
+            double dz = pos.getZ() + 0.5D - camera.z;
+            if (dx * dx + dy * dy + dz * dz > cullRadiusSqr) {
+                return;
+            }
+        }
         MovingBlockRenderState renderState = new MovingBlockRenderState();
         renderState.blockPos = pos;
         renderState.randomSeedPos = pos;
         renderState.blockState = block.state();
-        renderState.biome = level.getBiome(pos);
-        if (level instanceof BlockAndTintGetter tintGetter) {
+        renderState.biome = biome;
+        if (tintGetter != null) {
             renderState.cardinalLighting = tintGetter.cardinalLighting();
             renderState.lightEngine = tintGetter.getLightEngine();
         }

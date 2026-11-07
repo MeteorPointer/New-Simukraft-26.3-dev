@@ -31,6 +31,8 @@ import java.util.UUID;
 public final class RtsConstructionPreviewManager {
     private static final int PREVIEW_LIGHT = 15728880;
     private static Map<UUID, Site> sites = Map.of();
+    private static HoverLabel cachedHover;
+    private static boolean hoverCached;
 
     private RtsConstructionPreviewManager() {
     }
@@ -72,6 +74,7 @@ public final class RtsConstructionPreviewManager {
             }
         }
         sites = next;
+        invalidateHover();
     }
 
     /**
@@ -82,6 +85,7 @@ public final class RtsConstructionPreviewManager {
             site.close();
         }
         sites = Map.of();
+        invalidateHover();
     }
 
     /**
@@ -104,6 +108,23 @@ public final class RtsConstructionPreviewManager {
      * hovered: 光标射线先进入施工范围，且没有更近的方块挡住时返回悬浮信息。
      */
     public static HoverLabel hovered() {
+        if (hoverCached) {
+            return cachedHover;
+        }
+        hoverCached = true;
+        cachedHover = computeHovered();
+        return cachedHover;
+    }
+
+    /**
+     * invalidateHover: 光标或施工快照变化后丢掉本帧缓存。
+     */
+    public static void invalidateHover() {
+        hoverCached = false;
+        cachedHover = null;
+    }
+
+    private static HoverLabel computeHovered() {
         if (sites.isEmpty() || !FreeCameraManager.isRtsActive()) {
             return null;
         }

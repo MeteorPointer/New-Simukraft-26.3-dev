@@ -23,7 +23,7 @@ public final class RtsMiniMapRenderer {
     private static final int LARGE_WORLD_SPAN = 1024;
     private static final int MAP_MARGIN = 12;
     private static final int FRAME_SIZE = 3;
-    private static final int REFRESH_INTERVAL_TICKS = 5;
+    private static final int REFRESH_INTERVAL_TICKS = 20;
     private static final int MAP_DRAG_THRESHOLD = 2;
     private static final int COLOR_FRAME = 0xEE111815;
     private static final int COLOR_BORDER = 0xFF8DAA8A;

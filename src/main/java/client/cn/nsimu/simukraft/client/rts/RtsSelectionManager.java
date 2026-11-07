@@ -53,6 +53,9 @@ public final class RtsSelectionManager {
     private static volatile UUID targetCitizenId;
     private static volatile Component targetCitizenName = Component.empty();
     private static volatile BlockPos citizenMoveTarget;
+    private static CursorRay cachedCursorRay;
+    private static BlockHitResult cachedCursorBlockHit;
+    private static boolean cursorCacheValid;
     private static final Set<UUID> selectedCitizenIds = new LinkedHashSet<>();
     private static long lastLeftClickNanos;
     private static BlockPos lastLeftClickPos;
@@ -119,15 +122,14 @@ public final class RtsSelectionManager {
      */
     public static BlockPos cursorPlacementPos() {
         Minecraft minecraft = Minecraft.getInstance();
-        BlockHitResult hit = rayTraceCursor(minecraft);
-        return surfacePlacementPos(minecraft, hit);
+        return surfacePlacementPos(minecraft, currentCursorBlockHit());
     }
 
     /**
      * cursorTargetPos: 返回 RTS 系统光标命中的原始方块坐标。
      */
     public static BlockPos cursorTargetPos() {
-        BlockHitResult hit = rayTraceCursor(Minecraft.getInstance());
+        BlockHitResult hit = currentCursorBlockHit();
         return hit != null && hit.getType() == HitResult.Type.BLOCK ? hit.getBlockPos().immutable() : null;
     }
 
@@ -188,6 +190,7 @@ public final class RtsSelectionManager {
         BuildingBoundsRenderer.setRtsBuildingBounds(null);
         RtsConstructionPreviewManager.clear();
         RtsLogisticsRouteManager.clear();
+        invalidateCursorCache();
         Minecraft minecraft = Minecraft.getInstance();
         // 排在 CameraMouseLock 的松开之后，避免退出后光标仍可自由移动。
         minecraft.execute(() -> {
@@ -216,6 +219,7 @@ public final class RtsSelectionManager {
         BuildingBoundsRenderer.setRtsBuildingBounds(null);
         RtsConstructionPreviewManager.clear();
         RtsLogisticsRouteManager.clear();
+        invalidateCursorCache();
     }
 
     /**
@@ -233,14 +237,33 @@ public final class RtsSelectionManager {
      * currentCursorRay: 返回当前系统光标对应的世界射线。
      */
     public static CursorRay currentCursorRay() {
-        return cursorRay(Minecraft.getInstance());
+        ensureCursorCache();
+        return cachedCursorRay;
     }
 
     /**
      * currentCursorBlockHit: 返回当前光标射线命中的方块。
      */
     public static BlockHitResult currentCursorBlockHit() {
-        return rayTraceCursor(Minecraft.getInstance());
+        ensureCursorCache();
+        return cachedCursorBlockHit;
+    }
+
+    private static void invalidateCursorCache() {
+        cursorCacheValid = false;
+        cachedCursorRay = null;
+        cachedCursorBlockHit = null;
+        RtsConstructionPreviewManager.invalidateHover();
+    }
+
+    private static void ensureCursorCache() {
+        if (cursorCacheValid) {
+            return;
+        }
+        Minecraft minecraft = Minecraft.getInstance();
+        cachedCursorRay = cursorRay(minecraft);
+        cachedCursorBlockHit = rayTraceCursor(minecraft, cachedCursorRay);
+        cursorCacheValid = true;
     }
 
     /**
@@ -258,7 +281,7 @@ public final class RtsSelectionManager {
             deactivate();
             return;
         }
-        if (minecraft.player.tickCount % 20 == 0) {
+        if (minecraft.player.tickCount % 40 == 0) {
             ClientPacketDistributor.sendToServer(new RtsConstructionPreviewRequestPacket());
         }
         if (minecraft.gui.screen() == null && SimuKraftKeyMappings.RTS_DELETE.consumeClick() && selectedPos != null) {
@@ -272,6 +295,7 @@ public final class RtsSelectionManager {
             RtsLogisticsRouteManager.clear();
             return;
         }
+        invalidateCursorCache();
         updateTarget(minecraft);
         RtsLogisticsRouteManager.tick(minecraft);
         RtsMovePreviewManager.update(targetPlacementPos);
@@ -508,8 +532,8 @@ public final class RtsSelectionManager {
     }
 
     private static void updateTarget(Minecraft minecraft) {
-        CursorRay ray = cursorRay(minecraft);
-        BlockHitResult hit = rayTraceCursor(minecraft, ray);
+        CursorRay ray = currentCursorRay();
+        BlockHitResult hit = currentCursorBlockHit();
         CitizenEntity citizen = rayTraceCitizen(minecraft, ray, hit);
         setPlacementTarget(hit);
         if (citizen != null) {
@@ -557,13 +581,6 @@ public final class RtsSelectionManager {
         BlockPos hitPos = hit.getBlockPos();
         int surfaceY = RtsSurfaceHeightResolver.resolveSurfaceY(level, hitPos.getX(), hitPos.getZ());
         return new BlockPos(hitPos.getX(), surfaceY, hitPos.getZ());
-    }
-
-    /**
-     * rayTraceCursor: 将系统光标转换为与当前投影一致的世界射线。
-     */
-    private static BlockHitResult rayTraceCursor(Minecraft minecraft) {
-        return rayTraceCursor(minecraft, cursorRay(minecraft));
     }
 
     /**

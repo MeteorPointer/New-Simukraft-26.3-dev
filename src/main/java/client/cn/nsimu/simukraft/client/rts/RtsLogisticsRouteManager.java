@@ -32,7 +32,7 @@ public final class RtsLogisticsRouteManager {
             clear();
             return;
         }
-        BlockPos target = RtsSelectionManager.cursorTargetPos();
+        BlockPos target = RtsSelectionManager.targetPos();
         BlockPos anchor = queryAnchor(minecraft, target);
         if (anchor == null) {
             clear();
