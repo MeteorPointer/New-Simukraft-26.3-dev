@@ -9,6 +9,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.PalettedContainer;
+import net.minecraft.world.level.chunk.Strategy;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.junit.jupiter.api.Test;
 
@@ -68,7 +69,7 @@ class PathSnapshotBuilderSparseCaptureTest {
     @Test
     void copiedPaletteIsReadOffTheCaptureMap() {
         PalettedContainer<BlockState> container = new PalettedContainer<>(
-                Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState(), PalettedContainer.Strategy.SECTION_STATES);
+                Blocks.AIR.defaultBlockState(), Strategy.createForBlockStates(Block.BLOCK_STATE_REGISTRY));
         container.set(0, 15, 0, Blocks.STONE.defaultBlockState());
         PalettedContainer<BlockState> copy = container.copy();
         container.set(0, 15, 0, Blocks.DIRT.defaultBlockState());
