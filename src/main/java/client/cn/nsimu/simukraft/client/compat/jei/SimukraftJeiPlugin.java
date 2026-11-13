@@ -17,7 +17,6 @@ import java.util.List;
  * SimukraftJeiPlugin: JEI 入口。只有安装了 JEI 时才会被 ServiceLoader 加载。
  */
 @JeiPlugin
-@OnlyIn(Dist.CLIENT)
 public class SimukraftJeiPlugin implements IModPlugin {
     private List<IndustrialJeiRecipe> industrialRecipes = List.of();
     private List<CommercialJeiRecipe> commercialRecipes = List.of();

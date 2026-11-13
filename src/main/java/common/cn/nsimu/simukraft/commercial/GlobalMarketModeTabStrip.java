@@ -69,7 +69,7 @@ final class GlobalMarketModeTabStrip {
     /**
      * renderUnselected: 先画未选中 Tab，让面板盖住底部接缝。
      */
-    @OnlyIn(Dist.CLIENT)
+
     static void renderUnselected(GUIContext guiContext, Font font, int left, int rootTop, Mode mode, boolean canList) {
         render(guiContext, font, left, rootTop, mode, canList, false);
     }
@@ -77,7 +77,6 @@ final class GlobalMarketModeTabStrip {
     /**
      * renderSelected: 面板之后再画选中 Tab，纹理接到窗口上沿。
      */
-    @OnlyIn(Dist.CLIENT)
     static void renderSelected(GUIContext guiContext, Font font, int left, int rootTop, Mode mode, boolean canList) {
         render(guiContext, font, left, rootTop, mode, canList, true);
     }
@@ -101,7 +100,6 @@ final class GlobalMarketModeTabStrip {
         return mode == null ? null : Component.translatable(mode.translationKey());
     }
 
-    @OnlyIn(Dist.CLIENT)
     private static void render(GUIContext guiContext, Font font, int left, int rootTop, Mode mode, boolean canList, boolean selectedPass) {
         Mode[] tabs = tabs(canList);
         for (int i = 0; i < tabs.length; i++) {

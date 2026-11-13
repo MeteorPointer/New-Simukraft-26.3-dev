@@ -15,7 +15,6 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 /**
  * RTS 拆除确认：先询问再发送拆除请求，并且不暂停单人游戏。
  */
-@OnlyIn(Dist.CLIENT)
 public final class RtsDemolishConfirmScreen extends ConfirmScreen {
     private RtsDemolishConfirmScreen(BooleanConsumer callback, Component message) {
         super(callback,

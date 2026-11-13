@@ -39,7 +39,6 @@ final class GlobalMarketWarehousePanel {
         return index >= 0 && index < itemCount ? index : -1;
     }
 
-    @OnlyIn(Dist.CLIENT)
     static void render(GUIContext guiContext, Font font, int left, int top, List<CommercialTradeOpenResponsePacket.WarehouseSlot> items, int scroll) {
         for (int row = 0; row < ROWS; row++) {
             for (int col = 0; col < COLS; col++) {

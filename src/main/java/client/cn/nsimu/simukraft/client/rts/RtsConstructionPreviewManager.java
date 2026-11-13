@@ -22,7 +22,6 @@ import java.util.*;
 /**
  * RTS 施工预览：按任务缓存放置预览同款 VBO，进度变化时不重建网格。
  */
-@OnlyIn(Dist.CLIENT)
 public final class RtsConstructionPreviewManager {
     private static final int PREVIEW_LIGHT = 15728880;
     private static Map<UUID, Site> sites = Map.of();

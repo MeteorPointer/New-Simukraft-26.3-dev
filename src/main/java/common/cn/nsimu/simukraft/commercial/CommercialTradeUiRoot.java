@@ -479,7 +479,6 @@ public final class CommercialTradeUiRoot extends UIElement {
     /**
      * itemHoverTooltip: 原版物品提示（品质、附魔、F3+H），数量放在最后一行。
      */
-    @OnlyIn(Dist.CLIENT)
     private List<Component> itemHoverTooltip(ItemStack stack, int count) {
         Minecraft minecraft = Minecraft.getInstance();
         Item.TooltipContext context = minecraft.level != null ? Item.TooltipContext.of(minecraft.level) : Item.TooltipContext.EMPTY;
@@ -522,7 +521,6 @@ public final class CommercialTradeUiRoot extends UIElement {
                 && CommercialTradeUiSupport.stockEnough(offer, 1);
     }
 
-    @OnlyIn(Dist.CLIENT)
     private void renderMarketButtons(GUIContext guiContext, Font font, int left, int top) {
         if (!isListMode()) {
             return;
@@ -535,7 +533,6 @@ public final class CommercialTradeUiRoot extends UIElement {
         renderActionIcon(guiContext, left + UNLIST_ICON_X, top + ACTION_ICON_Y, new ItemStack(Items.BARRIER), canUnlistSelected());
     }
 
-    @OnlyIn(Dist.CLIENT)
     private void renderActionIcon(GUIContext guiContext, int x, int y, ItemStack icon, boolean enabled) {
         blitButton(guiContext, x, y, ACTION_ICON_SIZE, ACTION_ICON_SIZE);
         if (!enabled) {
@@ -544,7 +541,6 @@ public final class CommercialTradeUiRoot extends UIElement {
         guiContext.graphics.fakeItem(icon, x + 1, y + 1);
     }
 
-    @OnlyIn(Dist.CLIENT)
     private void blitButton(GUIContext guiContext, int x, int y, int width, int height) {
         boolean hovered = inside(guiContext.mouseX, guiContext.mouseY, x, y, width, height);
         guiContext.graphics.blitSprite(RenderPipelines.GUI_TEXTURED, hovered ? BUTTON_HIGHLIGHTED_SPRITE : BUTTON_SPRITE, x, y, width, height);
@@ -906,7 +902,6 @@ public final class CommercialTradeUiRoot extends UIElement {
         return packet.globalMarket() && packet.canList() && marketMode == GlobalMarketModeTabStrip.Mode.WAREHOUSE;
     }
 
-    @OnlyIn(Dist.CLIENT)
     private void renderWarehouse(GUIContext guiContext, Font font, int left, int top) {
         guiContext.graphics.fill(left + ROW_X, top + 16, left + 103, top + 160, LEFT_PANEL_BACKGROUND);
         Component title = Component.translatable("gui.simukraft.global_market.warehouse");
@@ -1120,7 +1115,6 @@ public final class CommercialTradeUiRoot extends UIElement {
         selectedInventorySlots.removeIf(slot -> slot.getSlot() == null || slot.getSlot().getItem().isEmpty());
     }
 
-    @OnlyIn(Dist.CLIENT)
     private static void drawSelectionSlot(GUIContext guiContext, int x, int y, int size, int border, int fill) {
         guiContext.graphics.fill(x, y, x + size, y + size, fill);
         guiContext.graphics.fill(x, y, x + size, y + 2, border);

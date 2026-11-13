@@ -18,7 +18,6 @@ import net.neoforged.api.distmarker.OnlyIn;
 /**
  * ConstructionFundsConfirmScreen: 资金不足时用 LDLib2 对话框询问是否仍要建造。
  */
-@OnlyIn(Dist.CLIENT)
 public final class ConstructionFundsConfirmScreen extends ModularUIScreen {
     private final Screen preview;
     private boolean proceeded;

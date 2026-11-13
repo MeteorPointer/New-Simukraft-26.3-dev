@@ -16,7 +16,6 @@ import java.util.List;
 /**
  * RTS 物流线路：光标停在物流盒上时向服务端要该节点的线路。
  */
-@OnlyIn(Dist.CLIENT)
 public final class RtsLogisticsRouteManager {
     private static BlockPos requested;
     private static List<RtsLogisticsRoutesSyncPacket.Line> lines = List.of();
