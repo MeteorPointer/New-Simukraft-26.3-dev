@@ -3,21 +3,17 @@ package client.cn.nsimu.simukraft.client.compat.jei;
 import common.cn.nsimu.simukraft.SimuKraft;
 import common.cn.nsimu.simukraft.registry.ModBlocks;
 import mezz.jei.api.IModPlugin;
-import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import net.minecraft.resources.Identifier;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.List;
 
 /**
- * SimukraftJeiPlugin: JEI 入口。只有安装了 JEI 时才会被 ServiceLoader 加载。
+ * 物理客户端 JEI 注册。由 common 服务入口在客户端转发过来。
  */
-@JeiPlugin
-public class SimukraftJeiPlugin implements IModPlugin {
+public class SimukraftClientJeiPlugin implements IModPlugin {
     private List<IndustrialJeiRecipe> industrialRecipes = List.of();
     private List<CommercialJeiRecipe> commercialRecipes = List.of();
 

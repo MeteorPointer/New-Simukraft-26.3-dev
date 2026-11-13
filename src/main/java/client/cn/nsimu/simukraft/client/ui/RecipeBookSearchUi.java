@@ -1,4 +1,4 @@
-package common.cn.nsimu.simukraft.ui;
+package client.cn.nsimu.simukraft.client.ui;
 
 import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;

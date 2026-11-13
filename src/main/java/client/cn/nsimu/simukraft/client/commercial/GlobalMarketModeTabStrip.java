@@ -1,4 +1,4 @@
-package common.cn.nsimu.simukraft.commercial;
+package client.cn.nsimu.simukraft.client.commercial;
 
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
 import common.cn.nsimu.simukraft.registry.ModItems;
@@ -9,8 +9,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import javax.annotation.Nullable;
 

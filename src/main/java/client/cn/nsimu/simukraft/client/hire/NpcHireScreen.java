@@ -27,7 +27,7 @@ import common.cn.nsimu.simukraft.mineraldrilling.MineralDrillingConstants;
 import common.cn.nsimu.simukraft.network.npc.hire.NpcHireAssignPacket;
 import common.cn.nsimu.simukraft.network.npc.hire.NpcHireListRequestPacket;
 import common.cn.nsimu.simukraft.network.npc.hire.NpcHireListResponsePacket;
-import common.cn.nsimu.simukraft.ui.RecipeBookSearchUi;
+import client.cn.nsimu.simukraft.client.ui.RecipeBookSearchUi;
 import dev.vfyjxf.taffy.style.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;

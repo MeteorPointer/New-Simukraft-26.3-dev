@@ -1,6 +1,7 @@
-package common.cn.nsimu.simukraft.commercial;
+package client.cn.nsimu.simukraft.client.commercial;
 
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
+import common.cn.nsimu.simukraft.commercial.CommercialTradeOfferTab;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
 

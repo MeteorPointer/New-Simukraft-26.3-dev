@@ -1,11 +1,9 @@
-package common.cn.nsimu.simukraft.commercial;
+package client.cn.nsimu.simukraft.client.commercial;
 
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
 import common.cn.nsimu.simukraft.network.commercial.CommercialTradeOpenResponsePacket;
 import net.minecraft.client.gui.Font;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.List;
 

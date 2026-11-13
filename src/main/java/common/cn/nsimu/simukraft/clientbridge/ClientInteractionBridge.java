@@ -50,4 +50,11 @@ public final class ClientInteractionBridge {
     public static void openGuideBook(ItemStack stack) {
         HANDLER.get().openGuideBook(stack);
     }
+
+    /**
+     * clientLanguage: 读取物理客户端语言；专用服务器返回 null。
+     */
+    public static String clientLanguage() {
+        return HANDLER.get().clientLanguage();
+    }
 }

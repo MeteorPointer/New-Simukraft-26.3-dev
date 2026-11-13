@@ -33,4 +33,14 @@ public final class ClientInteractionHandlerImpl implements ClientInteractionHand
         ItemStack previewStack = stack == null || stack.isEmpty() ? ItemStack.EMPTY : stack.copy();
         Minecraft.getInstance().gui.setScreen(new GuideBookScreen(previewStack));
     }
+
+    @Override
+    public String clientLanguage() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft == null || minecraft.getLanguageManager() == null) {
+            return null;
+        }
+        String selected = minecraft.getLanguageManager().getSelected();
+        return selected == null || selected.isBlank() ? null : selected;
+    }
 }

@@ -10,7 +10,7 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import common.cn.nsimu.simukraft.building.BuildingPackageCatalog;
 import common.cn.nsimu.simukraft.building.BuildingStructure;
 import common.cn.nsimu.simukraft.building.BuildingStructureService;
-import common.cn.nsimu.simukraft.ui.RecipeBookSearchUi;
+import client.cn.nsimu.simukraft.client.ui.RecipeBookSearchUi;
 import dev.vfyjxf.taffy.style.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;

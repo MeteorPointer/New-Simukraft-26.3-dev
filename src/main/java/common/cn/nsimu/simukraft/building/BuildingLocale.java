@@ -1,6 +1,7 @@
 package common.cn.nsimu.simukraft.building;
 
 import com.google.gson.JsonObject;
+import common.cn.nsimu.simukraft.clientbridge.ClientInteractionBridge;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.fml.loading.FMLEnvironment;
@@ -32,7 +33,7 @@ public final class BuildingLocale {
         if (FMLEnvironment.getDist() == null || FMLEnvironment.getDist().isDedicatedServer()) {
             return "zh_cn";
         }
-        return clientLanguage();
+        return ClientInteractionBridge.clientLanguage();
     }
 
     private static String onlinePlayerLanguage() {
@@ -51,18 +52,6 @@ public final class BuildingLocale {
             return null;
         }
         return null;
-    }
-
-    private static String clientLanguage() {
-        try {
-            Class<?> minecraft = Class.forName("net.minecraft.client.Minecraft");
-            Object instance = minecraft.getMethod("getInstance").invoke(null);
-            Object languageManager = minecraft.getMethod("getLanguageManager").invoke(instance);
-            Object selected = languageManager.getClass().getMethod("getSelected").invoke(languageManager);
-            return selected instanceof String value ? value : null;
-        } catch (ReflectiveOperationException | RuntimeException exception) {
-            return null;
-        }
     }
 
     /**

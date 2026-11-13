@@ -2,9 +2,6 @@ package common.cn.nsimu.simukraft.logistics.menu;
 
 import common.cn.nsimu.simukraft.logistics.LogisticsWarehouseInventoryService;
 import common.cn.nsimu.simukraft.network.logistics.LogisticsServerBoxOpenResponsePacket;
-import common.cn.nsimu.simukraft.network.logistics.LogisticsWarehouseGridExtractPacket;
-import common.cn.nsimu.simukraft.network.logistics.LogisticsWarehouseGridInsertPacket;
-import common.cn.nsimu.simukraft.network.logistics.LogisticsWarehouseGridShiftClickPacket;
 import common.cn.nsimu.simukraft.registry.ModMenuTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -16,7 +13,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -163,7 +159,7 @@ public final class LogisticsWarehouseGridMenu extends AbstractContainerMenu {
             if (clickType == ContainerInput.PICKUP_ALL || clickType == ContainerInput.CLONE) {
                 return;
             }
-            handleWarehouseClick(slotId, dragType, clickType, player);
+            LogisticsWarehouseGridClientBridge.handleClick(this, slotId, dragType, clickType, player);
             return;
         }
         super.clicked(slotId, dragType, clickType, player);
@@ -255,30 +251,6 @@ public final class LogisticsWarehouseGridMenu extends AbstractContainerMenu {
         return inventory.player.level() instanceof ServerLevel level
                 ? LogisticsWarehouseInventoryService.insert(level, warehousePos, stack)
                 : stack;
-    }
-
-    /**
-     * handleWarehouseClick: 客户端点击聚合槽时发送精确物品操作请求。
-     */
-    private void handleWarehouseClick(int slotId, int dragType, ContainerInput clickType, Player player) {
-        if (!player.level().isClientSide()) {
-            return;
-        }
-        ItemStack carried = getCarried();
-        if (clickType == ContainerInput.PICKUP && !carried.isEmpty()) {
-            ClientPacketDistributor.sendToServer(new LogisticsWarehouseGridInsertPacket(warehousePos));
-            return;
-        }
-        ItemStack target = targetStackAtVisibleSlot(slotId);
-        if (target.isEmpty()) {
-            return;
-        }
-        if (clickType == ContainerInput.PICKUP && carried.isEmpty()) {
-            int count = dragType == 1 ? Math.max(1, (target.getCount() + 1) / 2) : target.getCount();
-            ClientPacketDistributor.sendToServer(new LogisticsWarehouseGridExtractPacket(warehousePos, target, count));
-        } else if (clickType == ContainerInput.QUICK_MOVE && carried.isEmpty()) {
-            ClientPacketDistributor.sendToServer(new LogisticsWarehouseGridShiftClickPacket(warehousePos, target));
-        }
     }
 
     /**

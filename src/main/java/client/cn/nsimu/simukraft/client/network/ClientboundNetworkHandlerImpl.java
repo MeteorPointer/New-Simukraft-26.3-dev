@@ -29,7 +29,7 @@ import client.cn.nsimu.simukraft.client.path.NpcPathDebugRenderer;
 import client.cn.nsimu.simukraft.client.rts.RtsConstructionPreviewManager;
 import client.cn.nsimu.simukraft.client.rts.RtsLogisticsRouteManager;
 import client.cn.nsimu.simukraft.client.toast.ClientInfoToast;
-import common.cn.nsimu.simukraft.commercial.CommercialTradeUiRoot;
+import common.cn.nsimu.simukraft.commercial.CommercialTradeUiBridge;
 import common.cn.nsimu.simukraft.network.bank.BankControlBoxOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.building.BuildingCacheReloadPacket;
 import common.cn.nsimu.simukraft.network.building.controlbox.ResidentialControlBoxBoundsUpdatePacket;
@@ -231,7 +231,7 @@ public final class ClientboundNetworkHandlerImpl implements ClientboundNetworkHa
 
     @Override
     public void handleCommercialTradeOpenResponse(CommercialTradeOpenResponsePacket packet) {
-        CommercialTradeUiRoot.refreshActive(packet);
+        CommercialTradeUiBridge.refreshActive(packet);
     }
 
     @Override

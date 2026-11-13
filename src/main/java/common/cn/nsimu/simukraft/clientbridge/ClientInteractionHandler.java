@@ -28,4 +28,11 @@ public interface ClientInteractionHandler {
      */
     default void openGuideBook(ItemStack stack) {
     }
+
+    /**
+     * clientLanguage: 返回物理客户端当前语言代码。
+     */
+    default String clientLanguage() {
+        return null;
+    }
 }

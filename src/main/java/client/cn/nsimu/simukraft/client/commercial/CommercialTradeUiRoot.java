@@ -1,4 +1,4 @@
-package common.cn.nsimu.simukraft.commercial;
+package client.cn.nsimu.simukraft.client.commercial;
 
 import com.lowdragmc.lowdraglib2.gui.slot.LocalSlot;
 import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
@@ -11,6 +11,10 @@ import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvent;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.IGUIContext;
+import client.cn.nsimu.simukraft.client.ui.RecipeBookSearchUi;
+import common.cn.nsimu.simukraft.commercial.CommercialTradeMenuProvider;
+import common.cn.nsimu.simukraft.commercial.CommercialTradeOfferTab;
+import common.cn.nsimu.simukraft.commercial.CommercialTradeUiSupport;
 import common.cn.nsimu.simukraft.economy.EconomyService;
 import common.cn.nsimu.simukraft.network.commercial.CommercialTradeOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.commercial.CommercialTradePacket;
@@ -18,7 +22,6 @@ import common.cn.nsimu.simukraft.network.globalmarket.GlobalMarketListPacket;
 import common.cn.nsimu.simukraft.network.globalmarket.GlobalMarketUnlistPacket;
 import common.cn.nsimu.simukraft.network.globalmarket.GlobalMarketWarehouseDepositPacket;
 import common.cn.nsimu.simukraft.network.globalmarket.GlobalMarketWarehouseWithdrawPacket;
-import common.cn.nsimu.simukraft.ui.RecipeBookSearchUi;
 import dev.vfyjxf.taffy.style.TaffyPosition;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -31,8 +34,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TooltipFlag;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 import javax.annotation.Nullable;

@@ -3,6 +3,7 @@ package common.cn.nsimu.simukraft.commercial;
 import com.lowdragmc.lowdraglib2.gui.factory.IContainerUIHolder;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
+import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import common.cn.nsimu.simukraft.network.commercial.CommercialTradeOpenResponsePacket;
 import common.cn.nsimu.simukraft.network.rts.RtsRemoteCitizenAccess;
 import net.minecraft.server.level.ServerLevel;
@@ -18,11 +19,18 @@ public final class CommercialTradeMenuHolder implements IContainerUIHolder {
     }
 
     /**
-     * createUI: 创建包含真实玩家背包槽位的 LDLib 交易 UI。
+     * createUI: 两端创建相同顺序的菜单槽位，客户端额外绘制完整交易界面。
      */
     @Override
     public ModularUI createUI(Player player) {
-        return ModularUI.of(UI.of(new CommercialTradeUiRoot(packet)), player);
+        if (player != null && player.level().isClientSide()) {
+            ModularUI clientUi = CommercialTradeUiBridge.create(packet, player);
+            if (clientUi != null) {
+                return clientUi;
+            }
+        }
+        UIElement root = CommercialTradeSlotLayout.create(packet);
+        return ModularUI.of(UI.of(root), player);
     }
 
     /**

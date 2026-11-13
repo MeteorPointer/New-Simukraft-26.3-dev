@@ -33,7 +33,7 @@ import common.cn.nsimu.simukraft.network.city.map.CityCoreMapResponsePacket;
 import common.cn.nsimu.simukraft.network.city.member.CityCoreMemberActionPacket;
 import common.cn.nsimu.simukraft.network.city.member.CityCoreMembersRequestPacket;
 import common.cn.nsimu.simukraft.network.city.member.CityCoreMembersResponsePacket;
-import common.cn.nsimu.simukraft.ui.RecipeBookSearchUi;
+import client.cn.nsimu.simukraft.client.ui.RecipeBookSearchUi;
 import dev.vfyjxf.taffy.style.AlignContent;
 import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.FlexDirection;
@@ -1220,7 +1220,7 @@ public final class CityCoreScreenOpener {
         }
 
         /**
-         * openOrReplaceTab：同一标签换内容，���免关系图停留在上一个市民。
+         * openOrReplaceTab���同一标签换内容，���免关系图停留在上一个市民。
          */
         private void openOrReplaceTab(String id, String titleKey, UIElement content) {
             View existing = openedTabs.remove(id);
