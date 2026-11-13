@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -33,6 +34,9 @@ public class SimuMapManager {
     private static final int STALE_RELEASE_INTERVAL_TICKS = 600;
     private static final long STALE_REGION_MAX_AGE_MS = 60_000L;
     private static final int ACTIVE_REFRESH_INTERVAL_TICKS = 200;
+    // 区块加载改为限流补采：避免进入世界时成批区块在主线程同步全量采样导致严重卡顿。
+    private static final int CHUNK_LOAD_SCAN_BUDGET_PER_TICK = 4;
+    private static final int MAX_PENDING_CHUNK_SCANS = 4096;
 
     private static SimuMapManager instance;
 
@@ -45,6 +49,9 @@ public class SimuMapManager {
     private final Map<Long, SimuMapRegion> regions = new ConcurrentHashMap<>();
     private final Set<Long> renderingKeys = ConcurrentHashMap.newKeySet();
     private final Map<Long, Long> scannedAtTick = new ConcurrentHashMap<>();
+    // 待补采区块队列（打包坐标），仅由每拍限流消费，用并发容器兜住区块加载与 tick 的时序。
+    private final Queue<Long> pendingChunkScans = new ConcurrentLinkedQueue<>();
+    private final Set<Long> pendingChunkKeys = ConcurrentHashMap.newKeySet();
 
     private int scanRadius = DEFAULT_SCAN_RADIUS;
     private long tickCount = 0L;
@@ -154,6 +161,8 @@ public class SimuMapManager {
         regions.clear();
         renderingKeys.clear();
         scannedAtTick.clear();
+        pendingChunkScans.clear();
+        pendingChunkKeys.clear();
         renderExecutor.shutdownNow();
 
         instance = null;
@@ -193,6 +202,7 @@ public class SimuMapManager {
         if (shouldScanThisTick(active)) {
             incrementalScan(active ? ACTIVE_SCAN_BUDGET : PASSIVE_SCAN_BUDGET);
         }
+        drainPendingChunkScans(level);
         if (active && tickCount % DIRTY_RENDER_INTERVAL_TICKS == 0) {
             renderDirtyRegions();
         }
@@ -256,7 +266,7 @@ public class SimuMapManager {
     }
 
     /**
-     * 客户端 chunk 一加载就立即采样，避免地图按螺旋慢慢补。
+     * onClientChunkLoaded: 新加载区块只排队，交由每拍限流补采，避免进入世界时区块风暴在主线程同步全量采样造成严重卡顿。
      */
     public void onClientChunkLoaded(Level level, ChunkAccess chunk) {
         if (!initialized || level == null || chunk == null) {
@@ -264,7 +274,34 @@ public class SimuMapManager {
         }
 
         updateScope(SimuMapStorage.getCurrentWorldId(), level.dimension());
-        scanLoadedChunk(level, chunk, chunk.getPos().x(), chunk.getPos().z(), false);
+        ChunkPos pos = chunk.getPos();
+        queueChunkScan(pos.x(), pos.z());
+    }
+
+    // queueChunkScan: 记录待补采区块；超上限直接丢弃，螺旋增量扫描仍能兜底覆盖。
+    private void queueChunkScan(int chunkX, int chunkZ) {
+        if (pendingChunkScans.size() >= MAX_PENDING_CHUNK_SCANS) {
+            return;
+        }
+        long packed = ChunkPos.pack(chunkX, chunkZ);
+        if (pendingChunkKeys.add(packed)) {
+            pendingChunkScans.add(packed);
+        }
+    }
+
+    // drainPendingChunkScans: 每拍最多补采固定数量区块，把区块加载的采样开销摊平到多拍执行。
+    private void drainPendingChunkScans(Level level) {
+        if (level == null) {
+            return;
+        }
+        for (int drained = 0; drained < CHUNK_LOAD_SCAN_BUDGET_PER_TICK; drained++) {
+            Long packed = pendingChunkScans.poll();
+            if (packed == null) {
+                return;
+            }
+            pendingChunkKeys.remove(packed);
+            scanLoadedChunk(level, ChunkPos.getX(packed), ChunkPos.getZ(packed), true);
+        }
     }
 
     /**
@@ -275,6 +312,7 @@ public class SimuMapManager {
             return;
         }
         scannedAtTick.remove(chunkPos.pack());
+        pendingChunkKeys.remove(chunkPos.pack());
     }
 
     private void updateScope(String worldId, ResourceKey<Level> dimension) {
@@ -294,6 +332,8 @@ public class SimuMapManager {
                 regions.clear();
                 renderingKeys.clear();
                 scannedAtTick.clear();
+                pendingChunkScans.clear();
+                pendingChunkKeys.clear();
                 resetScanCursor();
             }
         } else if (previousDimension == null) {
