@@ -266,11 +266,11 @@ dependencies {
     implementation "dev.vfyjxf:taffy:1.1.5"
     compileOnly "org.appliedenergistics.yoga:yoga:1.0.0"
     implementation "maven.modrinth:B1CBVXHX:Yj7iArC5" // ldlib2
-    implementation "maven.modrinth:AANobbMI:Sx1xfT5Y" // sodium
-    implementation "maven.modrinth:YL57xq9U:Ag5S66CF" // iris
+    implementation "maven.modrinth:AANobbMI:CT6qQx01" // sodium
+    // implementation "maven.modrinth:YL57xq9U:Ag5S66CF" // iris // will we still need to support iris, they are now out of date.
     implementation "maven.modrinth:NcUtCpym:KeQTErHb" // xaero's world map
     implementation "maven.modrinth:l6YH9Als:HwHxykP9" // spark
-    implementation "maven.modrinth:u6dRKJwZ:TAqAED7H" // jei
+    implementation "maven.modrinth:u6dRKJwZ:hvy9mHtw" // jei
     jij "com.zaxxer:HikariCP:7.1.0"
     jij "org.xerial:sqlite-jdbc:3.54.1.0"
 
