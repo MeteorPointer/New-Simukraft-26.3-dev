@@ -7,6 +7,7 @@ import client.cn.nsimu.simukraft.client.globalmarket.GlobalMarketControlBoxScree
 import client.cn.nsimu.simukraft.client.industrial.IndustrialControlBoxScreenOpener;
 import client.cn.nsimu.simukraft.client.logistics.LogisticsServerBoxScreenOpener;
 import client.cn.nsimu.simukraft.client.mineraldrilling.MineralDrillingControlBoxScreenOpener;
+import client.cn.nsimu.simukraft.client.ui.RecipeBookSearchUi;
 import client.cn.nsimu.simukraft.client.ui.SimuKraftFlexLayout;
 import client.cn.nsimu.simukraft.client.ui.SimuKraftUiTheme;
 import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
@@ -27,7 +28,6 @@ import common.cn.nsimu.simukraft.mineraldrilling.MineralDrillingConstants;
 import common.cn.nsimu.simukraft.network.npc.hire.NpcHireAssignPacket;
 import common.cn.nsimu.simukraft.network.npc.hire.NpcHireListRequestPacket;
 import common.cn.nsimu.simukraft.network.npc.hire.NpcHireListResponsePacket;
-import client.cn.nsimu.simukraft.client.ui.RecipeBookSearchUi;
 import dev.vfyjxf.taffy.style.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;

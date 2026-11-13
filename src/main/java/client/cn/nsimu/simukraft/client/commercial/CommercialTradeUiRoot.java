@@ -1,5 +1,6 @@
 package client.cn.nsimu.simukraft.client.commercial;
 
+import client.cn.nsimu.simukraft.client.ui.RecipeBookSearchUi;
 import com.lowdragmc.lowdraglib2.gui.slot.LocalSlot;
 import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
@@ -11,7 +12,6 @@ import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvent;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.IGUIContext;
-import client.cn.nsimu.simukraft.client.ui.RecipeBookSearchUi;
 import common.cn.nsimu.simukraft.commercial.CommercialTradeMenuProvider;
 import common.cn.nsimu.simukraft.commercial.CommercialTradeOfferTab;
 import common.cn.nsimu.simukraft.commercial.CommercialTradeUiSupport;

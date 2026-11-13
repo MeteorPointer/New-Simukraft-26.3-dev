@@ -12,8 +12,6 @@ import common.cn.nsimu.simukraft.economy.CoinDenominations;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 /**
  * ConstructionFundsConfirmScreen: 资金不足时用 LDLib2 对话框询问是否仍要建造。

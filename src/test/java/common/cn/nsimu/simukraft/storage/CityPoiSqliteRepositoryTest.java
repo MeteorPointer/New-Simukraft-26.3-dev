@@ -1,7 +1,6 @@
 package common.cn.nsimu.simukraft.storage;
 
 import common.cn.nsimu.simukraft.util.NbtUuid;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
